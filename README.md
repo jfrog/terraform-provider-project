@@ -1,30 +1,16 @@
-# Terraform Provider Artifactory
+# Terraform Provider Projects
 
-[![Actions Status](https://github.com/jfrog/terraform-provider-artifactory/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-artifactory/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/terraform-provider-artifactory)](https://goreportcard.com/report/github.com/jfrog/terraform-provider-artifactory)
+[![Actions Status](https://github.com/jfrog/terraform-provider-projects/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-projects/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/terraform-provider-artifactory)](https://goreportcard.com/report/github.com/jfrog/terraform-provider-projects)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/jfrog/terraform)
 
 To use this provider in your Terraform module, follow the documentation [here](https://registry.terraform.io/providers/jfrog/artifactory/latest/docs).
-## Release notes for 2.3.1
-With the major version release of 2.3.1, all remnants of the original atlassian code have been pitched. A real effort 
-was made to sustain backward compatibility. For a variety of reasons, this was not possible. In some cases it simply
-couldn't be supported.
 
-In this release, all the rest clients were replaced with a single client: [Resty](https://github.com/go-resty/resty).
-The last major release before this major bump was 2.2.15, and it had no less than 4 different clients in use. In some
-cases, the jfrog-client-go code could have worked, but in others cases it was fundamentally incompatible with the way
-terraform needed to operate as the jfrog go client directly interpreted results as being errored or not (using non-standard
-error codes). In addition, the objective of this release is *not* to upgrade to new APIs, but to simply get rid of all the clients
-and get the tests passing. Since several of the V1 apis that this TF provider uses are not available in the jf-go client 
-this gave further reason to go it alone.
 
-The end result is much more transparent code and complete portability. The final approach taken was to use resty for all
-the calls and to manage authentication, but to use the jfg client for payload structure. In the case of xray, this was 
-not possible, and the original structure code was preserved. 
 
 ## License requirements:
 
-This provider requires access to Artifactory APIs, which are only available in the _licensed_ pro and enterprise editions.
+This provider requires access to the APIs, which are only available in the _licensed_ pro and enterprise editions.
 You can determine which license you have by accessing the following URL
 `${host}/artifactory/api/system/licenses/`
 
@@ -45,48 +31,10 @@ The following 3 license types (`jq .type`) do **NOT** support APIs:
 - OSS
 
 ## Limitations of functionality
-The current way a repository is created is essentially through a union of fields of certain repo types. 
-It's important to note that, the official documentation is used only for inspiration as the documentation is quite wrong.
-Support for some features has been achieved entirely through reverse engineering.
-
-### Local repository limitations
-[Local repository creation](https://www.jfrog.com/confluence/display/JFROG/Repository+Configuration+JSON#RepositoryConfigurationJSON-LocalRepository)
-does not support (directly), repository specific fields in all cases. It's basically a union of
-- Base repo params
-- Maven
-- Gradle
-- Debian
-- Docker (v1)
-- RPM
-
-### Remote repository limitations
-[Remote repository creation](https://www.jfrog.com/confluence/display/JFROG/Repository+Configuration+JSON#RepositoryConfigurationJSON-RemoteRepository) 
-does not support (directly), repository specific fields in all cases. It's basically a union of
-- base remote repo params
-- bower support
-- maven
-- gradle
-- Docker (v1)
-- VCS
-- Pypi
-- Nuget 
-Query params may be forwarded, but this field doesn't exist in the documentation
-
-### Permission target limitations
-[Permission target V2](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-CreateorReplacePermissionTarget)
-Permission target V1 support has been totally removed. Dynamically testing of permission targets using a new repository
-currently doesn't work because of race conditions when creating a repo. This will have to be resolved with retries at a 
-later date. 
-
-### Changes to user creation ###
-Previously, passwords were being generated for the user if none was supplied. This was both unnecessary (since TF has a password provider)
-and because the internal implementation could never be entirely in line with the remote server (or, be sure it was).
-With the release of 2.3.1, password is still optional, but if supplied, must watch the default password requirements. These
-can be overridden with `JFROG_PASSWD_VALIDATION_ON=false` if a custom password policy is in place.
 
 
 ## Build the Provider
-Simply run `make install` - this will compile the provider and install it to `~/.terraform.d`. When running this, it will
+Simply run `make install` - this will compile the provider and install it to `~/terraform.d`. When running this, it will
 take the current tag and bump it 1 minor version. It does not actually create a new tag (that is `make release`). 
 If you wish to use the locally installed provider, make sure your TF script refers to the new version number 
 
@@ -106,9 +54,8 @@ Once you have that done you must set the following properties
 
 Then, you have to set some environment variables as this is how the acceptance tests pick up their config
 ```bash
-ARTIFACTORY_URL=http://localhost:8082
-ARTIFACTORY_USERNAME=admin
-ARTIFACTORY_PASSWORD=password
+JFROG_URL=http://localhost:8081
+JFROG_ACCESS_TOKEN=...
 TF_ACC=FOO
 ```
 a crucial, and very much hidden, env var to set is
@@ -148,10 +95,10 @@ make install
 ```
 4. Run your provider: `terraform init && terraform plan` - it will start in this busy sleep loop.
 5. In a separate shell, find the `PID` of the provider that got forked 
-`pgrep terraform-provider-artifactory`
+`pgrep terraform-provider-projects`
 6. Then, attach the debugger to that pid: `dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $pid`
 A 1-liner for this whole process is: 
-`dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $(pgrep terraform-provider-artifactory)`
+`dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $(pgrep terraform-provider-projects)`
 7. In intellij, setup a remote go debugging session (the default port is `2345`, but make sure it's set.) And click the `debug` button
 8. Your editor should immediately break at the breakpoint from step 2. At this point, in the watch window, edit the `debug` 
 value and set it to false, and allow the debugger to continue. Be ready for your debugging as this will release the provider 
@@ -192,7 +139,7 @@ entitled to contribute the code/documentation/translation to the project
 and is willing to have it used in distributions and derivative works
 (or is willing to transfer ownership).
 
-[Sign the CLA](https://cla-assistant.io/jfrog/terraform-provider-artifactory)
+[Sign the CLA](https://cla-assistant.io/jfrog/terraform-provider-projects)
 
 ## License
 Copyright (c) 2020 JFrog.

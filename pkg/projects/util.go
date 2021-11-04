@@ -1,13 +1,10 @@
-package artifactory
+package projects
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"math/rand"
 	"text/template"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -114,18 +111,6 @@ func getMD5Hash(o interface{}) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-var randomInt = func() func() int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Int
-}()
-
-func randBool() bool {
-	return randomInt() % 2 == 0
-}
-
-func randSelect(items ... interface{}) interface{} {
-	return items[randomInt() % len(items)]
-}
 
 func mergeMaps(schemata ...map[string]interface{}) map[string]interface{} {
 	result := map[string]interface{}{}
@@ -155,11 +140,7 @@ func executeTemplate(name, temp string, fields interface{}) string {
 	return tpl.String()
 }
 
-func mkNames(name, resource string) (int, string, string) {
-	id := randomInt()
-	n := fmt.Sprintf("%s%d", name, id)
-	return id, fmt.Sprintf("%s.%s", resource, n), n
-}
+
 
 type Lens func(key string, value interface{}) []error
 
@@ -177,7 +158,7 @@ func sendConfigurationPatch(content []byte, m interface{}) error {
 
 	_, err := m.(*resty.Client).R().SetBody(content).
 		SetHeader("Content-Type", "application/yaml").
-		Patch("artifactory/api/system/configuration")
+		Patch("projects/api/system/configuration")
 
 	return err
 }

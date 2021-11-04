@@ -15,7 +15,7 @@ You can either access it via api, or web browser - it does require admin level c
 APIs that will work without a license (side node: you can also install your license here with a `POST`)
 
 ```bash
-curl -sL ${host}/artifactory/api/system/licenses/ | jq .
+curl -sL ${host}/projects/api/system/licenses/ | jq .
 {
   "type" : "Enterprise Plus Trial",
   "validThrough" : "Jan 29, 2022",
@@ -35,7 +35,7 @@ The following 3 license types (`jq .type`) do **NOT** support APIs:
 terraform {
   required_providers {
     artifactory = {
-      source  = "registry.terraform.io/jfrog/artifactory"
+      source  = "registry.terraform.io/jfrog/projects"
       version = "2.2.7"
     }
   }
@@ -43,7 +43,7 @@ terraform {
 
 # Configure the Artifactory provider
 provider "artifactory" {
-  url = "${var.artifactory_url}/artifactory"
+  url = "${var.artifactory_url}/projects"
   username = "${var.artifactory_username}"
   password = "${var.artifactory_password}"
 }
@@ -72,7 +72,7 @@ Usage:
 ```hcl
 # Configure the Artifactory provider
 provider "artifactory" {
-  url = "artifactory.site.com/artifactory"
+  url = "projects.site.com/projects"
   username = "myusername"
   password = "mypassword"
 }
@@ -86,7 +86,7 @@ Usage:
 ```hcl
 # Configure the Artifactory provider
 provider "artifactory" {
-  url = "artifactory.site.com/artifactory"
+  url = "projects.site.com/projects"
   access_token = "abc...xy"
 }
 ```
@@ -99,7 +99,7 @@ Usage:
 ```hcl
 # Configure the Artifactory provider
 provider "artifactory" {
-  url = "artifactory.site.com/artifactory"
+  url = "projects.site.com/projects"
   api_key = "abc...xy"
 }
 ```

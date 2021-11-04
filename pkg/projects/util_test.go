@@ -1,4 +1,4 @@
-package artifactory
+package projects
 
 import (
 	"fmt"
@@ -6,9 +6,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"math"
+	"math/rand"
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func fmtMapToHcl(fields map[string]interface{}) string {
@@ -91,7 +93,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
-		provider, _ := testAccProviders["artifactory"]()
+		provider, _ := testAccProviders["projects"]()
 		client := provider.Meta().(*resty.Client)
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
@@ -107,6 +109,20 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 	}
 }
 
-func testCheckRepo(id string, request *resty.Request) (*resty.Response, error) {
-	return checkRepo(id, request.AddRetryCondition(neverRetry))
+func mkNames(name, resource string) (int, string, string) {
+	id := randomInt()
+	n := fmt.Sprintf("%s%d", name, id)
+	return id, fmt.Sprintf("%s.%s", resource, n), n
+}
+var randomInt = func() func() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Int
+}()
+
+func randBool() bool {
+	return randomInt() % 2 == 0
+}
+
+func randSelect(items ... interface{}) interface{} {
+	return items[randomInt() % len(items)]
 }

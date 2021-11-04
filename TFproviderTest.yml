@@ -3,7 +3,7 @@ resources:
     type: GitRepo
     configuration:
       gitProvider: Partnership_GitHub
-      path: jfrog/terraform-provider-artifactory # if path is modified, change the name as well, per Pipelines doc
+      path: jfrog/terraform-provider-projects # if path is modified, change the name as well, per Pipelines doc
       branches:
         include: master
       buildOn:
@@ -45,7 +45,7 @@ pipelines:
             CLOUDFLARE_ZONE_ID: ${int_gkeEnvVars_cloudflare_zone_id}
             CLOUDFLARE_TOKEN: ${int_gkeEnvVars_cloudflare_token}
             NUM_NODES: ${int_gkeEnvVars_NUM_NODES}
-            ARTIFACTORY_DISTRIBUTION: artifactory
+            ARTIFACTORY_DISTRIBUTION: projects
             NEW_RT_PASSWORD: ${int_gkeEnvVars_new_rt_password}
         execution:
           onStart:
@@ -56,7 +56,7 @@ pipelines:
             - fozzie checkout native-steps
             - fozzie gke/create_cluster
             - echo "Creating Artifactory Secret"
-            - kubectl create secret generic artifactory-license --from-file=$FOZZIE_HOME/native-steps/license/artifactory.cluster.license
+            - kubectl create secret generic projects-license --from-file=$FOZZIE_HOME/native-steps/license/projects.cluster.license
             - echo "Creating TLS Secret"
             - kubectl create secret tls tls-ingress --cert=$FOZZIE_HOME/native-steps/dns/tls.crt --key=$FOZZIE_HOME/native-steps/dns/tls.key
             - helm repo add jfrog https://charts.jfrog.io/

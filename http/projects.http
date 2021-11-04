@@ -1,0 +1,86 @@
+GET {{ host }}/access/api/v1/projects
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+###
+
+
+
+POST {{ host }}/access/api/v1/projects
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+{
+  "display_name": "prj-{{ $uuid }}",
+  "description": "a test project",
+  "admin_privileges": {
+    "manage_members": true,
+    "manage_resources": true,
+    "manage_security_assets": true,
+    "index_resources": true,
+    "allow_ignore_rules": true
+  },
+  "storage_quota_bytes": -1,
+  "project_key": "{{ prjkey }}"
+}
+
+###
+GET {{ host }}/access/api/v1/projects/{{ prjkey }}/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+###
+GET {{ host }}/access/api/v1/projects/{{ prjkey }}/users/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+###
+GET {{ host }}/access/api/v1/projects/{{ prjkey }}/roles/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+### the role is case sensitive and the user won't show up if it's wrong and you won't get rejected
+PUT {{ host }}/access/api/v1/projects/{{ prjkey }}/users/christianb
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+{
+  "roles": [
+    "Developer",
+    "Project Admin"
+  ]
+}
+### there is no way to determine which repositories are in a project
+## even the UI doesn't work
+GET {{ host }}/access/api/v1/projects/{{ prjkey }}/repositories/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+###
+GET {{ host }}/ui/api/v1/projects/{{ prjkey }}/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+### the group 'writeAccess' exists in the UI but not here
+GET {{ host }}/access/api/v1/projects/{{ prjkey }}/groups/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+
+### there seems to be no way to list repositories in a project
+GET {{ host }}/access/api/v1/projects/_/share/repositories/
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+###
+GET {{ host }}/artifactory/api/repositories?project=christ
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{ token }}
+###
