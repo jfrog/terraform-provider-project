@@ -53,6 +53,10 @@ func Provider() *schema.Provider {
 	return p
 }
 
+type ProjectClient struct {
+	Get func(id string) (Project, error)
+}
+
 func buildResty(URL string) (*resty.Client, error) {
 
 	u, err := url.ParseRequestURI(URL)
@@ -78,6 +82,75 @@ func buildResty(URL string) (*resty.Client, error) {
 	return restyBase, nil
 
 }
+func mkProjectClient(resty *resty.Client) (ProjectClient, error) {
+	groupsChan := make(chan Group)
+	defer close(groupsChan)
+	var getGroup = func(prjId, grpId string) {
+		var group Group
+		resty.R().SetResult(&group).SetPathParam("group", grpId).
+			SetPathParam("project", prjId).
+			Get("/access/api/v1/projects/{project}/groups/{group}")
+		//if err != nil {
+		//	return nil, err // make an error channel or a new type?
+		//}
+		groupsChan <- group
+	}
+	var getGroups = func(prjId string) ([]Group, error) {
+		var result []Group
+		_, err := resty.R().SetResult(&result).Get(fmt.Sprintf("/access/api/v1/projects/%s/groups/", prjId))
+		if err != nil {
+			return nil, err
+		}
+		for group := range groupsChan {
+			go getGroup(prjId, group.Id())
+		}
+		return result, nil
+	}
+	roleChan := make(chan Role)
+	defer close(roleChan)
+	var getRole = func(prjId, roleId string) {
+		var role Role
+		resty.R().SetResult(&role).SetPathParam("role", roleId).
+			SetPathParam("project", prjId).
+			Get("/access/api/v1/projects/{project}/groups/{role}")
+		//if err != nil {
+		//	return nil, err // make an error channel or a new type?
+		//}
+		roleChan <- role
+	}
+
+	var getRoles = func(prjId string) ([]Role, error) {
+		var result []Role
+		_, err := resty.R().SetResult(result).SetPathParam("prjKey", prjId).Get("/access/api/v1/projects/{prjKey}/roles/")
+		if err != nil {
+			return nil, err
+		}
+		for group := range groupsChan {
+			go getRole(prjId, group.Id())
+		}
+		return result, nil
+	}
+
+	client := ProjectClient{
+		Get: func(id string) (Project, error) {
+			result := Project{}
+			groups, err := getGroups(id)
+			roles, err := getRoles(id)
+			if err != nil {
+				return Project{}, err
+			}
+			_, err = resty.R().SetResult(&result).Get("/access/api/v1/projects/" + id)
+			if err != nil {
+				return Project{}, err
+			}
+			result.Groups = groups
+			result.Roles = roles
+			return result, nil
+		},
+	}
+	// or, remove the struct and just return the function
+	return client, nil
+}
 
 func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, error) {
 	if accessToken != "" {
@@ -102,13 +175,17 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 	if err != nil {
 		return nil, err
 	}
+	client, err := mkProjectClient(restyBase)
+	if err != nil {
+		return nil, err
+	}
 	_, err = sendUsageRepo(restyBase, terraformVersion)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return restyBase, nil
+	return client, nil
 
 }
 

@@ -8,7 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strconv"
 )
-
+type Identifiable interface {
+	Id() string
+}
 // Project GET {{ host }}/access/api/v1/projects/{{prjKey}}/
 //GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
 type Project struct {
@@ -21,7 +23,10 @@ type Project struct {
 	Repositories           []string `hcl:"repositories" `
 	Roles                  []Role   `hcl:"roles"`
 	Users                  []Member `hcl:"users"`
-	Groups                 []Member `hcl:"groups"`
+	Groups                 []Group `hcl:"groups"`
+}
+func (p Project) Id() string {
+	return p.Key
 }
 
 // Member GET {{ host }}/access/api/v1/projects/{{prjKey}}/users/
@@ -30,6 +35,16 @@ type Member struct {
 	Name  string   `hcl:"name" json:"name"`
 	Roles []string `hcl:"roles" json:"roles"`
 }
+func (m Member) Id() string {
+	return m.Name
+}
+type Group Member
+
+func (g Group) Id() string {
+	return g.Name
+}
+
+
 
 // Role GET {{ host }}/access/api/v1/projects/{{prjKey}}/roles/
 // This gets all available project roles
@@ -41,12 +56,16 @@ type Role struct {
 	Actions      []string `hcl:"actions" json:"actions"`
 }
 
+func (r Role) Id() string {
+	return r.Name
+}
+
 func projectResource() *schema.Resource {
 
 	const projectsUrl = "/access/api/v1/projects"
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		prj := Project{}
-		_, err := m.(*resty.Client).R().SetResult(&prj).Post(projectsUrl + "id")
+		_, err := m.(*resty.Client).R().SetResult(&prj).Post(projectsUrl + data.Id())
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -62,14 +81,14 @@ func projectResource() *schema.Resource {
 		return nil
 	}
 	var updateProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		_, err := m.(*resty.Client).R().Put(projectsUrl + "id")
+		_, err := m.(*resty.Client).R().Put(projectsUrl + data.Id())
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		return nil
 	}
 	var deleteProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		_, err := m.(*resty.Client).R().Delete(projectsUrl + "id")
+		_, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
 		if err != nil {
 			return diag.FromErr(err)
 		}
