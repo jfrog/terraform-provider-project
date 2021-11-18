@@ -37,37 +37,6 @@ func (p Project) Id() string {
 	return p.Key
 }
 
-// Member GET {{ host }}/access/api/v1/projects/{{prjKey}}/users/
-// GET {{ host }}/access/api/v1/projects/{{prjKey}}/groups/
-// type Member struct {
-// 	Name  string   `hcl:"name" json:"name"`
-// 	Roles []string `hcl:"roles" json:"roles"`
-// }
-//
-// func (m Member) Id() string {
-// 	return m.Name
-// }
-//
-// type Group Member
-//
-// func (g Group) Id() string {
-// 	return g.Name
-// }
-//
-// // Role GET {{ host }}/access/api/v1/projects/{{prjKey}}/roles/
-// // This gets all available project roles
-// type Role struct {
-// 	Name         string   `hcl:"name" json:"name"`
-// 	Description  string   `hcl:"description" json:"description"`
-// 	Type         string   `hcl:"type" json:"type"`
-// 	Environments []string `hcl:"environments" json:"environments"`
-// 	Actions      []string `hcl:"actions" json:"actions"`
-// }
-//
-// func (r Role) Id() string {
-// 	return r.Name
-// }
-
 const projectsUrl = "/access/api/v1/projects/"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
@@ -154,85 +123,6 @@ func projectResource() *schema.Resource {
 			Default:     false,
 			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker",
 		},
-		// "repositories": {
-		// 	Type:     schema.TypeSet,
-		// 	Required: true,
-		// 	Elem: &schema.Schema{
-		// 		Type: schema.TypeString,
-		// 	},
-		// 	Set: schema.HashString,
-		// },
-		// "build_repository": {
-		// 	Type:     schema.TypeString,
-		// 	Optional: true,
-		// },
-		// "block_deployments_on_limit": {
-		// 	Type:     schema.TypeBool,
-		// 	Optional: true,
-		// 	Default:  false,
-		// },
-		// "groups": {
-		// 	Type:     schema.TypeSet,
-		// 	Required: true,
-		// 	Elem: &schema.Resource{
-		// 		Schema: map[string]*schema.Schema{
-		// 			"name": {
-		// 				Type:     schema.TypeString,
-		// 				Required: true,
-		// 			},
-		// 			"roles": {
-		// 				Type:     schema.TypeList,
-		// 				Required: true,
-		// 				Elem: &schema.Schema{
-		// 					Type: schema.TypeString,
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
-		// "members": {
-		// 	Type:     schema.TypeList,
-		// 	Required: true,
-		// 	Elem: &schema.Resource{
-		// 		Schema: map[string]*schema.Schema{
-		// 			"name": {
-		// 				Type:     schema.TypeString,
-		// 				Required: true,
-		// 			},
-		// 			"roles": {
-		// 				Type:     schema.TypeList,
-		// 				Required: true,
-		// 				Elem: &schema.Schema{
-		// 					Type: schema.TypeString,
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
-		// "project_admins": {
-		// 	Type:     schema.TypeSet,
-		// 	Required: true,
-		// 	Elem: &schema.Resource{
-		// 		Schema: map[string]*schema.Schema{
-		// 			"user_names": {
-		// 				Type:     schema.TypeSet,
-		// 				Required: true,
-		// 				Set:      schema.HashString,
-		// 				Elem: &schema.Schema{
-		// 					Type: schema.TypeString,
-		// 				},
-		// 			},
-		// 			"roles": {
-		// 				Type:     schema.TypeSet,
-		// 				Required: true,
-		// 				Set:      schema.HashString,
-		// 				Elem: &schema.Schema{
-		// 					Type: schema.TypeString,
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 
 	var unpackProject = func(data *schema.ResourceData) (interface{}, string, error) {
