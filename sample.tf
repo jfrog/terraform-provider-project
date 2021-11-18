@@ -9,7 +9,7 @@ terraform {
 }
 
 resource "project" "myproject" {
-  key = "my_project"
+  key = "myproj"
   display_name = "My Project"
   description = "My Project"
   admin_privileges {
@@ -20,27 +20,4 @@ resource "project" "myproject" {
   max_storage_in_gigabytes = 10
   block_deployments_on_limit = false
   email_notification = true
-  // users = ["user1","user2"]
-  // groups {
-  //   name = "somegroup"
-  //   roles = ["admin","reader"]
-  // }
-  // group {
-  //   name = "somegroup1"
-  //   roles = ["admin","reader"]
-  // }
-  // member {
-  //   name = "christian"
-  //   roles = ["admin"]
-  // }
-  // member {
-  //   name = "karol"
-  //   roles = ["admin"]
-  // }
-  // project_admins {
-  //   user_names = ["christian"]
-  //   roles = ["some_admin_role"]
-  // }
-  // build_repository = "mybuild"
-  // repositories = ["myrepo", "other-repo"]
 }
