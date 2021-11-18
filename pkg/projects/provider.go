@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-// Version for some reason isn't getting updated by the linker
 var Version = "0.0.1"
 
 // Provider Projects provider that supports configuration via username+password or a token
@@ -23,14 +22,14 @@ func Provider() *schema.Provider {
 			"url": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				DefaultFunc:  schema.MultiEnvDefaultFunc([]string{"JFROG_URL", "PROJECTS_URL"}, "http://localhost:8081"),
+				DefaultFunc:  schema.MultiEnvDefaultFunc([]string{"PROJECTS_URL", "JFROG_URL"}, "http://localhost:8081"),
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 			},
 			"access_token": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Sensitive:        true,
-				DefaultFunc:      schema.MultiEnvDefaultFunc([]string{"JFROG_ACCESS_TOKEN", "PROJECTS_ACCESS_TOKEN"}, ""),
+				DefaultFunc:      schema.MultiEnvDefaultFunc([]string{"PROJECTS_ACCESS_TOKEN", "JFROG_ACCESS_TOKEN"}, ""),
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 				Description:      "This is a Bearer token that can be given to you by your admin under `Identity and Access`",
 			},
@@ -60,92 +59,108 @@ type ProjectClient struct {
 func buildResty(URL string) (*resty.Client, error) {
 
 	u, err := url.ParseRequestURI(URL)
-
 	if err != nil {
 		return nil, err
 	}
+
 	baseUrl := fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 	restyBase := resty.New().SetHostURL(baseUrl).OnAfterResponse(func(client *resty.Client, response *resty.Response) error {
 		if response == nil {
 			return fmt.Errorf("no response found")
 		}
+
 		if response.StatusCode() >= http.StatusBadRequest {
 			return fmt.Errorf("\n%d %s %s\n%s", response.StatusCode(), response.Request.Method, response.Request.URL, string(response.Body()[:]))
 		}
+
 		return nil
 	}).
 		SetHeader("content-type", "application/json").
 		SetHeader("accept", "*/*").
 		SetHeader("user-agent", "jfrog/terraform-provider-projects:"+Version).
 		SetRetryCount(5)
+
 	restyBase.DisableWarn = true
+
 	return restyBase, nil
-
 }
-func mkProjectClient(resty *resty.Client) (ProjectClient, error) {
-	groupsChan := make(chan Group)
-	defer close(groupsChan)
-	var getGroup = func(prjId, grpId string) {
-		var group Group
-		resty.R().SetResult(&group).SetPathParam("group", grpId).
-			SetPathParam("project", prjId).
-			Get("/access/api/v1/projects/{project}/groups/{group}")
-		//if err != nil {
-		//	return nil, err // make an error channel or a new type?
-		//}
-		groupsChan <- group
-	}
-	var getGroups = func(prjId string) ([]Group, error) {
-		var result []Group
-		_, err := resty.R().SetResult(&result).Get(fmt.Sprintf("/access/api/v1/projects/%s/groups/", prjId))
-		if err != nil {
-			return nil, err
-		}
-		for group := range groupsChan {
-			go getGroup(prjId, group.Id())
-		}
-		return result, nil
-	}
-	roleChan := make(chan Role)
-	defer close(roleChan)
-	var getRole = func(prjId, roleId string) {
-		var role Role
-		resty.R().SetResult(&role).SetPathParam("role", roleId).
-			SetPathParam("project", prjId).
-			Get("/access/api/v1/projects/{project}/groups/{role}")
-		//if err != nil {
-		//	return nil, err // make an error channel or a new type?
-		//}
-		roleChan <- role
-	}
 
-	var getRoles = func(prjId string) ([]Role, error) {
-		var result []Role
-		_, err := resty.R().SetResult(result).SetPathParam("prjKey", prjId).Get("/access/api/v1/projects/{prjKey}/roles/")
-		if err != nil {
-			return nil, err
-		}
-		for group := range groupsChan {
-			go getRole(prjId, group.Id())
-		}
-		return result, nil
-	}
+func mkProjectClient(resty *resty.Client) (ProjectClient, error) {
+	// groupsChan := make(chan Group)
+	// defer close(groupsChan)
+	//
+	// var getGroup = func(prjId, grpId string) {
+	// 	var group Group
+	// 	resty.R().SetResult(&group).SetPathParam("group", grpId).
+	// 		SetPathParam("project", prjId).
+	// 		Get("/access/api/v1/projects/{project}/groups/{group}")
+	// 	//if err != nil {
+	// 	//	return nil, err // make an error channel or a new type?
+	// 	//}
+	// 	groupsChan <- group
+	// }
+	//
+	// var getGroups = func(prjId string) ([]Group, error) {
+	// 	var result []Group
+	//
+	// 	_, err := resty.R().SetResult(&result).Get(fmt.Sprintf("/access/api/v1/projects/%s/groups/", prjId))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	//
+	// 	for group := range groupsChan {
+	// 		go getGroup(prjId, group.Id())
+	// 	}
+	//
+	// 	return result, nil
+	// }
+	//
+	// roleChan := make(chan Role)
+	// defer close(roleChan)
+	// var getRole = func(prjId, roleId string) {
+	// 	var role Role
+	// 	resty.R().SetResult(&role).SetPathParam("role", roleId).
+	// 		SetPathParam("project", prjId).
+	// 		Get("/access/api/v1/projects/{project}/groups/{role}")
+	// 	//if err != nil {
+	// 	//	return nil, err // make an error channel or a new type?
+	// 	//}
+	// 	roleChan <- role
+	// }
+	//
+	// var getRoles = func(prjId string) ([]Role, error) {
+	// 	var result []Role
+	//
+	// 	_, err := resty.R().SetResult(result).SetPathParam("prjKey", prjId).Get("/access/api/v1/projects/{prjKey}/roles/")
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	//
+	// 	for group := range groupsChan {
+	// 		go getRole(prjId, group.Id())
+	// 	}
+	//
+	// 	return result, nil
+	// }
 
 	client := ProjectClient{
 		Get: func(id string) (Project, error) {
-			result := Project{}
-			groups, err := getGroups(id)
-			roles, err := getRoles(id)
+			project := Project{}
+			// groups, err := getGroups(id)
+			// roles, err := getRoles(id)
+			// if err != nil {
+			// 	return Project{}, err
+			// }
+
+			_, err := resty.R().SetResult(&project).Get("/access/api/v1/projects/" + id)
 			if err != nil {
 				return Project{}, err
 			}
-			_, err = resty.R().SetResult(&result).Get("/access/api/v1/projects/" + id)
-			if err != nil {
-				return Project{}, err
-			}
-			result.Groups = groups
-			result.Roles = roles
-			return result, nil
+
+			// result.Groups = groups
+			// result.Roles = roles
+
+			return project, nil
 		},
 	}
 	// or, remove the struct and just return the function
@@ -175,17 +190,18 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 	if err != nil {
 		return nil, err
 	}
-	client, err := mkProjectClient(restyBase)
-	if err != nil {
-		return nil, err
-	}
+
+	// _, err := mkProjectClient(restyBase)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	_, err = sendUsageRepo(restyBase, terraformVersion)
-
 	if err != nil {
 		return nil, err
 	}
 
-	return client, nil
+	return restyBase, nil
 
 }
 

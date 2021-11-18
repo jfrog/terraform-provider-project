@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"math"
 	"text/template"
 
 	"github.com/go-resty/resty/v2"
@@ -111,7 +112,6 @@ func getMD5Hash(o interface{}) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-
 func mergeMaps(schemata ...map[string]interface{}) map[string]interface{} {
 	result := map[string]interface{}{}
 	for _, schma := range schemata {
@@ -121,6 +121,7 @@ func mergeMaps(schemata ...map[string]interface{}) map[string]interface{} {
 	}
 	return result
 }
+
 func mergeSchema(schemata ...map[string]*schema.Schema) map[string]*schema.Schema {
 	result := map[string]*schema.Schema{}
 	for _, schma := range schemata {
@@ -139,8 +140,6 @@ func executeTemplate(name, temp string, fields interface{}) string {
 
 	return tpl.String()
 }
-
-
 
 type Lens func(key string, value interface{}) []error
 
@@ -170,3 +169,11 @@ func IntPtr(v int) *int { return &v }
 func Int64Ptr(v int64) *int64 { return &v }
 
 func StringPtr(v string) *string { return &v }
+
+func BytesToGigabytles(bytes int) int {
+ return int(bytes/int(math.Pow(1024, 3)))
+}
+
+func GigabytlesToBytes(bytes int) int {
+ return bytes * int(math.Pow(1024, 3))
+}
