@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 
-	"github.com/jfrog/terraform-provider-artifactory/pkg/projects"
+	"github.com/jfrog/terraform-provider-projects/pkg/projects"
 )
 
 func main() {
