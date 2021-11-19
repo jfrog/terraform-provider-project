@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccProjectsInvalidProjectKey(t *testing.T) {
+func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
@@ -22,7 +22,7 @@ func TestAccProjectsInvalidProjectKey(t *testing.T) {
 		"manage_resources":           randBool(),
 		"index_resources":            randBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(20)),
+		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
 	}
 	project := executeTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
@@ -40,20 +40,48 @@ func TestAccProjectsInvalidProjectKey(t *testing.T) {
         }
 	`, params)
 
-	resource.Test(t, resource.TestCase{
+	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: project,
+				Config:      project,
 				ExpectError: regexp.MustCompile(`.*key must be 3 - 6 lowercase alphanumeric characters.*`),
 			},
 		},
-	})
+	}
 }
 
-func TestAccProjectsInvalidDisplayName(t *testing.T) {
+type testCase struct {
+	Name  string
+	Value string
+}
+
+func TestAccProjectsInvalidProjectKey(t *testing.T) {
+	invalidProjectKeys := []testCase{
+		testCase{
+			Name:  "TooShort",
+			Value: strings.ToLower(randSeq(2)),
+		},
+		testCase{
+			Name:  "TooLong",
+			Value: strings.ToLower(randSeq(7)),
+		},
+		testCase{
+			Name:  "HasUppercase",
+			Value: randSeq(8),
+		},
+	}
+
+	for _, invalidProjectKey := range invalidProjectKeys {
+		t.Run(fmt.Sprintf("TestProjectKey%s", invalidProjectKey.Name), func(t *testing.T) {
+			resource.Test(makeInvalidProjectKeyTestCase(invalidProjectKey.Value, t))
+		})
+	}
+}
+
+func TestAccProjectInvalidDisplayName(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(20))
 	resourceName := fmt.Sprintf("project.%s", name)
 
@@ -89,14 +117,14 @@ func TestAccProjectsInvalidDisplayName(t *testing.T) {
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: project,
+				Config:      project,
 				ExpectError: regexp.MustCompile(`.*string must be less than or equal 32 characters long.*`),
 			},
 		},
 	})
 }
 
-func TestAccProjects(t *testing.T) {
+func TestAccProject(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
