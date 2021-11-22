@@ -13,7 +13,7 @@ import (
 var testAccProviders = func() map[string]func() (*schema.Provider, error) {
 	provider := Provider()
 	return map[string]func() (*schema.Provider, error){
-		"projects": func() (*schema.Provider, error) {
+		"project": func() (*schema.Provider, error) {
 			return provider, nil
 		},
 	}
@@ -28,6 +28,7 @@ func TestProvider(t *testing.T) {
 func TestProvider_impl(t *testing.T) {
 	var _ = Provider()
 }
+
 func getTestResty(t *testing.T) *resty.Client {
 	if v := os.Getenv("PROJECTS_URL"); v == "" {
 		t.Fatal("PROJECTS_URL must be set for acceptance tests")
@@ -52,7 +53,7 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	provider, _ := testAccProviders["projects"]()
+	provider, _ := testAccProviders["project"]()
 	oldErr := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
 	if oldErr != nil {
 		t.Fatal(oldErr)

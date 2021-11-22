@@ -1,12 +1,14 @@
-terraform-provider-artifactory
+terraform-provider-*
 dist/
 vendor/
 .idea/
 .github/
 .modules/
-.terraform
+.terraform*
 terraform.tfstate
 terraform.tfstate.backup
 lib/
 *.lic
 /resources/
+
+.DS_Store

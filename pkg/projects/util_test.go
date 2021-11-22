@@ -27,6 +27,7 @@ func fmtMapToHcl(fields map[string]interface{}) string {
 
 	return strings.Join(allPairs, "\n")
 }
+
 func toHclFormatString(tabs, max int, value interface{}) string {
 	prefix := ""
 	suffix := ""
@@ -38,6 +39,7 @@ func toHclFormatString(tabs, max int, value interface{}) string {
 	}
 	return fmt.Sprintf("%s%%-%ds %s %s%s%s", strings.Repeat("\t", tabs), max, delimeter, prefix, "%s", suffix)
 }
+
 func mapToTestChecks(fqrn string, fields map[string]interface{}) []resource.TestCheckFunc {
 	var result []resource.TestCheckFunc
 	for key, value := range fields {
@@ -65,6 +67,7 @@ func mapToTestChecks(fqrn string, fields map[string]interface{}) []resource.Test
 	}
 	return result
 }
+
 func toHclFormat(thing interface{}) string {
 	switch thing.(type) {
 	case string:
@@ -84,7 +87,6 @@ func toHclFormat(thing interface{}) string {
 
 type CheckFun func(id string, request *resty.Request) (*resty.Response, error)
 
-
 func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 	return func(s *terraform.State) error {
 
@@ -93,7 +95,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
-		provider, _ := testAccProviders["projects"]()
+		provider, _ := testAccProviders["project"]()
 		client := provider.Meta().(*resty.Client)
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
@@ -114,6 +116,18 @@ func mkNames(name, resource string) (int, string, string) {
 	n := fmt.Sprintf("%s%d", name, id)
 	return id, fmt.Sprintf("%s.%s", resource, n), n
 }
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+	rand.Seed(time.Now().UnixNano())
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(b)
+}
+
 var randomInt = func() func() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Int
