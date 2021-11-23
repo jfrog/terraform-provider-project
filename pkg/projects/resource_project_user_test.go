@@ -48,16 +48,16 @@ func TestAccProjectUser(t *testing.T) {
 	email1 := fmt.Sprintf("%s@tempurl.org", username1)
 	username2 := "user2"
 	email2 := fmt.Sprintf("%s@tempurl.org", username2)
-	role := "developer"
-	newRole := "contributor"
+	developeRole := "developer"
+	contributorRole := "contributor"
 
 	params := map[string]interface{}{
-		"name":        name,
-		"project_key": projectKey,
-		"username1":   username1,
-		"username2":   username2,
-		"role":        role,
-		"newRole":     newRole,
+		"name":            name,
+		"project_key":     projectKey,
+		"username1":       username1,
+		"username2":       username2,
+		"developeRole":    developeRole,
+		"contributorRole": contributorRole,
 	}
 
 	initialConfig := executeTemplate("TestAccProjectUser", `
@@ -73,7 +73,7 @@ func TestAccProjectUser(t *testing.T) {
 
 			user {
 				name = "{{ .username1 }}"
-				roles = ["{{ .role }}"]
+				roles = ["{{ .developeRole }}"]
 			}
 		}
 	`, params)
@@ -91,12 +91,12 @@ func TestAccProjectUser(t *testing.T) {
 
 			user {
 				name = "{{ .username1 }}"
-				roles = ["{{ .newRole }}"]
+				roles = ["{{ .developeRole }}", "{{ .contributorRole }}"]
 			}
 
 			user {
 				name = "{{ .username2 }}"
-				roles = ["{{ .role }}"]
+				roles = ["{{ .contributorRole }}"]
 			}
 		}
 	`, params)
@@ -137,7 +137,8 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "user.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
-					resource.TestCheckResourceAttr(resourceName, "user.0.roles.0", role),
+					resource.TestCheckResourceAttr(resourceName, "user.0.roles.#", "1"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", developeRole),
 				),
 			},
 			{
@@ -148,9 +149,12 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "user.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
-					resource.TestCheckResourceAttr(resourceName, "user.0.roles.0", newRole),
+					resource.TestCheckResourceAttr(resourceName, "user.0.roles.#", "2"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", developeRole),
+					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", contributorRole),
 					resource.TestCheckResourceAttr(resourceName, "user.1.name", username2),
-					resource.TestCheckResourceAttr(resourceName, "user.1.roles.0", role),
+					resource.TestCheckResourceAttr(resourceName, "user.1.roles.#", "1"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "user.1.roles.*", contributorRole),
 				),
 			},
 			{
