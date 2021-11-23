@@ -198,7 +198,7 @@ var deleteUsers = func(projectKey string, users []User, m interface{}) error {
 
 	var errs []error
 	for _, user := range users {
-		fmt.Printf("[TRACE] %+v\n", user)
+		log.Printf("[TRACE] %+v\n", user)
 
 		_, err := m.(*resty.Client).R().Delete(getProjectsUsersUrl(projectKey, user.Name))
 		if err != nil {
