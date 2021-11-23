@@ -171,9 +171,17 @@ func Int64Ptr(v int64) *int64 { return &v }
 func StringPtr(v string) *string { return &v }
 
 func BytesToGigabytles(bytes int) int {
- return int(bytes/int(math.Pow(1024, 3)))
+	if bytes == -1 {
+		return -1
+	}
+
+	return int(bytes/int(math.Pow(1024, 3)))
 }
 
 func GigabytlesToBytes(bytes int) int {
- return bytes * int(math.Pow(1024, 3))
+	if bytes == -1 {
+		return -1
+	}
+
+ 	return bytes * int(math.Pow(1024, 3))
 }

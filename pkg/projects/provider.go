@@ -36,7 +36,7 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"project": projectResource(),
+			"project_project": projectResource(),
 		},
 	}
 

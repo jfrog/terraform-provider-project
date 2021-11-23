@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"log"
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
@@ -55,13 +56,13 @@ func projectResource() *schema.Resource {
 			Description: "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.",
 		},
 		"display_name": {
-			Required:         true,
-			Type:             schema.TypeString,
+			Required: true,
+			Type:     schema.TypeString,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.All(
 				validation.StringIsNotEmpty,
 				maxLength(32),
 			)),
-			Description:      "Also known as project name on the UI",
+			Description: "Also known as project name on the UI",
 		},
 		"description": {
 			Type:     schema.TypeString,
@@ -123,9 +124,29 @@ func projectResource() *schema.Resource {
 			Default:     false,
 			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker",
 		},
+
+		"user": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:             schema.TypeString,
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+					},
+					"roles": {
+						Type:     schema.TypeSet,
+						Required: true,
+						Elem:     &schema.Schema{Type: schema.TypeString},
+						// ValidateDiagFunc: validation.ToDiagFunc(validation.ValidateListUniqueStrings),
+					},
+				},
+			},
+		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (interface{}, string, error) {
+	var unpackProject = func(data *schema.ResourceData) (string, Project, Users, error) {
 		d := &ResourceData{data}
 
 		project := Project{
@@ -139,25 +160,26 @@ func projectResource() *schema.Resource {
 
 		if v, ok := d.GetOkExists("admin_privileges"); ok {
 			privileges := v.(*schema.Set).List()
-			if len(privileges) == 0 {
-				return nil, "", nil
+			if len(privileges) == 1 {
+				adminPrivileges := AdminPrivileges{}
+
+				id := privileges[0].(map[string]interface{})
+
+				adminPrivileges.ManageMembers = id["manage_members"].(bool)
+				adminPrivileges.ManageResources = id["manage_resources"].(bool)
+				adminPrivileges.IndexResources = id["index_resources"].(bool)
+
+				project.AdminPrivileges = &adminPrivileges
 			}
-
-			adminPrivileges := AdminPrivileges{}
-
-			id := privileges[0].(map[string]interface{})
-
-			adminPrivileges.ManageMembers = id["manage_members"].(bool)
-			adminPrivileges.ManageResources = id["manage_resources"].(bool)
-			adminPrivileges.IndexResources = id["index_resources"].(bool)
-
-			project.AdminPrivileges = &adminPrivileges
 		}
 
-		return project, project.Id(), nil
+		_, users, err := unpackUsers(data)
+
+		return project.Id(), project, users, err
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project *Project, users *[]User) diag.Diagnostics {
+		var errors []error
 		setValue := mkLens(d)
 
 		setValue("key", project.Key)
@@ -165,10 +187,10 @@ func projectResource() *schema.Resource {
 		setValue("description", project.Description)
 		setValue("max_storage_in_gigabytes", BytesToGigabytles(project.StorageQuota))
 		setValue("block_deployments_on_limit", project.SoftLimit)
-		setValue("email_notification", project.QuotaEmailNotification)
+		errors = setValue("email_notification", project.QuotaEmailNotification)
 
 		if project.AdminPrivileges != nil {
-			setValue("admin_privileges", []interface{}{
+			errors = setValue("admin_privileges", []interface{}{
 				map[string]bool{
 					"manage_members":   project.AdminPrivileges.ManageMembers,
 					"manage_resources": project.AdminPrivileges.ManageResources,
@@ -177,22 +199,38 @@ func projectResource() *schema.Resource {
 			})
 		}
 
+		if users != nil {
+			errors = packUsers(d, "user", users)
+		}
+
+		if errors != nil && len(errors) > 0 {
+			return diag.Errorf("failed to pack project %q", errors)
+		}
+
 		return nil
 	}
 
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		project := Project{}
-		_, err := m.(*resty.Client).R().SetResult(&project).Get(projectsUrl + data.Id())
 
+		_, err := m.(*resty.Client).R().SetResult(&project).Get(projectsUrl + data.Id())
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project)
+		users, err := readUsers(data.Id(), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, &project, &users)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		project, key, err := unpackProject(data)
+		log.Printf("[DEBUG] createProject")
+		log.Printf("[TRACE] %+v\n", data)
+
+		key, project, users, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -203,11 +241,20 @@ func projectResource() *schema.Resource {
 		}
 
 		data.SetId(key)
+
+		_, err = updateUsers(key, users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		return readProject(ctx, data, m)
 	}
 
 	var updateProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		project, key, err := unpackProject(data)
+		log.Printf("[DEBUG] updateProject")
+		log.Printf("[TRACE] %+v\n", data)
+
+		key, project, users, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -218,10 +265,19 @@ func projectResource() *schema.Resource {
 		}
 
 		data.SetId(key)
+
+		_, err = updateUsers(key, users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		return readProject(ctx, data, m)
 	}
 
 	var deleteProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+		log.Printf("[DEBUG] deleteProject")
+		log.Printf("[TRACE] %+v\n", data)
+
 		_, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
 		if err != nil {
 			return diag.FromErr(err)

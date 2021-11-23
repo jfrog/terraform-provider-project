@@ -12,7 +12,7 @@ import (
 
 func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	resourceName := fmt.Sprintf("project.%s", name)
+	resourceName := fmt.Sprintf("project_project.%s", name)
 
 	params := map[string]interface{}{
 		"max_storage_in_gigabytes":   rand.Intn(100),
@@ -25,7 +25,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
 	}
 	project := executeTemplate("TestAccProjects", `
-		resource "project" "{{ .name }}" {
+		resource "project_project" "{{ .name }}" {
             key = "{{ .project_key }}"
             display_name = "{{ .name }}"
             description = "test description"
@@ -83,7 +83,7 @@ func TestAccProjectsInvalidProjectKey(t *testing.T) {
 
 func TestAccProjectInvalidDisplayName(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(20))
-	resourceName := fmt.Sprintf("project.%s", name)
+	resourceName := fmt.Sprintf("project_project.%s", name)
 
 	params := map[string]interface{}{
 		"max_storage_in_gigabytes":   rand.Intn(100),
@@ -96,7 +96,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 		"project_key":                strings.ToLower(randSeq(10)),
 	}
 	project := executeTemplate("TestAccProjects", `
-		resource "project" "{{ .name }}" {
+		resource "project_project" "{{ .name }}" {
             key = "{{ .project_key }}"
             display_name = "{{ .name }}"
             description = "test description"
@@ -117,7 +117,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      project,
+				Config: project,
 				ExpectError: regexp.MustCompile(`.*string must be less than or equal 32 characters long.*`),
 			},
 		},
@@ -126,7 +126,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 
 func TestAccProject(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	resourceName := fmt.Sprintf("project.%s", name)
+	resourceName := fmt.Sprintf("project_project.%s", name)
 
 	params := map[string]interface{}{
 		"max_storage_in_gigabytes":   rand.Intn(100),
@@ -139,7 +139,7 @@ func TestAccProject(t *testing.T) {
 		"project_key":                strings.ToLower(randSeq(6)),
 	}
 	project := executeTemplate("TestAccProjects", `
-		resource "project" "{{ .name }}" {
+		resource "project_project" "{{ .name }}" {
             key = "{{ .project_key }}"
             display_name = "{{ .name }}"
             description = "test description"
