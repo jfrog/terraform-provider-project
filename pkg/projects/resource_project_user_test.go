@@ -54,7 +54,7 @@ func TestAccProjectUser(t *testing.T) {
 		"project_key": projectKey,
 		"username":    username,
 		"role":        role,
-		"newRole":        newRole,
+		"newRole":     newRole,
 	}
 
 	initialConfig := executeTemplate("TestAccProjectUser", `
