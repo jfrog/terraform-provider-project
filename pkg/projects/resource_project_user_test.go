@@ -44,75 +44,85 @@ func TestAccProjectUser(t *testing.T) {
 	resourceName := fmt.Sprintf("project_project.%s", name)
 	projectKey := strings.ToLower(randSeq(6))
 
-	username := "user1"
-	email := "user1@tempurl.org"
+	username1 := "user1"
+	email1 := fmt.Sprintf("%s@tempurl.org", username1)
+	username2 := "user2"
+	email2 := fmt.Sprintf("%s@tempurl.org", username2)
 	role := "developer"
 	newRole := "contributor"
 
 	params := map[string]interface{}{
 		"name":        name,
 		"project_key": projectKey,
-		"username":    username,
+		"username1":   username1,
+		"username2":   username2,
 		"role":        role,
 		"newRole":     newRole,
 	}
 
 	initialConfig := executeTemplate("TestAccProjectUser", `
 		resource "project_project" "{{ .name }}" {
-            key = "{{ .project_key }}"
-            display_name = "{{ .name }}"
-            description = "test description"
-            admin_privileges {
-                manage_members = true
-                manage_resources = true
-                index_resources = true
-            }
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
 
 			user {
-				name = "{{ .username }}"
+				name = "{{ .username1 }}"
 				roles = ["{{ .role }}"]
 			}
-        }
+		}
 	`, params)
 
 	addUserConfig := executeTemplate("TestAccProjectUser", `
 		resource "project_project" "{{ .name }}" {
-            key = "{{ .project_key }}"
-            display_name = "{{ .name }}"
-            description = "test description"
-            admin_privileges {
-                manage_members = true
-                manage_resources = true
-                index_resources = true
-            }
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
 
 			user {
-				name = "{{ .username }}"
+				name = "{{ .username1 }}"
 				roles = ["{{ .newRole }}"]
 			}
-        }
+
+			user {
+				name = "{{ .username2 }}"
+				roles = ["{{ .role }}"]
+			}
+		}
 	`, params)
 
 	noUserConfig := executeTemplate("TestAccProjectUser", `
 		resource "project_project" "{{ .name }}" {
-            key = "{{ .project_key }}"
-            display_name = "{{ .name }}"
-            description = "test description"
-            admin_privileges {
-                manage_members = true
-                manage_resources = true
-                index_resources = true
-            }
-        }
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+		}
 	`, params)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			createTestUser(t, projectKey, username, email)
+			createTestUser(t, projectKey, username1, email1)
+			createTestUser(t, projectKey, username2, email2)
 		},
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestUser(t, projectKey, username)
+			deleteTestUser(t, projectKey, username1)
+			deleteTestUser(t, projectKey, username2)
 			resp, err := verifyProject(id, request)
 
 			return resp, err
@@ -125,7 +135,8 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "user.0.name", username),
+					resource.TestCheckResourceAttr(resourceName, "user.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
 					resource.TestCheckResourceAttr(resourceName, "user.0.roles.0", role),
 				),
 			},
@@ -135,8 +146,11 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "user.0.name", username),
+					resource.TestCheckResourceAttr(resourceName, "user.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
 					resource.TestCheckResourceAttr(resourceName, "user.0.roles.0", newRole),
+					resource.TestCheckResourceAttr(resourceName, "user.1.name", username2),
+					resource.TestCheckResourceAttr(resourceName, "user.1.roles.0", role),
 				),
 			},
 			{
