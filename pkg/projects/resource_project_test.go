@@ -93,7 +93,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 		"manage_resources":           randBool(),
 		"index_resources":            randBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(10)),
+		"project_key":                strings.ToLower(randSeq(6)),
 	}
 	project := executeTemplate("TestAccProjects", `
 		resource "project_project" "{{ .name }}" {
