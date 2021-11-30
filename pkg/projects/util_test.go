@@ -1,17 +1,28 @@
 package projects
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"math"
 	"math/rand"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
+
+func testAccProviders() map[string]func() (*schema.Provider, error) {
+	return map[string]func() (*schema.Provider, error){
+		"project": func() (*schema.Provider, error) {
+			return Provider(), nil
+		},
+	}
+}
 
 func fmtMapToHcl(fields map[string]interface{}) string {
 	var allPairs []string
@@ -95,7 +106,8 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
-		provider, _ := testAccProviders["project"]()
+		provider, _ := testAccProviders()["project"]()
+		provider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
 		client := provider.Meta().(*resty.Client)
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {

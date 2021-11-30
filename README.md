@@ -35,8 +35,8 @@ The following 3 license types (`jq .type`) do **NOT** support APIs:
 
 ## Build the Provider
 Simply run `make install` - this will compile the provider and install it to `~/terraform.d`. When running this, it will
-take the current tag and bump it 1 minor version. It does not actually create a new tag (that is `make release`). 
-If you wish to use the locally installed provider, make sure your TF script refers to the new version number 
+take the current tag and bump it 1 minor version. It does not actually create a new tag (that is `make release`).
+If you wish to use the locally installed provider, make sure your TF script refers to the new version number
 
 Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
@@ -56,27 +56,30 @@ Then, you have to set some environment variables as this is how the acceptance t
 ```bash
 JFROG_URL=http://localhost:8081
 JFROG_ACCESS_TOKEN=...
-TF_ACC=FOO
+TF_ACC=true
 ```
-a crucial, and very much hidden, env var to set is
-`TF_ACC=FOO` - you can literally set `TF_ACC` to anything you want, so long as it's set. The acceptance tests use
-terraform testing libraries that, if this flag isn't set, will skip all tests.
+a crucial env var to set is
+`TF_ACC=true` - you can literally set `TF_ACC` to anything you want, so long as it's set. The acceptance tests use
+terraform testing libraries that, if this flag isn't set, will skip all tests. See [Terraform doc](https://www.terraform.io/docs/extend/testing/acceptance-tests/index.html#running-acceptance-tests).
 
 You can then run the tests as
 `go test -v ./pkg/...`
 **DO NOT** remove the `-v` - terraform testing needs this (don't ask me why). This will recursively run all tests, including
-acceptance tests. 
+acceptance tests.
 
 ## Debugging
-Debugging a terraform provider is not straightforward. Terraform forks your provider as a separate process and then 
-connects to it via RPC. Normally, when debugging, you would start the process to debug directly. However, with the 
+
+### Debugger-based debugging
+
+Debugging a terraform provider is not straightforward. Terraform forks your provider as a separate process and then
+connects to it via RPC. Normally, when debugging, you would start the process to debug directly. However, with the
 terraform + go architecture, this isn't possible. So, you need to run terraform as you normally would and attach to the
 provider process by getting it's pid. This would be really tricky considering how fast the process can come up and be down.
-So, you need to actually halt the provider and have it wait for your debugger to attach. 
+So, you need to actually halt the provider and have it wait for your debugger to attach.
 
 Having said all that, here are the steps:
 1. Install [delve](https://github.com/go-delve/delve)
-2. Keep in mind that terraform will 
+2. Keep in mind that terraform will
    parallel process if it can, and it will start new instances of the TF provider process when running apply between the plan and confirmation
    Add a snippet of go code to the close to where you need to break where in you install a busy sleep loop:
 ```go
@@ -84,31 +87,35 @@ Having said all that, here are the steps:
 	for debug {
 		time.Sleep(time.Second) // set breakpoint here
 	}
-``` 
+```
 Then set a breakpoint inside the loop. Once you have attached to the process you can set the `debug` value to `false`,
-thus breaking the sleep loop and allow you to continue. 
+thus breaking the sleep loop and allow you to continue.
 2. Compile the provider with debug symbology (`go build -gcflags "all=-N -l"`)
 3. Install the provider (change as needed for your version)
-```bash 
+```bash
 # this will bump your version by 1 so it doesn't download from TF. Make sure you update any test scripts accordingly
-make install 
+make install
 ```
 4. Run your provider: `terraform init && terraform plan` - it will start in this busy sleep loop.
-5. In a separate shell, find the `PID` of the provider that got forked 
+5. In a separate shell, find the `PID` of the provider that got forked
 `pgrep terraform-provider-projects`
 6. Then, attach the debugger to that pid: `dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $pid`
-A 1-liner for this whole process is: 
+A 1-liner for this whole process is:
 `dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $(pgrep terraform-provider-projects)`
 7. In intellij, setup a remote go debugging session (the default port is `2345`, but make sure it's set.) And click the `debug` button
-8. Your editor should immediately break at the breakpoint from step 2. At this point, in the watch window, edit the `debug` 
-value and set it to false, and allow the debugger to continue. Be ready for your debugging as this will release the provider 
+8. Your editor should immediately break at the breakpoint from step 2. At this point, in the watch window, edit the `debug`
+value and set it to false, and allow the debugger to continue. Be ready for your debugging as this will release the provider
 and continue executing normally.
 
 You will need to repeat steps 4-8 everytime you want to debug
 
+### Log-based debugging
 
+You can [turn on logging](https://www.terraform.io/docs/extend/debugging.html#turning-on-logging) for debug purpose by setting env var `TF_LOG` to `DEBUG`, i.e.
 
-
+```sh
+export TF_LOG=DEBUG
+```
 
 ## Versioning
 In general, this project follows [semver](https://semver.org/) as closely as we

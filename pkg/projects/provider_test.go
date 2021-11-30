@@ -6,18 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
-
-var testAccProviders = func() map[string]func() (*schema.Provider, error) {
-	provider := Provider()
-	return map[string]func() (*schema.Provider, error){
-		"project": func() (*schema.Provider, error) {
-			return provider, nil
-		},
-	}
-}()
 
 func TestProvider(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
@@ -46,16 +36,10 @@ func getTestResty(t *testing.T) *resty.Client {
 }
 
 func testAccPreCheck(t *testing.T) {
-	restyClient := getTestResty(t)
-	// TODO check the payload and make sure it's the right license type
-	_, err := restyClient.R().Get("/artifactory/api/system/licenses/")
+	ctx := context.Background()
+	provider, _ := testAccProviders()["project"]()
+	err := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
 	if err != nil {
 		t.Fatal(err)
-	}
-	ctx := context.Background()
-	provider, _ := testAccProviders["project"]()
-	oldErr := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
-	if oldErr != nil {
-		t.Fatal(oldErr)
 	}
 }
