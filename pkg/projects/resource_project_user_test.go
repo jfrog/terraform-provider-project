@@ -24,7 +24,7 @@ func createTestUser(t *testing.T, projectKey string, username string, email stri
 		Admin:    false,
 	}
 
-	_, err := restyClient.R().SetBody(user).Put(fmt.Sprintf("/artifactory/api/security/users/%s", username))
+	_, err := restyClient.R().SetBody(user).Put("/artifactory/api/security/users/" + username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,21 +33,21 @@ func createTestUser(t *testing.T, projectKey string, username string, email stri
 func deleteTestUser(t *testing.T, projectKey string, username string) {
 	restyClient := getTestResty(t)
 
-	_, err := restyClient.R().Delete(fmt.Sprintf("/artifactory/api/security/users/%s", username))
+	_, err := restyClient.R().Delete("/artifactory/api/security/users/" + username)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestAccProjectUser(t *testing.T) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	resourceName := fmt.Sprintf("project_project.%s", name)
+	name := "tftestprojects" + randSeq(10)
+	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
 	username1 := "user1"
-	email1 := fmt.Sprintf("%s@tempurl.org", username1)
+	email1 := username1 + "@tempurl.org"
 	username2 := "user2"
-	email2 := fmt.Sprintf("%s@tempurl.org", username2)
+	email2 := username2 + "@tempurl.org"
 	developeRole := "developer"
 	contributorRole := "contributor"
 
@@ -61,7 +61,7 @@ func TestAccProjectUser(t *testing.T) {
 	}
 
 	initialConfig := executeTemplate("TestAccProjectUser", `
-		resource "project_project" "{{ .name }}" {
+		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
 			description = "test description"
@@ -71,7 +71,7 @@ func TestAccProjectUser(t *testing.T) {
 				index_resources = true
 			}
 
-			user {
+			member {
 				name = "{{ .username1 }}"
 				roles = ["{{ .developeRole }}"]
 			}
@@ -79,7 +79,7 @@ func TestAccProjectUser(t *testing.T) {
 	`, params)
 
 	addUserConfig := executeTemplate("TestAccProjectUser", `
-		resource "project_project" "{{ .name }}" {
+		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
 			description = "test description"
@@ -89,12 +89,12 @@ func TestAccProjectUser(t *testing.T) {
 				index_resources = true
 			}
 
-			user {
+			member {
 				name = "{{ .username1 }}"
 				roles = ["{{ .developeRole }}", "{{ .contributorRole }}"]
 			}
 
-			user {
+			member {
 				name = "{{ .username2 }}"
 				roles = ["{{ .contributorRole }}"]
 			}
@@ -102,7 +102,7 @@ func TestAccProjectUser(t *testing.T) {
 	`, params)
 
 	noUserConfig := executeTemplate("TestAccProjectUser", `
-		resource "project_project" "{{ .name }}" {
+		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
 			description = "test description"
@@ -135,10 +135,10 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "user.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
-					resource.TestCheckResourceAttr(resourceName, "user.0.roles.#", "1"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", developeRole),
+					resource.TestCheckResourceAttr(resourceName, "member.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.name", username1),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.0", developeRole),
 				),
 			},
 			{
@@ -147,14 +147,14 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "user.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "user.0.name", username1),
-					resource.TestCheckResourceAttr(resourceName, "user.0.roles.#", "2"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", developeRole),
-					resource.TestCheckTypeSetElemAttr(resourceName, "user.0.roles.*", contributorRole),
-					resource.TestCheckResourceAttr(resourceName, "user.1.name", username2),
-					resource.TestCheckResourceAttr(resourceName, "user.1.roles.#", "1"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "user.1.roles.*", contributorRole),
+					resource.TestCheckResourceAttr(resourceName, "member.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.name", username1),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.0", contributorRole),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.1", developeRole),
+					resource.TestCheckResourceAttr(resourceName, "member.1.name", username2),
+					resource.TestCheckResourceAttr(resourceName, "member.1.roles.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "member.1.roles.0", contributorRole),
 				),
 			},
 			{
@@ -163,7 +163,7 @@ func TestAccProjectUser(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "user"),
+					resource.TestCheckNoResourceAttr(resourceName, "member"),
 				),
 			},
 		},

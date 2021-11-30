@@ -3,6 +3,7 @@ package projects
 import (
 	"context"
 	"log"
+	"net/http"
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
@@ -29,7 +30,7 @@ type Project struct {
 	DisplayName            string           `hcl:"display_name" json:"display_name"`
 	Description            string           `hcl:"description" json:"description"`
 	AdminPrivileges        *AdminPrivileges `hcl:"admin_privileges" json:"admin_privileges"`
-	StorageQuota           int              `hcl:"max_storage_in_gigabytes" json:"storage_quota_bytes"`
+	StorageQuota           int              `hcl:"max_storage_in_gibabytes" json:"storage_quota_bytes"`
 	SoftLimit              bool             `hcl:"block_deployments_on_limit" json:"soft_limit"`
 	QuotaEmailNotification bool             `hcl:"email_notification" json:"storage_quota_email_notification"`
 }
@@ -88,7 +89,7 @@ func projectResource() *schema.Resource {
 				},
 			},
 		},
-		"max_storage_in_gigabytes": {
+		"max_storage_in_gibabytes": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Default:  -1,
@@ -125,7 +126,7 @@ func projectResource() *schema.Resource {
 			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker",
 		},
 
-		"user": {
+		"member": {
 			Type:     schema.TypeSet,
 			Optional: true,
 			Elem: &schema.Resource{
@@ -152,7 +153,7 @@ func projectResource() *schema.Resource {
 			Key:                    d.getString("key", false),
 			DisplayName:            d.getString("display_name", false),
 			Description:            d.getString("description", false),
-			StorageQuota:           GigabytlesToBytes(d.getInt("max_storage_in_gigabytes", false)),
+			StorageQuota:           GibabytesToBytes(d.getInt("max_storage_in_gibabytes", false)),
 			SoftLimit:              d.getBool("block_deployments_on_limit", false),
 			QuotaEmailNotification: d.getBool("email_notification", false),
 		}
@@ -184,7 +185,7 @@ func projectResource() *schema.Resource {
 		setValue("key", project.Key)
 		setValue("display_name", project.DisplayName)
 		setValue("description", project.Description)
-		setValue("max_storage_in_gigabytes", BytesToGigabytles(project.StorageQuota))
+		setValue("max_storage_in_gibabytes", BytesToGibabytes(project.StorageQuota))
 		setValue("block_deployments_on_limit", project.SoftLimit)
 		errors = setValue("email_notification", project.QuotaEmailNotification)
 
@@ -198,11 +199,11 @@ func projectResource() *schema.Resource {
 			})
 		}
 
-		if users != nil {
-			errors = packUsers(d, "user", users)
+		if len(*users) > 0 {
+			errors = packUsers(d, "member", users)
 		}
 
-		if errors != nil && len(errors) > 0 {
+		if len(errors) > 0 {
 			return diag.Errorf("failed to pack project %q", errors)
 		}
 
@@ -277,8 +278,9 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] deleteProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		_, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
-		if err != nil {
+		resp, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
+		if err != nil && resp.StatusCode() == http.StatusNotFound {
+			data.SetId("")
 			return diag.FromErr(err)
 		}
 

@@ -18,8 +18,8 @@ clean:
 	rm -fR .terraform.d/ .terraform terraform.tfstate* terraform.d/
 
 release:
-	@git tag ${NEXT_VERSION} && git push --mirror
-	@echo "Pushed ${NEXT_VERSION}"
+	@git tag v${NEXT_VERSION} && git push --mirror
+	@echo "Pushed v${NEXT_VERSION}"
 
 build: fmtcheck
 	go build -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}'"
@@ -38,9 +38,9 @@ attach:
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $$(pgrep terraform-provider-projects)
 
 acceptance: fmtcheck
-	export TF_ACC=1
-	test -n ARTIFACTORY_USERNAME && test -n ARTIFACTORY_PASSWORD && test -n ARTIFACTORY_URL \
-		&& go test -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}-test'" -v -parallel 20 ./pkg/...
+	export TF_ACC=true && \
+		test -n ARTIFACTORY_USERNAME && test -n ARTIFACTORY_PASSWORD && test -n ARTIFACTORY_URL && \
+		go test -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}-test'" -v -parallel 20 ./pkg/...
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."

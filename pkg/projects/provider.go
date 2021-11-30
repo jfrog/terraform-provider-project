@@ -36,7 +36,7 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"project_project": projectResource(),
+			"project": projectResource(),
 		},
 	}
 
@@ -115,7 +115,6 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 	}
 
 	return restyBase, nil
-
 }
 
 func sendUsageRepo(restyBase *resty.Client, terraformVersion string) (interface{}, error) {

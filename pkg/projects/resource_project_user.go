@@ -13,17 +13,12 @@ type User struct {
 	Roles []string `json:"roles"`
 }
 
-type Comparable interface {
-	Hash() string
-	Equals(other Comparable) bool
-}
-
-func (user User) Hash() string {
-	return user.Name
+type Equatable interface {
+	Equals(other Equatable) bool
 }
 
 func (a User) Equals(b User) bool {
-	return a.Hash() == b.Hash()
+	return a.Name == b.Name
 }
 
 func contains(as []User, b User) bool {
@@ -41,35 +36,28 @@ func contains(as []User, b User) bool {
 	return false
 }
 
-// Not the most efficient way to determine the slices intersection but this suffices for the small-ish number of items
-var usersIntersection = func(as []User, bs []User) []User {
-	log.Printf("[DEBUG] usersIntersection")
-	log.Printf("[TRACE] as: %+v\n", as)
-	log.Printf("[TRACE] bs: %+v\n", bs)
+var userApply = func(predicate func(bs []User, a User) bool) func(as []User, bs []User) []User {
+	return func(as []User, bs []User) []User {
+		var results []User
 
-	intersection := make([]User, 0)
-
-	for _, a := range as {
-		if contains(bs, a) {
-			intersection = append(intersection, a)
+		// Not the most efficient way to determine the slices intersection but this suffices for the small-ish number of items
+		for _, a := range as {
+			if predicate(bs, a) {
+				results = append(results, a)
+			}
 		}
-	}
 
-	return intersection
+		return results
+	}
 }
 
-// Not the most efficient way to determine the slices differences but this suffices for the small-ish number of items
-var usersDifference = func(as []User, bs []User) []User {
-	difference := make([]User, 0)
+var usersIntersection = userApply(func(bs []User, a User) bool {
+	return contains(bs, a)
+})
 
-	for _, a := range as {
-		if !contains(bs, a) {
-			difference = append(difference, a)
-		}
-	}
-
-	return difference
-}
+var usersDifference = userApply(func(bs []User, a User) bool {
+	return !contains(bs, a)
+})
 
 type Users struct {
 	Members []User
@@ -77,18 +65,13 @@ type Users struct {
 
 const projectUsersUrl = "/access/api/v1/projects/%s/users/"
 
-var unpackUsers = func(data *schema.ResourceData) (string, Users, error) {
-	d := &ResourceData{data}
-	projectKey := d.getString("key", false)
+func getMembers(d *ResourceData) []User {
+	var members []User
 
-	users := Users{
-		Members: make([]User, 0),
-	}
-
-	if v, ok := d.GetOkExists("user"); ok {
+	if v, ok := d.GetOkExists("member"); ok {
 		projectUsers := v.(*schema.Set).List()
 		if len(projectUsers) == 0 {
-			return projectKey, users, nil
+			return members
 		}
 
 		for _, projectUser := range projectUsers {
@@ -98,8 +81,19 @@ var unpackUsers = func(data *schema.ResourceData) (string, Users, error) {
 				Name:  id["name"].(string),
 				Roles: castToStringArr(id["roles"].(*schema.Set).List()),
 			}
-			users.Members = append(users.Members, user)
+			members = append(members, user)
 		}
+	}
+
+	return members
+}
+
+var unpackUsers = func(data *schema.ResourceData) (string, Users, error) {
+	d := &ResourceData{data}
+	projectKey := d.getString("key", false)
+
+	users := Users{
+		Members: getMembers(d),
 	}
 
 	return projectKey, users, nil
@@ -178,8 +172,8 @@ var updateUsers = func(projectKey string, terraformUsers Users, m interface{}) (
 		errs = append(errs, err)
 	}
 
-	if errs != nil && len(errs) > 0 {
-		return nil, fmt.Errorf("failed to update users for project: %s", fmt.Sprintf("%s", errs))
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("failed to update users for project: %s", errs)
 	}
 
 	return readUsers(projectKey, m)
@@ -198,16 +192,26 @@ var deleteUsers = func(projectKey string, users []User, m interface{}) error {
 
 	var errs []error
 	for _, user := range users {
-		log.Printf("[TRACE] %+v\n", user)
-
-		_, err := m.(*resty.Client).R().Delete(getProjectsUsersUrl(projectKey, user.Name))
+		err := deleteUser(projectKey, user, m)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 
 	if errs != nil && len(errs) > 0 {
-		return fmt.Errorf("failed to delete users from project: %s", fmt.Sprintf("%s", errs))
+		return fmt.Errorf("failed to delete users from project: %s", errs)
+	}
+
+	return nil
+}
+
+var deleteUser = func(projectKey string, user User, m interface{}) error {
+	log.Println("[DEBUG] deleteUser")
+	log.Printf("[TRACE] %+v\n", user)
+
+	_, err := m.(*resty.Client).R().Delete(getProjectsUsersUrl(projectKey, user.Name))
+	if err != nil {
+		return err
 	}
 
 	return nil

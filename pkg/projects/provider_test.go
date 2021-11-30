@@ -6,18 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
-
-var testAccProviders = func() map[string]func() (*schema.Provider, error) {
-	provider := Provider()
-	return map[string]func() (*schema.Provider, error){
-		"project": func() (*schema.Provider, error) {
-			return provider, nil
-		},
-	}
-}()
 
 func TestProvider(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {

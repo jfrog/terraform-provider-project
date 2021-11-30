@@ -8,7 +8,7 @@ terraform {
   }
 }
 
-resource "project_project" "myproject" {
+resource "project" "myproject" {
   key = "myproj"
   display_name = "My Project"
   description  = "My Project"
@@ -17,16 +17,16 @@ resource "project_project" "myproject" {
     manage_resources = true
     index_resources  = true
   }
-  max_storage_in_gigabytes   = 10
+  max_storage_in_gibabytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
 
-  user {
+  member {
     name  = "user1"
     roles = ["developer","project admin"]
   }
 
-  user {
+  member {
     name  = "user2"
     roles = ["developer"]
   }
