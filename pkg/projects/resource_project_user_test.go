@@ -127,7 +127,7 @@ func TestAccProjectUser(t *testing.T) {
 
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders,
+		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

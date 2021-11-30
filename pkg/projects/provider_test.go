@@ -37,7 +37,7 @@ func getTestResty(t *testing.T) *resty.Client {
 
 func testAccPreCheck(t *testing.T) {
 	ctx := context.Background()
-	provider, _ := testAccProviders["project"]()
+	provider, _ := testAccProviders()["project"]()
 	err := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
 	if err != nil {
 		t.Fatal(err)

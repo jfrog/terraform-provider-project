@@ -43,7 +43,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders,
+		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -114,7 +114,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders,
+		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
 				Config: project,
@@ -157,7 +157,7 @@ func TestAccProject(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders,
+		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
 				Config: project,

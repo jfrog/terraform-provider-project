@@ -16,13 +16,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var testAccProviders = func() map[string]func() (*schema.Provider, error) {
+func testAccProviders() map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"project": func() (*schema.Provider, error) {
 			return Provider(), nil
 		},
 	}
-}()
+}
 
 func fmtMapToHcl(fields map[string]interface{}) string {
 	var allPairs []string
@@ -106,7 +106,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
-		provider, _ := testAccProviders["project"]()
+		provider, _ := testAccProviders()["project"]()
 		provider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
 		client := provider.Meta().(*resty.Client)
 		resp, err := check(rs.Primary.ID, client.R())
