@@ -93,13 +93,14 @@ func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, er
 	return nil, fmt.Errorf("no authentication details supplied")
 }
 
-type License struct {
-	Type 		 string `json:"type"`
-	ValidThrough string `json:"validThrough"`
-	LicensedTo   string `json:"licensedTo"`
-}
-
 func checkArtifactoryLicense(client *resty.Client) error {
+
+	type License struct {
+		Type 		 string `json:"type"`
+		ValidThrough string `json:"validThrough"`
+		LicensedTo   string `json:"licensedTo"`
+	}
+
 	license := License{}
 	_, err := client.R().SetResult(&license).Get("/artifactory/api/system/licenses/")
 	if err != nil {
