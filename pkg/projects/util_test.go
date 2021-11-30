@@ -107,7 +107,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
 		provider, _ := testAccProviders["project"]()
-		_ = provider.Configure(context.Background(), &terraform.ResourceConfig{})
+		provider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
 		client := provider.Meta().(*resty.Client)
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
