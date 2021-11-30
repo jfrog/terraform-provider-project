@@ -63,7 +63,11 @@ type Users struct {
 	Members []User
 }
 
-const projectUsersUrl = "/access/api/v1/projects/%s/users/"
+const projectUsersUrl = "/access/api/v1/projects/%s/users/%s"
+
+var getProjectsUsersUrl = func(projectKey string, id string) string {
+	return fmt.Sprintf(projectUsersUrl, projectKey, id)
+}
 
 func getMembers(d *ResourceData) []User {
 	var members []User
@@ -99,14 +103,14 @@ var unpackUsers = func(data *schema.ResourceData) (string, Users, error) {
 	return projectKey, users, nil
 }
 
-var packUsers = func(d *schema.ResourceData, key string, users *[]User) []error {
+var packUsers = func(d *schema.ResourceData, key string, users []User) []error {
 	log.Printf("[DEBUG] packUsers")
 
 	setValue := mkLens(d)
 
 	var projectUsers []interface{}
 
-	for _, user := range *users {
+	for _, user := range users {
 		log.Printf("[TRACE] %+v\n", user)
 		projectUser := map[string]interface{}{
 			"name":  user.Name,
@@ -124,16 +128,12 @@ var packUsers = func(d *schema.ResourceData, key string, users *[]User) []error 
 	return errors
 }
 
-var getProjectsUsersUrl = func(projectKey string, id string) string {
-	return fmt.Sprintf(projectUsersUrl, projectKey) + id
-}
-
 var readUsers = func(projectKey string, m interface{}) ([]User, error) {
 	log.Println("[DEBUG] readUsers")
 
 	users := Users{}
 
-	_, err := m.(*resty.Client).R().SetResult(&users).Get(fmt.Sprintf(projectUsersUrl, projectKey))
+	_, err := m.(*resty.Client).R().SetResult(&users).Get(getProjectsUsersUrl(projectKey, ""))
 	if err != nil {
 		return nil, err
 	}

@@ -26,13 +26,13 @@ type AdminPrivileges struct {
 // Project GET {{ host }}/access/api/v1/projects/{{prjKey}}/
 //GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
 type Project struct {
-	Key                    string           `hcl:"key" json:"project_key"`
-	DisplayName            string           `hcl:"display_name" json:"display_name"`
-	Description            string           `hcl:"description" json:"description"`
-	AdminPrivileges        *AdminPrivileges `hcl:"admin_privileges" json:"admin_privileges"`
-	StorageQuota           int              `hcl:"max_storage_in_gibabytes" json:"storage_quota_bytes"`
-	SoftLimit              bool             `hcl:"block_deployments_on_limit" json:"soft_limit"`
-	QuotaEmailNotification bool             `hcl:"email_notification" json:"storage_quota_email_notification"`
+	Key                    string           `json:"project_key"`
+	DisplayName            string           `json:"display_name"`
+	Description            string           `json:"description"`
+	AdminPrivileges        AdminPrivileges  `json:"admin_privileges"`
+	StorageQuota           int              `json:"storage_quota_bytes"`
+	SoftLimit              bool             `json:"soft_limit"`
+	QuotaEmailNotification bool             `json:"storage_quota_email_notification"`
 }
 
 func (p Project) Id() string {
@@ -113,6 +113,7 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
+			Description: "Storage quota in GB. Must be 1 or larger",
 		},
 		"block_deployments_on_limit": {
 			Type:     schema.TypeBool,
@@ -143,6 +144,7 @@ func projectResource() *schema.Resource {
 					},
 				},
 			},
+			Description: "Member of the project. Must be existing Artifactory user.",
 		},
 	}
 
@@ -169,7 +171,7 @@ func projectResource() *schema.Resource {
 				adminPrivileges.ManageResources = id["manage_resources"].(bool)
 				adminPrivileges.IndexResources = id["index_resources"].(bool)
 
-				project.AdminPrivileges = &adminPrivileges
+				project.AdminPrivileges = adminPrivileges
 			}
 		}
 
@@ -178,7 +180,7 @@ func projectResource() *schema.Resource {
 		return project.Id(), project, users, err
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project, users *[]User) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project *Project, users []User) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
@@ -188,18 +190,15 @@ func projectResource() *schema.Resource {
 		setValue("max_storage_in_gibabytes", BytesToGibabytes(project.StorageQuota))
 		setValue("block_deployments_on_limit", project.SoftLimit)
 		errors = setValue("email_notification", project.QuotaEmailNotification)
+		errors = setValue("admin_privileges", []interface{}{
+			map[string]bool{
+				"manage_members":   project.AdminPrivileges.ManageMembers,
+				"manage_resources": project.AdminPrivileges.ManageResources,
+				"index_resources":  project.AdminPrivileges.IndexResources,
+			},
+		})
 
-		if project.AdminPrivileges != nil {
-			errors = setValue("admin_privileges", []interface{}{
-				map[string]bool{
-					"manage_members":   project.AdminPrivileges.ManageMembers,
-					"manage_resources": project.AdminPrivileges.ManageResources,
-					"index_resources":  project.AdminPrivileges.IndexResources,
-				},
-			})
-		}
-
-		if len(*users) > 0 {
+		if len(users) > 0 {
 			errors = packUsers(d, "member", users)
 		}
 
@@ -223,7 +222,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project, &users)
+		return packProject(data, &project, users)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {

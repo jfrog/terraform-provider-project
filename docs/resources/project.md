@@ -28,14 +28,14 @@ resource "project" "my-project" {
 
 Project argument have an almost one to one mapping with the [JFrog Projects API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-PROJECTS). The following arguments are supported:
 
-* `key` - (Required)
-* `display_name` - (Required)
+* `key` - (Required) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.
+* `display_name` - (Required) Also known as project name on the UI
 * `description` - (Optional)
 * `admin_privileges` - (Required)
-* `max_storage_in_gibabytes` - (Optional)
+* `max_storage_in_gibabytes` - (Optional) Storage quota in GB. Must be 1 or larger
 * `block_deployments_on_limit` - (Optional)
-* `email_notification` - (Optional)
-* `member` - (Optional)
+* `email_notification` - (Optional) Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker
+* `member` - (Optional) Member of the project. Must be existing Artifactory user.
 
 ### Member Argument
 

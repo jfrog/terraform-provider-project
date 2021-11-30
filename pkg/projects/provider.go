@@ -3,11 +3,12 @@ package projects
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -92,6 +93,26 @@ func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, er
 	return nil, fmt.Errorf("no authentication details supplied")
 }
 
+type License struct {
+	Type 		 string `json:"type"`
+	ValidThrough string `json:"validThrough"`
+	LicensedTo   string `json:"licensedTo"`
+}
+
+func checkArtifactoryLicense(client *resty.Client) error {
+	license := License{}
+	_, err := client.R().SetResult(&license).Get("/artifactory/api/system/licenses/")
+	if err != nil {
+		return err
+	}
+
+	if !strings.Contains(license.Type, "Enterprise") {
+		return fmt.Errorf("Artifactory requires Enterprise license to work with Terraform!")
+	}
+
+	return nil
+}
+
 func providerConfigure(d *schema.ResourceData, terraformVersion string) (interface{}, error) {
 	URL, ok := d.GetOk("url")
 	if URL == nil || URL == "" || !ok {
@@ -105,6 +126,11 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 	accessToken := d.Get("access_token").(string)
 
 	restyBase, err = addAuthToResty(restyBase, accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkArtifactoryLicense(restyBase)
 	if err != nil {
 		return nil, err
 	}
