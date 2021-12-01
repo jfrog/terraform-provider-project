@@ -22,17 +22,18 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"url": {
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				DefaultFunc:  schema.MultiEnvDefaultFunc([]string{"PROJECTS_URL", "JFROG_URL"}, "http://localhost:8081"),
 				ValidateFunc: validation.IsURLWithHTTPorHTTPS,
+				Description:  "URL of Artifactory. This can also be sourced from the `PROJECTS_URL` or `JFROG_URL` environment variable. Default to 'http://localhost:8081' if not set.",
 			},
 			"access_token": {
 				Type:             schema.TypeString,
-				Optional:         true,
+				Required:         true,
 				Sensitive:        true,
 				DefaultFunc:      schema.MultiEnvDefaultFunc([]string{"PROJECTS_ACCESS_TOKEN", "JFROG_ACCESS_TOKEN"}, ""),
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
-				Description:      "This is a Bearer token that can be given to you by your admin under `Identity and Access`",
+				Description:      "This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.",
 			},
 		},
 

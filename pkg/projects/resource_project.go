@@ -78,16 +78,19 @@ func projectResource() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"manage_members": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Allows the Project Admin to manage Platform users/groups as project members with different roles.",
 					},
 					"manage_resources": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.",
 					},
 					"index_resources": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Enables a project admin to define the resources to be indexed by Xray",
 					},
 				},
 			},
@@ -116,7 +119,7 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
-			Description: "Storage quota in GB. Must be 1 or larger",
+			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
 		},
 		"block_deployments_on_limit": {
 			Type:     schema.TypeBool,
@@ -139,15 +142,17 @@ func projectResource() *schema.Resource {
 						Type:             schema.TypeString,
 						Required:         true,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+						Description:      "Must be existing Artifactory user",
 					},
 					"roles": {
-						Type:     schema.TypeSet,
-						Required: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: "List of pre-defined Project or custom roles",
 					},
 				},
 			},
-			Description: "Member of the project. Must be existing Artifactory user.",
+			Description: "Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject).",
 		},
 
 		"group": {
@@ -159,15 +164,17 @@ func projectResource() *schema.Resource {
 						Type:             schema.TypeString,
 						Required:         true,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+						Description:      "Must be existing Artifactory group",
 					},
 					"roles": {
-						Type:     schema.TypeSet,
-						Required: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: "List of pre-defined Project or custom roles",
 					},
 				},
 			},
-			Description: "Project group. Must be existing Artifactory group.",
+			Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
 		},
 	}
 
@@ -341,5 +348,6 @@ func projectResource() *schema.Resource {
 		},
 
 		Schema: projectSchema,
+		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.",
 	}
 }
