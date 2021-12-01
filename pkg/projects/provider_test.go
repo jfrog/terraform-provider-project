@@ -2,10 +2,10 @@ package projects
 
 import (
 	"context"
-	"github.com/go-resty/resty/v2"
 	"os"
 	"testing"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 

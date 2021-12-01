@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -40,6 +41,8 @@ func (p Project) Id() string {
 }
 
 const projectsUrl = "/access/api/v1/projects/"
+const projectUsersUrl = projectsUrl + "%s/users/"
+const projectGroupsUrl = projectsUrl + "%s/groups/"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
@@ -146,9 +149,29 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Member of the project. Must be existing Artifactory user.",
 		},
+
+		"group": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:             schema.TypeString,
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+					},
+					"roles": {
+						Type:     schema.TypeSet,
+						Required: true,
+						Elem:     &schema.Schema{Type: schema.TypeString},
+					},
+				},
+			},
+			Description: "Project group. Must be existing Artifactory group.",
+		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (string, Project, Users, error) {
+	var unpackProject = func(data *schema.ResourceData) (string, Project, Membership, Membership, error) {
 		d := &ResourceData{data}
 
 		project := Project{
@@ -175,12 +198,13 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, users, err := unpackUsers(data)
+		_, users, err := unpackMembers(data, "member")
+		_, groups, err := unpackMembers(data, "group")
 
-		return project.Id(), project, users, err
+		return project.Id(), project, users, groups, err
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project, users []User) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project *Project, users []Member, groups []Member) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
@@ -199,7 +223,11 @@ func projectResource() *schema.Resource {
 		})
 
 		if len(users) > 0 {
-			errors = packUsers(d, "member", users)
+			errors = packMembers(d, "member", users)
+		}
+
+		if len(groups) > 0 {
+			errors = packMembers(d, "group", groups)
 		}
 
 		if len(errors) > 0 {
@@ -217,19 +245,24 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		users, err := readUsers(data.Id(), m)
+		users, err := readMembers(fmt.Sprintf(projectUsersUrl, data.Id()), m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project, users)
+		groups, err := readMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, &project, users, groups)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		log.Printf("[DEBUG] createProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, err := unpackProject(data)
+		key, project, users, groups, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -241,7 +274,12 @@ func projectResource() *schema.Resource {
 
 		data.SetId(key)
 
-		_, err = updateUsers(key, users, m)
+		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -253,7 +291,7 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] updateProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, err := unpackProject(data)
+		key, project, users, groups, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -265,7 +303,12 @@ func projectResource() *schema.Resource {
 
 		data.SetId(key)
 
-		_, err = updateUsers(key, users, m)
+		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}

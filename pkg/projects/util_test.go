@@ -3,14 +3,15 @@ package projects
 import (
 	"context"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"math"
 	"math/rand"
 	"net/http"
 	"reflect"
 	"strings"
+	"testing"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -151,4 +152,62 @@ func randBool() bool {
 
 func randSelect(items ... interface{}) interface{} {
 	return items[randomInt() % len(items)]
+}
+
+func createTestUser(t *testing.T, projectKey string, name string, email string) {
+
+	type ArtifactoryUser struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		Admin    bool   `json:"admin"`
+	}
+
+	restyClient := getTestResty(t)
+
+	user := ArtifactoryUser{
+		Email:    email,
+		Password: "Password1",
+		Admin:    false,
+	}
+
+	_, err := restyClient.R().SetBody(user).Put("/artifactory/api/security/users/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func deleteTestUser(t *testing.T, projectKey string, name string) {
+	restyClient := getTestResty(t)
+
+	_, err := restyClient.R().Delete("/artifactory/api/security/users/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createTestGroup(t *testing.T, projectKey string, name string) {
+
+	type ArtifactoryGroup struct {
+		Name    string `json:"name"`
+	}
+
+	restyClient := getTestResty(t)
+
+	group := ArtifactoryGroup{
+		Name:    name,
+	}
+
+	_, err := restyClient.R().SetBody(group).Put("/artifactory/api/security/groups/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func deleteTestGroup(t *testing.T, projectKey string, name string) {
+	restyClient := getTestResty(t)
+
+	_, err := restyClient.R().Delete("/artifactory/api/security/groups/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

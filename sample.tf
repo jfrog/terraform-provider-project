@@ -30,4 +30,14 @@ resource "project" "myproject" {
     name  = "user2"
     roles = ["developer"]
   }
+
+  group {
+    name = "dev-group"
+    roles = ["developer"]
+  }
+
+  group {
+    name = "release-group"
+    roles = ["release manager"]
+  }
 }
