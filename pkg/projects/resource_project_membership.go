@@ -90,6 +90,8 @@ func getMembers(d *ResourceData, membershipKey string) []Member {
 
 var unpackMembers = func(data *schema.ResourceData, membershipKey string) (Membership) {
 	d := &ResourceData{data}
+	projectKey := d.getString("key", false)
+
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
 	}
