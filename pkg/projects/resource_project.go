@@ -122,9 +122,10 @@ func projectResource() *schema.Resource {
 			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
 		},
 		"block_deployments_on_limit": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  false,
+			Type:       schema.TypeBool,
+			Optional:   true,
+			Default:    false,
+			Description: "Block artifacts deployment if storage quota is exceeded.",
 		},
 		"email_notification": {
 			Type:        schema.TypeBool,
