@@ -206,10 +206,10 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, users, err := unpackMembers(data, "member")
-		_, groups, err := unpackMembers(data, "group")
+		users := unpackMembers(data, "member")
+		groups := unpackMembers(data, "group")
 
-		return project.Id(), project, users, groups, err
+		return project.Id(), project, users, groups, nil
 	}
 
 	var packProject = func(d *schema.ResourceData, project *Project, users []Member, groups []Member) diag.Diagnostics {
