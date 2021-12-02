@@ -170,7 +170,7 @@ func Int64Ptr(v int64) *int64 { return &v }
 
 func StringPtr(v string) *string { return &v }
 
-func BytesToGibabytes(bytes int) int {
+func BytesToGibibytes(bytes int) int {
 	if bytes <= -1 {
 		return -1
 	}
@@ -178,7 +178,7 @@ func BytesToGibabytes(bytes int) int {
 	return int(bytes/int(math.Pow(1024, 3)))
 }
 
-func GibabytesToBytes(bytes int) int {
+func GibibytesToBytes(bytes int) int {
 	if bytes <= -1 {
 		return -1
 	}

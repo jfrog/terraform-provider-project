@@ -95,7 +95,7 @@ func projectResource() *schema.Resource {
 				},
 			},
 		},
-		"max_storage_in_gibabytes": {
+		"max_storage_in_gibibytes": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Default:  -1,
@@ -185,7 +185,7 @@ func projectResource() *schema.Resource {
 			Key:                    d.getString("key", false),
 			DisplayName:            d.getString("display_name", false),
 			Description:            d.getString("description", false),
-			StorageQuota:           GibabytesToBytes(d.getInt("max_storage_in_gibabytes", false)),
+			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes", false)),
 			SoftLimit:              d.getBool("block_deployments_on_limit", false),
 			QuotaEmailNotification: d.getBool("email_notification", false),
 		}
@@ -218,7 +218,7 @@ func projectResource() *schema.Resource {
 		setValue("key", project.Key)
 		setValue("display_name", project.DisplayName)
 		setValue("description", project.Description)
-		setValue("max_storage_in_gibabytes", BytesToGibabytes(project.StorageQuota))
+		setValue("max_storage_in_gibibytes", BytesToGibibytes(project.StorageQuota))
 		setValue("block_deployments_on_limit", project.SoftLimit)
 		errors = setValue("email_notification", project.QuotaEmailNotification)
 		errors = setValue("admin_privileges", []interface{}{

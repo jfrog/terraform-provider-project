@@ -15,7 +15,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
-		"max_storage_in_gibabytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   rand.Intn(100),
 		"block_deployments_on_limit": randBool(),
 		"email_notification":         randBool(),
 		"manage_members":             randBool(),
@@ -34,7 +34,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
                 manage_resources = {{ .manage_resources }}
                 index_resources = {{ .index_resources }}
             }
-            max_storage_in_gibabytes = {{ .max_storage_in_gibabytes }}
+            max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
 			block_deployments_on_limit = {{ .block_deployments_on_limit }}
             email_notification = {{ .email_notification }}
         }
@@ -86,7 +86,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
-		"max_storage_in_gibabytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   rand.Intn(100),
 		"block_deployments_on_limit": randBool(),
 		"email_notification":         randBool(),
 		"manage_members":             randBool(),
@@ -105,7 +105,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
                 manage_resources = {{ .manage_resources }}
                 index_resources = {{ .index_resources }}
             }
-            max_storage_in_gibabytes = {{ .max_storage_in_gibabytes }}
+            max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
 			block_deployments_on_limit = {{ .block_deployments_on_limit }}
             email_notification = {{ .email_notification }}
         }
@@ -129,7 +129,7 @@ func TestAccProject(t *testing.T) {
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
-		"max_storage_in_gibabytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   rand.Intn(100),
 		"block_deployments_on_limit": randBool(),
 		"email_notification":         randBool(),
 		"manage_members":             randBool(),
@@ -148,7 +148,7 @@ func TestAccProject(t *testing.T) {
                 manage_resources = {{ .manage_resources }}
                 index_resources = {{ .index_resources }}
             }
-            max_storage_in_gibabytes = {{ .max_storage_in_gibabytes }}
+            max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
 			block_deployments_on_limit = {{ .block_deployments_on_limit }}
             email_notification = {{ .email_notification }}
         }
@@ -165,7 +165,7 @@ func TestAccProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibabytes", fmt.Sprintf("%d", params["max_storage_in_gibabytes"])),
+					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibibytes", fmt.Sprintf("%d", params["max_storage_in_gibibytes"])),
 					resource.TestCheckResourceAttr(resourceName, "block_deployments_on_limit", fmt.Sprintf("%t", params["block_deployments_on_limit"])),
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),

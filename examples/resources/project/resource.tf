@@ -7,7 +7,7 @@ resource "project" "myproject" {
     manage_resources = true
     index_resources  = true
   }
-  max_storage_in_gibabytes   = 10
+  max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
 
