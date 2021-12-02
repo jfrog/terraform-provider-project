@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,13 +28,13 @@ type AdminPrivileges struct {
 // Project GET {{ host }}/access/api/v1/projects/{{prjKey}}/
 //GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
 type Project struct {
-	Key                    string           `json:"project_key"`
-	DisplayName            string           `json:"display_name"`
-	Description            string           `json:"description"`
-	AdminPrivileges        AdminPrivileges  `json:"admin_privileges"`
-	StorageQuota           int              `json:"storage_quota_bytes"`
-	SoftLimit              bool             `json:"soft_limit"`
-	QuotaEmailNotification bool             `json:"storage_quota_email_notification"`
+	Key                    string          `json:"project_key"`
+	DisplayName            string          `json:"display_name"`
+	Description            string          `json:"description"`
+	AdminPrivileges        AdminPrivileges `json:"admin_privileges"`
+	StorageQuota           int             `json:"storage_quota_bytes"`
+	SoftLimit              bool            `json:"soft_limit"`
+	QuotaEmailNotification bool            `json:"storage_quota_email_notification"`
 }
 
 func (p Project) Id() string {
@@ -43,6 +44,7 @@ func (p Project) Id() string {
 const projectsUrl = "/access/api/v1/projects/"
 const projectUsersUrl = projectsUrl + "%s/users/"
 const projectGroupsUrl = projectsUrl + "%s/groups/"
+const projectRolesUrl = projectsUrl + "%s/roles/"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
@@ -122,9 +124,9 @@ func projectResource() *schema.Resource {
 			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
 		},
 		"block_deployments_on_limit": {
-			Type:       schema.TypeBool,
-			Optional:   true,
-			Default:    false,
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
 			Description: "Block artifacts deployment if storage quota is exceeded.",
 		},
 		"email_notification": {
@@ -176,6 +178,48 @@ func projectResource() *schema.Resource {
 				},
 			},
 			Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
+		},
+
+		"role": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+							validation.StringIsNotEmpty,
+							maxLength(64),
+						)),
+					},
+					"description": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					"type": {
+						Type:             schema.TypeString,
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleTypes, false)),
+						Description:      fmt.Sprintf("Type of role (%s)", strings.Join(validRoleTypes, ",")),
+					},
+					"environments": {
+						Type:             schema.TypeSet,
+						Required:         true,
+						Elem:             &schema.Schema{Type: schema.TypeString},
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleEnvironments, false)),
+						Description:      fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ",")),
+					},
+					"actions": {
+						Type:             schema.TypeSet,
+						Required:         true,
+						Elem:             &schema.Schema{Type: schema.TypeString},
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleActions, false)),
+						Description:      fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ",")),
+					},
+				},
+			},
+			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
 		},
 	}
 
@@ -348,7 +392,7 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema: projectSchema,
+		Schema:      projectSchema,
 		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.",
 	}
 }
