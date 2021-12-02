@@ -92,7 +92,7 @@ var unpackMembers = func(data *schema.ResourceData, membershipKey string) (strin
 	d := &ResourceData{data}
 	projectKey := d.getString("key", false)
 
-    membership := Membership{
+	membership := Membership{
 		Members: getMembers(d, membershipKey),
 	}
 
@@ -194,8 +194,8 @@ var deleteMembers = func(membershipUrl string, members []Member, m interface{}) 
 		}
 	}
 
-	if errs != nil && len(errs) > 0 {
-		return fmt.Errorf("failed to delete members from project: %s", errs)
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to delete members from project: %v", errs)
 	}
 
 	return nil
