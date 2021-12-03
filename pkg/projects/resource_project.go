@@ -121,7 +121,7 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
-			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
+			Description: "Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.",
 		},
 		"block_deployments_on_limit": {
 			Type:        schema.TypeBool,
