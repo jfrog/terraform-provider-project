@@ -12,6 +12,7 @@ install:
 	mkdir -p ${BUILD_PATH} && \
 		(test -f ${BINARY_NAME} || go build -o ./${BINARY_NAME} -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}'") && \
 		mv ${BINARY_NAME} ${BUILD_PATH} && \
+		sed -i 's/version = ".*"/version = "${NEXT_VERSION}"/' sample.tf && \
 		terraform init
 
 clean:
@@ -50,5 +51,8 @@ fmt:
 fmtcheck:
 	@echo "==> Checking that code complies with gofmt requirements..."
 	@sh -c "find . -name '*.go' -not -name '*vendor*' -print0 | xargs -0 gofmt -l -s"
+
+doc:
+	go generate
 
 .PHONY: build fmt

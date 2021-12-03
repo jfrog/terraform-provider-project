@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"regexp"
@@ -40,6 +41,8 @@ func (p Project) Id() string {
 }
 
 const projectsUrl = "/access/api/v1/projects/"
+const projectUsersUrl = projectsUrl + "%s/users/"
+const projectGroupsUrl = projectsUrl + "%s/groups/"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
@@ -75,21 +78,24 @@ func projectResource() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"manage_members": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Allows the Project Admin to manage Platform users/groups as project members with different roles.",
 					},
 					"manage_resources": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.",
 					},
 					"index_resources": {
-						Type:     schema.TypeBool,
-						Required: true,
+						Type:        schema.TypeBool,
+						Required:    true,
+						Description: "Enables a project admin to define the resources to be indexed by Xray",
 					},
 				},
 			},
 		},
-		"max_storage_in_gibabytes": {
+		"max_storage_in_gibibytes": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Default:  -1,
@@ -113,12 +119,13 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
-			Description: "Storage quota in GB. Must be 1 or larger",
+			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
 		},
 		"block_deployments_on_limit": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  false,
+			Type:       schema.TypeBool,
+			Optional:   true,
+			Default:    false,
+			Description: "Block artifacts deployment if storage quota is exceeded.",
 		},
 		"email_notification": {
 			Type:        schema.TypeBool,
@@ -136,26 +143,50 @@ func projectResource() *schema.Resource {
 						Type:             schema.TypeString,
 						Required:         true,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+						Description:      "Must be existing Artifactory user",
 					},
 					"roles": {
-						Type:     schema.TypeSet,
-						Required: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: "List of pre-defined Project or custom roles",
 					},
 				},
 			},
-			Description: "Member of the project. Must be existing Artifactory user.",
+			Description: "Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject).",
+		},
+
+		"group": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:             schema.TypeString,
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+						Description:      "Must be existing Artifactory group",
+					},
+					"roles": {
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: "List of pre-defined Project or custom roles",
+					},
+				},
+			},
+			Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
 		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (string, Project, Users, error) {
+	var unpackProject = func(data *schema.ResourceData) (string, Project, Membership, Membership, error) {
 		d := &ResourceData{data}
 
 		project := Project{
 			Key:                    d.getString("key", false),
 			DisplayName:            d.getString("display_name", false),
 			Description:            d.getString("description", false),
-			StorageQuota:           GibabytesToBytes(d.getInt("max_storage_in_gibabytes", false)),
+			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes", false)),
 			SoftLimit:              d.getBool("block_deployments_on_limit", false),
 			QuotaEmailNotification: d.getBool("email_notification", false),
 		}
@@ -175,19 +206,20 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, users, err := unpackUsers(data)
+		users := unpackMembers(data, "member")
+		groups := unpackMembers(data, "group")
 
-		return project.Id(), project, users, err
+		return project.Id(), project, users, groups, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project, users []User) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project *Project, users []Member, groups []Member) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
 		setValue("key", project.Key)
 		setValue("display_name", project.DisplayName)
 		setValue("description", project.Description)
-		setValue("max_storage_in_gibabytes", BytesToGibabytes(project.StorageQuota))
+		setValue("max_storage_in_gibibytes", BytesToGibibytes(project.StorageQuota))
 		setValue("block_deployments_on_limit", project.SoftLimit)
 		errors = setValue("email_notification", project.QuotaEmailNotification)
 		errors = setValue("admin_privileges", []interface{}{
@@ -199,7 +231,11 @@ func projectResource() *schema.Resource {
 		})
 
 		if len(users) > 0 {
-			errors = packUsers(d, "member", users)
+			errors = packMembers(d, "member", users)
+		}
+
+		if len(groups) > 0 {
+			errors = packMembers(d, "group", groups)
 		}
 
 		if len(errors) > 0 {
@@ -217,19 +253,24 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		users, err := readUsers(data.Id(), m)
+		users, err := readMembers(fmt.Sprintf(projectUsersUrl, data.Id()), m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project, users)
+		groups, err := readMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, &project, users, groups)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		log.Printf("[DEBUG] createProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, err := unpackProject(data)
+		key, project, users, groups, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -241,7 +282,12 @@ func projectResource() *schema.Resource {
 
 		data.SetId(key)
 
-		_, err = updateUsers(key, users, m)
+		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -253,7 +299,7 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] updateProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, err := unpackProject(data)
+		key, project, users, groups, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -265,7 +311,12 @@ func projectResource() *schema.Resource {
 
 		data.SetId(key)
 
-		_, err = updateUsers(key, users, m)
+		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -298,5 +349,6 @@ func projectResource() *schema.Resource {
 		},
 
 		Schema: projectSchema,
+		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.",
 	}
 }
