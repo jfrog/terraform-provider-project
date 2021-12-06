@@ -8,11 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var validRoleTypes = []string{
-	"PREDEFINED",
-	"CUSTOM",
-}
-
 var validRoleEnvironments = []string{
 	"DEV",
 	"PROD",
@@ -61,8 +56,32 @@ type Role struct {
 	Actions      []string `json:"actions"`
 }
 
-func (a Role) Equals(b Role) bool {
-	return a.Name == b.Name
+func (r Role) Id() string {
+	return r.Name
+}
+
+func (a Role) Equals(b Identifiable) bool {
+	return a.Id() == b.Id()
+}
+
+func rolesToEquatables(roles []Role) []Equatable {
+	var equatables []Equatable
+
+	for _, role := range roles {
+		equatables = append(equatables, role)
+	}
+
+	return equatables
+}
+
+func equatablesToRoles(equatables []Equatable) []Role {
+	var roles []Role
+
+	for _, equatable := range equatables {
+		roles = append(roles, equatable.(Role))
+	}
+
+	return roles
 }
 
 var unpackRoles = func(data *schema.ResourceData) []Role {
@@ -120,27 +139,98 @@ var packRoles = func(d *schema.ResourceData, roles []Role) []error {
 	return errors
 }
 
-var readRoles = func(m interface{}) ([]Role, error) {
+var readRoles = func(projectKey string, m interface{}) ([]Role, error) {
 	log.Println("[DEBUG] readRoles")
 
 	roles := []Role{}
 
-	_, err := m.(*resty.Client).R().SetResult(&roles).Get(projectRolesUrl)
+	_, err := m.(*resty.Client).R().SetResult(&roles).Get(fmt.Sprintf(projectRolesUrl, projectKey))
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("[TRACE] %+v\n", roles)
+	log.Printf("[TRACE] roles: %+v\n", roles)
 
-	return roles, nil
+	// REST API returns all project roles, including ones with PREDEFINED type which can't be altered.
+	// We are only interested in the "CUSTOM" types that we can manipulate.
+	customRoles := roles[:0]
+	for _, role := range roles {
+		if role.Type == "CUSTOM" {
+			customRoles = append(customRoles, role)
+		}
+	}
+
+	log.Printf("[TRACE] customRoles: %+v\n", customRoles)
+
+	return customRoles, nil
 }
 
-var deleteRoles = func(roles []Role, m interface{}) error {
+var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) ([]Role, error) {
+	log.Println("[DEBUG] updateRoles")
+	log.Printf("[TRACE] terraformRoles: %+v\n", terraformRoles)
+
+	projectRoles, err := readRoles(projectKey, m)
+	log.Printf("[TRACE] projectRoles: %+v\n", projectRoles)
+
+	rolesToBeAdded := difference(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
+	log.Printf("[TRACE] rolesToBeAdded: %+v\n", rolesToBeAdded)
+	rolesToBeUpdated := intersection(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
+	log.Printf("[TRACE] rolesToBeUpdated: %+v\n", rolesToBeUpdated)
+	rolesToBeDeleted := difference(rolesToEquatables(projectRoles), rolesToEquatables(terraformRoles))
+	log.Printf("[TRACE] rolesToBeDeleted: %+v\n", rolesToBeDeleted)
+
+	var errs []error
+
+	for _, role := range rolesToBeAdded {
+		log.Printf("[TRACE] %+v\n", role)
+		err := addRole(projectKey, role.(Role), m)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	for _, role := range rolesToBeUpdated {
+		log.Printf("[TRACE] %+v\n", role)
+		err := updateRole(projectKey, role.(Role), m)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	err = deleteRoles(projectKey, equatablesToRoles(rolesToBeDeleted), m)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("failed to update roles for project: %s", errs)
+	}
+
+	return readRoles(projectKey, m)
+}
+
+var addRole = func(projectKey string, role Role, m interface{}) error {
+	log.Println("[DEBUG] addRole")
+
+	_, err := m.(*resty.Client).R().SetBody(role).Post(fmt.Sprintf(projectRolesUrl, projectKey))
+
+	return err
+}
+
+var updateRole = func(projectKey string, role Role, m interface{}) error {
+	log.Println("[DEBUG] updateRole")
+
+	_, err := m.(*resty.Client).R().SetBody(role).Put(fmt.Sprintf(projectRolesUrl, projectKey) + role.Name)
+
+	return err
+}
+
+var deleteRoles = func(projectKey string, roles []Role, m interface{}) error {
 	log.Println("[DEBUG] deleteRoles")
 
 	var errs []error
 	for _, role := range roles {
-		err := deleteRole(role, m)
+		err := deleteRole(projectKey, role, m)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -153,11 +243,11 @@ var deleteRoles = func(roles []Role, m interface{}) error {
 	return nil
 }
 
-var deleteRole = func(role Role, m interface{}) error {
+var deleteRole = func(projectKey string, role Role, m interface{}) error {
 	log.Println("[DEBUG] deleteRole")
 	log.Printf("[TRACE] %+v\n", role)
 
-	_, err := m.(*resty.Client).R().Delete(projectRolesUrl + role.Name)
+	_, err := m.(*resty.Client).R().Delete(fmt.Sprintf(projectRolesUrl, projectKey) + role.Name)
 	if err != nil {
 		return err
 	}

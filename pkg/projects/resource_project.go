@@ -15,10 +15,6 @@ import (
 	"strconv"
 )
 
-type Identifiable interface {
-	Id() string
-}
-
 type AdminPrivileges struct {
 	ManageMembers   bool `json:"manage_members"`
 	ManageResources bool `json:"manage_resources"`
@@ -49,6 +45,8 @@ const projectRolesUrl = projectsUrl + "%s/roles/"
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
 }
+
+var customRoleTypeRegex = regexp.MustCompile("^CUSTOM$")
 
 func projectResource() *schema.Resource {
 
@@ -200,21 +198,21 @@ func projectResource() *schema.Resource {
 					"type": {
 						Type:             schema.TypeString,
 						Required:         true,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleTypes, false)),
-						Description:      fmt.Sprintf("Type of role (%s)", strings.Join(validRoleTypes, ",")),
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, "Only \"CUSTOM\" is supported")),
+						Description:      "Type of role Only \"CUSTOM\" is supported",
 					},
 					"environments": {
 						Type:             schema.TypeSet,
 						Required:         true,
 						Elem:             &schema.Schema{Type: schema.TypeString},
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleEnvironments, false)),
+						// ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleEnvironments, false)),
 						Description:      fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ",")),
 					},
 					"actions": {
 						Type:             schema.TypeSet,
 						Required:         true,
 						Elem:             &schema.Schema{Type: schema.TypeString},
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleActions, false)),
+						// ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleActions, false)),
 						Description:      fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ",")),
 					},
 				},
@@ -223,7 +221,7 @@ func projectResource() *schema.Resource {
 		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (string, Project, Membership, Membership, error) {
+	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, error) {
 		d := &ResourceData{data}
 
 		project := Project{
@@ -253,10 +251,12 @@ func projectResource() *schema.Resource {
 		users := unpackMembers(data, "member")
 		groups := unpackMembers(data, "group")
 
-		return project.Id(), project, users, groups, nil
+		roles := unpackRoles(data)
+
+		return project, users, groups, roles, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project, users []Member, groups []Member) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
@@ -280,6 +280,10 @@ func projectResource() *schema.Resource {
 
 		if len(groups) > 0 {
 			errors = packMembers(d, "group", groups)
+		}
+
+		if len(roles) > 0 {
+			errors = packRoles(d, roles)
 		}
 
 		if len(errors) > 0 {
@@ -307,14 +311,19 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project, users, groups)
+		roles, err := readRoles(data.Id(), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, project, users, groups, roles)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		log.Printf("[DEBUG] createProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, groups, err := unpackProject(data)
+		project, users, groups, roles, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -324,7 +333,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		data.SetId(key)
+		data.SetId(project.Id())
 
 		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
 		if err != nil {
@@ -332,6 +341,11 @@ func projectResource() *schema.Resource {
 		}
 
 		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -343,7 +357,7 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] updateProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, groups, err := unpackProject(data)
+		project, users, groups, roles, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -353,7 +367,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		data.SetId(key)
+		data.SetId(project.Id())
 
 		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
 		if err != nil {
@@ -361,6 +375,11 @@ func projectResource() *schema.Resource {
 		}
 
 		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
 	"math"
 	"text/template"
 
@@ -185,3 +186,50 @@ func GibibytesToBytes(bytes int) int {
 
  	return bytes * int(math.Pow(1024, 3))
 }
+
+type Identifiable interface {
+	Id() string
+}
+
+type Equatable interface {
+	Identifiable
+	Equals(other Identifiable) bool
+}
+
+func contains(as []Equatable, b Equatable) bool {
+	log.Printf("[DEBUG] contains")
+	log.Printf("[TRACE] as: %+v\n", as)
+	log.Printf("[TRACE] b: %+v\n", b)
+
+	for _, a := range as {
+		log.Printf("[TRACE] a: %+v\n", a)
+		log.Printf("[TRACE] a.Equals(b): %+v\n", a.Equals(b))
+		if a.Equals(b) {
+			return true
+		}
+	}
+	return false
+}
+
+var apply = func(predicate func(bs []Equatable, a Equatable) bool) func(as []Equatable, bs []Equatable) []Equatable {
+	return func(as []Equatable, bs []Equatable) []Equatable {
+		var results []Equatable
+
+		// Not the most efficient way to determine the slices intersection but this suffices for the small-ish number of items
+		for _, a := range as {
+			if predicate(bs, a) {
+				results = append(results, a)
+			}
+		}
+
+		return results
+	}
+}
+
+var intersection = apply(func(bs []Equatable, a Equatable) bool {
+	return contains(bs, a)
+})
+
+var difference = apply(func(bs []Equatable, a Equatable) bool {
+	return !contains(bs, a)
+})
