@@ -13,8 +13,8 @@ func TestAccProjectRole(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
-	role1 := "role-1"
-	role2 := "role-2"
+	role1 := "role 1"
+	role2 := "role 2"
 
 	params := map[string]interface{}{
 		"name":        name,

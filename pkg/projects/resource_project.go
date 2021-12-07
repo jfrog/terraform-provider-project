@@ -46,7 +46,7 @@ func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
 }
 
-var customRoleTypeRegex = regexp.MustCompile("^CUSTOM$")
+var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
 func projectResource() *schema.Resource {
 
@@ -198,8 +198,8 @@ func projectResource() *schema.Resource {
 					"type": {
 						Type:             schema.TypeString,
 						Required:         true,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, "Only \"CUSTOM\" is supported")),
-						Description:      "Type of role Only \"CUSTOM\" is supported",
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, fmt.Sprintf("Only \"%s\" is supported", customRoleType))),
+						Description:      fmt.Sprintf("Type of role. Only \"%s\" is supported", customRoleType),
 					},
 					"environments": {
 						Type:             schema.TypeSet,

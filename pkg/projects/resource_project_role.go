@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const customRoleType = "CUSTOM"
+
 var validRoleEnvironments = []string{
 	"DEV",
 	"PROD",
@@ -155,7 +157,7 @@ var readRoles = func(projectKey string, m interface{}) ([]Role, error) {
 	// We are only interested in the "CUSTOM" types that we can manipulate.
 	customRoles := roles[:0]
 	for _, role := range roles {
-		if role.Type == "CUSTOM" {
+		if role.Type == customRoleType {
 			customRoles = append(customRoles, role)
 		}
 	}
