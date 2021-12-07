@@ -14,54 +14,27 @@ import (
 
 type ResourceData struct{ *schema.ResourceData }
 
-func (d *ResourceData) getStringRef(key string, onlyIfChanged bool) *string {
-	if v, ok := d.GetOk(key); ok && (!onlyIfChanged || d.HasChange(key)) {
-		return StringPtr(v.(string))
-	}
-	return nil
-}
-func (d *ResourceData) getString(key string, onlyIfChanged bool) string {
-	if v, ok := d.GetOk(key); ok && (!onlyIfChanged || d.HasChange(key)) {
+func (d *ResourceData) getString(key string) string {
+	if v, ok := d.GetOk(key); ok {
 		return v.(string)
 	}
 	return ""
 }
 
-func (d *ResourceData) getBoolRef(key string, onlyIfChanged bool) *bool {
-	if v, ok := d.GetOkExists(key); ok && (!onlyIfChanged || d.HasChange(key)) {
-		return BoolPtr(v.(bool))
-	}
-	return nil
-}
-
-func (d *ResourceData) getBool(key string, onlyIfChanged bool) bool {
-	if v, ok := d.GetOkExists(key); ok && (!onlyIfChanged || d.HasChange(key)) {
+func (d *ResourceData) getBool(key string) bool {
+	if v, ok := d.GetOkExists(key); ok {
 		return v.(bool)
 	}
 	return false
 }
 
-func (d *ResourceData) getIntRef(key string, onlyIfChanged bool) *int {
-	if v, ok := d.GetOkExists(key); ok && (!onlyIfChanged || d.HasChange(key)) {
-		return IntPtr(v.(int))
-	}
-	return nil
-}
-
-func (d *ResourceData) getInt(key string, onlyIfChanged bool) int {
-	if v, ok := d.GetOkExists(key); ok && (!onlyIfChanged || d.HasChange(key)) {
+func (d *ResourceData) getInt(key string) int {
+	if v, ok := d.GetOkExists(key); ok {
 		return v.(int)
 	}
 	return 0
 }
 
-func (d *ResourceData) getSetRef(key string) *[]string {
-	if v, ok := d.GetOkExists(key); ok {
-		arr := castToStringArr(v.(*schema.Set).List())
-		return &arr
-	}
-	return new([]string)
-}
 func (d *ResourceData) getSet(key string) []string {
 	if v, ok := d.GetOkExists(key); ok {
 		arr := castToStringArr(v.(*schema.Set).List())

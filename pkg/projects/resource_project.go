@@ -223,12 +223,12 @@ func projectResource() *schema.Resource {
 		d := &ResourceData{data}
 
 		project := Project{
-			Key:                    d.getString("key", false),
-			DisplayName:            d.getString("display_name", false),
-			Description:            d.getString("description", false),
-			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes", false)),
-			SoftLimit:              d.getBool("block_deployments_on_limit", false),
-			QuotaEmailNotification: d.getBool("email_notification", false),
+			Key:                    d.getString("key"),
+			DisplayName:            d.getString("display_name"),
+			Description:            d.getString("description"),
+			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes")),
+			SoftLimit:              d.getBool("block_deployments_on_limit"),
+			QuotaEmailNotification: d.getBool("email_notification"),
 		}
 
 		if v, ok := d.GetOkExists("admin_privileges"); ok {
