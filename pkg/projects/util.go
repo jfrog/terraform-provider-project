@@ -176,7 +176,7 @@ func BytesToGibibytes(bytes int) int {
 		return -1
 	}
 
-	return int(bytes/int(math.Pow(1024, 3)))
+	return int(bytes / int(math.Pow(1024, 3)))
 }
 
 func GibibytesToBytes(bytes int) int {
@@ -184,7 +184,7 @@ func GibibytesToBytes(bytes int) int {
 		return -1
 	}
 
- 	return bytes * int(math.Pow(1024, 3))
+	return bytes * int(math.Pow(1024, 3))
 }
 
 type Identifiable interface {

@@ -176,8 +176,10 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 
 	rolesToBeAdded := difference(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
 	log.Printf("[TRACE] rolesToBeAdded: %+v\n", rolesToBeAdded)
+
 	rolesToBeUpdated := intersection(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
 	log.Printf("[TRACE] rolesToBeUpdated: %+v\n", rolesToBeUpdated)
+
 	rolesToBeDeleted := difference(rolesToEquatables(projectRoles), rolesToEquatables(terraformRoles))
 	log.Printf("[TRACE] rolesToBeDeleted: %+v\n", rolesToBeDeleted)
 

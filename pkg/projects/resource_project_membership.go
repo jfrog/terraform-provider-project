@@ -70,7 +70,7 @@ func getMembers(d *ResourceData, membershipKey string) []Member {
 	return members
 }
 
-var unpackMembers = func(data *schema.ResourceData, membershipKey string) (Membership) {
+var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
 	d := &ResourceData{data}
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
@@ -128,8 +128,10 @@ var updateMembers = func(membershipUrl string, terraformMembership Membership, m
 
 	membersToBeAdded := difference(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
 	log.Printf("[TRACE] membersToBeAdded: %+v\n", membersToBeAdded)
+
 	membersToBeUpdated := intersection(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
 	log.Printf("[TRACE] membersToBeUpdated: %+v\n", membersToBeUpdated)
+
 	membersToBeDeleted := difference(membersToEquatables(projectMembers), membersToEquatables(terraformMembership.Members))
 	log.Printf("[TRACE] membersToBeDeleted: %+v\n", membersToBeDeleted)
 

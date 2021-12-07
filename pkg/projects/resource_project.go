@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
 )
 
 type AdminPrivileges struct {
@@ -202,18 +202,16 @@ func projectResource() *schema.Resource {
 						Description:      fmt.Sprintf("Type of role. Only \"%s\" is supported", customRoleType),
 					},
 					"environments": {
-						Type:             schema.TypeSet,
-						Required:         true,
-						Elem:             &schema.Schema{Type: schema.TypeString},
-						// ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleEnvironments, false)),
-						Description:      fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ",")),
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ", ")),
 					},
 					"actions": {
-						Type:             schema.TypeSet,
-						Required:         true,
-						Elem:             &schema.Schema{Type: schema.TypeString},
-						// ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice(validRoleActions, false)),
-						Description:      fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ",")),
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ", ")),
 					},
 				},
 			},
