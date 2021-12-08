@@ -8,6 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const projectRolesUrl = projectUrl + "/roles"
+const projectRoleUrl = projectRolesUrl + "/{roleName}"
+
 const customRoleType = "CUSTOM"
 
 var validRoleEnvironments = []string{
@@ -146,7 +149,11 @@ var readRoles = func(projectKey string, m interface{}) ([]Role, error) {
 
 	roles := []Role{}
 
-	_, err := m.(*resty.Client).R().SetResult(&roles).Get(fmt.Sprintf(projectRolesUrl, projectKey))
+	_, err := m.(*resty.Client).R().
+		SetPathParam("projectKey", projectKey).
+		SetResult(&roles).
+		Get(projectRolesUrl)
+
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +223,10 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 var addRole = func(projectKey string, role Role, m interface{}) error {
 	log.Println("[DEBUG] addRole")
 
-	_, err := m.(*resty.Client).R().SetBody(role).Post(fmt.Sprintf(projectRolesUrl, projectKey))
+	_, err := m.(*resty.Client).R().
+		SetPathParam("projectKey", projectKey).
+		SetBody(role).
+		Post(projectRolesUrl)
 
 	return err
 }
@@ -224,7 +234,13 @@ var addRole = func(projectKey string, role Role, m interface{}) error {
 var updateRole = func(projectKey string, role Role, m interface{}) error {
 	log.Println("[DEBUG] updateRole")
 
-	_, err := m.(*resty.Client).R().SetBody(role).Put(fmt.Sprintf(projectRolesUrl, projectKey) + role.Name)
+	_, err := m.(*resty.Client).R().
+		SetPathParams(map[string]string{
+		   "projectKey": projectKey,
+		   "roleName": role.Name,
+		}).
+		SetBody(role).
+		Put(projectRoleUrl)
 
 	return err
 }
@@ -251,7 +267,14 @@ var deleteRole = func(projectKey string, role Role, m interface{}) error {
 	log.Println("[DEBUG] deleteRole")
 	log.Printf("[TRACE] %+v\n", role)
 
-	_, err := m.(*resty.Client).R().Delete(fmt.Sprintf(projectRolesUrl, projectKey) + role.Name)
+	_, err := m.(*resty.Client).R().
+		SetPathParams(map[string]string{
+		   "projectKey": projectKey,
+		   "roleName": role.Name,
+		}).
+		SetBody(role).
+		Delete(projectRoleUrl)
+
 	if err != nil {
 		return err
 	}

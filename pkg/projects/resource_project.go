@@ -37,10 +37,8 @@ func (p Project) Id() string {
 	return p.Key
 }
 
-const projectsUrl = "/access/api/v1/projects/"
-const projectUsersUrl = projectsUrl + "%s/users/"
-const projectGroupsUrl = projectsUrl + "%s/groups/"
-const projectRolesUrl = projectsUrl + "%s/roles/"
+const projectsUrl = "/access/api/v1/projects"
+const projectUrl = projectsUrl + "/{projectKey}"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
@@ -294,17 +292,20 @@ func projectResource() *schema.Resource {
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		project := Project{}
 
-		_, err := m.(*resty.Client).R().SetResult(&project).Get(projectsUrl + data.Id())
+		_, err := m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			SetResult(&project).
+			Get(projectUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		users, err := readMembers(fmt.Sprintf(projectUsersUrl, data.Id()), m)
+		users, err := readMembers(data.Id(), usersMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		groups, err := readMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), m)
+		groups, err := readMembers(data.Id(), groupssMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -333,12 +334,12 @@ func projectResource() *schema.Resource {
 
 		data.SetId(project.Id())
 
-		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -360,19 +361,22 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(*resty.Client).R().SetBody(project).Put(projectsUrl + data.Id())
+		_, err = m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			SetBody(project).
+			Put(projectUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		data.SetId(project.Id())
 
-		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -389,7 +393,9 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] deleteProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		resp, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
+		resp, err := m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			Delete(projectUrl)
 		if err != nil && resp.StatusCode() == http.StatusNotFound {
 			data.SetId("")
 			return diag.FromErr(err)
