@@ -60,15 +60,15 @@ type testCase struct {
 
 func TestAccProjectsInvalidProjectKey(t *testing.T) {
 	invalidProjectKeys := []testCase{
-		testCase{
+		{
 			Name:  "TooShort",
 			Value: strings.ToLower(randSeq(2)),
 		},
-		testCase{
+		{
 			Name:  "TooLong",
 			Value: strings.ToLower(randSeq(7)),
 		},
-		testCase{
+		{
 			Name:  "HasUppercase",
 			Value: randSeq(8),
 		},
@@ -117,7 +117,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
-				Config: project,
+				Config:      project,
 				ExpectError: regexp.MustCompile(`.*string must be less than or equal 32 characters long.*`),
 			},
 		},

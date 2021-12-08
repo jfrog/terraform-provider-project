@@ -8,9 +8,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type Equatable interface {
-	Equals(other Equatable) bool
-}
+const projectMembershipsUrl = projectUrl + "/{membershipType}"
+const projectMembershipUrl = projectMembershipsUrl + "/{memberName}"
+
+const usersMembershipType = "users"
+const groupssMembershipType = "groups"
 
 // Use by both project user and project group, as they shared identical data structure
 type Member struct {
@@ -18,52 +20,38 @@ type Member struct {
 	Roles []string `json:"roles"`
 }
 
+func (m Member) Id() string {
+	return m.Name
+}
+
+func (a Member) Equals(b Identifiable) bool {
+	return a.Id() == b.Id()
+}
+
+func membersToEquatables(members []Member) []Equatable {
+	var equatables []Equatable
+
+	for _, member := range members {
+		equatables = append(equatables, member)
+	}
+
+	return equatables
+}
+
+func equatablesToMembers(equatables []Equatable) []Member {
+	var members []Member
+
+	for _, equatable := range equatables {
+		members = append(members, equatable.(Member))
+	}
+
+	return members
+}
+
 // Use by both project user and project group, as they shared identical data structure
 type Membership struct {
 	Members []Member
 }
-
-func (a Member) Equals(b Member) bool {
-	return a.Name == b.Name
-}
-
-func contains(as []Member, b Member) bool {
-	log.Printf("[DEBUG] contains")
-	log.Printf("[TRACE] as: %+v\n", as)
-	log.Printf("[TRACE] b: %+v\n", b)
-
-	for _, a := range as {
-		log.Printf("[TRACE] a: %+v\n", a)
-		log.Printf("[TRACE] a.Equals(b): %+v\n", a.Equals(b))
-		if a.Equals(b) {
-			return true
-		}
-	}
-	return false
-}
-
-var membershipApply = func(predicate func(bs []Member, a Member) bool) func(as []Member, bs []Member) []Member {
-	return func(as []Member, bs []Member) []Member {
-		var results []Member
-
-		// Not the most efficient way to determine the slices intersection but this suffices for the small-ish number of items
-		for _, a := range as {
-			if predicate(bs, a) {
-				results = append(results, a)
-			}
-		}
-
-		return results
-	}
-}
-
-var membershipIntersection = membershipApply(func(bs []Member, a Member) bool {
-	return contains(bs, a)
-})
-
-var membershipDifference = membershipApply(func(bs []Member, a Member) bool {
-	return !contains(bs, a)
-})
 
 func getMembers(d *ResourceData, membershipKey string) []Member {
 	var members []Member
@@ -88,7 +76,7 @@ func getMembers(d *ResourceData, membershipKey string) []Member {
 	return members
 }
 
-var unpackMembers = func(data *schema.ResourceData, membershipKey string) (Membership) {
+var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
 	d := &ResourceData{data}
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
@@ -122,12 +110,22 @@ var packMembers = func(d *schema.ResourceData, membershipKey string, members []M
 	return errors
 }
 
-var readMembers = func(membershipUrl string, m interface{}) ([]Member, error) {
+var readMembers = func(projectKey string, membershipType string, m interface{}) ([]Member, error) {
 	log.Println("[DEBUG] readMembers")
+
+	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
+	}
 
 	membership := Membership{}
 
-	_, err := m.(*resty.Client).R().SetResult(&membership).Get(membershipUrl)
+	_, err := m.(*resty.Client).R().
+		SetPathParams(map[string]string{
+		   "projectKey": projectKey,
+		   "membershipType": membershipType,
+		}).
+		SetResult(&membership).
+		Get(projectMembershipsUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -137,31 +135,37 @@ var readMembers = func(membershipUrl string, m interface{}) ([]Member, error) {
 	return membership.Members, nil
 }
 
-var updateMembers = func(membershipUrl string, terraformMembership Membership, m interface{}) ([]Member, error) {
+var updateMembers = func(projectKey string, membershipType string, terraformMembership Membership, m interface{}) ([]Member, error) {
 	log.Println("[DEBUG] updateMembers")
 	log.Printf("[TRACE] terraformMembership: %+v\n", terraformMembership)
 
-	projectMembers, err := readMembers(membershipUrl, m)
+	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
+	}
+
+	projectMembers, err := readMembers(projectKey, membershipType, m)
 	log.Printf("[TRACE] projectMembers: %+v\n", projectMembers)
 
-	membersToBeAdded := membershipDifference(terraformMembership.Members, projectMembers)
+	membersToBeAdded := difference(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
 	log.Printf("[TRACE] membersToBeAdded: %+v\n", membersToBeAdded)
-	membersToBeUpdated := membershipIntersection(terraformMembership.Members, projectMembers)
+
+	membersToBeUpdated := intersection(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
 	log.Printf("[TRACE] membersToBeUpdated: %+v\n", membersToBeUpdated)
-	membersToBeDeleted := membershipDifference(projectMembers, terraformMembership.Members)
+
+	membersToBeDeleted := difference(membersToEquatables(projectMembers), membersToEquatables(terraformMembership.Members))
 	log.Printf("[TRACE] membersToBeDeleted: %+v\n", membersToBeDeleted)
 
 	var errs []error
 
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
 		log.Printf("[TRACE] %+v\n", member)
-		err := updateMember(membershipUrl, member, m)
+		err := updateMember(projectKey, membershipType, member.(Member), m)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	err = deleteMembers(membershipUrl, membersToBeDeleted, m)
+	err = deleteMembers(projectKey, membershipType, equatablesToMembers(membersToBeDeleted), m)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -170,23 +174,38 @@ var updateMembers = func(membershipUrl string, terraformMembership Membership, m
 		return nil, fmt.Errorf("failed to update members for project: %s", errs)
 	}
 
-	return readMembers(membershipUrl, m)
+	return readMembers(projectKey, membershipType, m)
 }
 
-var updateMember = func(membershipUrl string, member Member, m interface{}) error {
+var updateMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
 	log.Println("[DEBUG] updateMember")
 
-	_, err := m.(*resty.Client).R().SetBody(member).Put(membershipUrl + member.Name)
+	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+		return fmt.Errorf("Invalid membershipType: %s", membershipType)
+	}
+
+	_, err := m.(*resty.Client).R().
+		SetPathParams(map[string]string{
+		   "projectKey": projectKey,
+		   "membershipType": membershipType,
+		   "memberName": member.Name,
+		}).
+		SetBody(member).
+		Put(projectMembershipUrl)
 
 	return err
 }
 
-var deleteMembers = func(membershipUrl string, members []Member, m interface{}) error {
+var deleteMembers = func(projectKey string, membershipType string, members []Member, m interface{}) error {
 	log.Println("[DEBUG] deleteMembers")
+
+	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+		return fmt.Errorf("Invalid membershipType: %s", membershipType)
+	}
 
 	var errs []error
 	for _, member := range members {
-		err := deleteMember(membershipUrl, member, m)
+		err := deleteMember(projectKey, membershipType, member, m)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -199,11 +218,21 @@ var deleteMembers = func(membershipUrl string, members []Member, m interface{}) 
 	return nil
 }
 
-var deleteMember = func(membershipUrl string, member Member, m interface{}) error {
+var deleteMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
 	log.Println("[DEBUG] deleteMember")
 	log.Printf("[TRACE] %+v\n", member)
 
-	_, err := m.(*resty.Client).R().Delete(membershipUrl + member.Name)
+	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+		return fmt.Errorf("Invalid membershipType: %s", membershipType)
+	}
+
+	_, err := m.(*resty.Client).R().
+		SetPathParams(map[string]string{
+		   "projectKey": projectKey,
+		   "membershipType": membershipType,
+		   "memberName": member.Name,
+		}).
+		Delete(projectMembershipUrl)
 	if err != nil {
 		return err
 	}

@@ -6,17 +6,14 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"strconv"
 )
-
-type Identifiable interface {
-	Id() string
-}
 
 type AdminPrivileges struct {
 	ManageMembers   bool `json:"manage_members"`
@@ -27,26 +24,27 @@ type AdminPrivileges struct {
 // Project GET {{ host }}/access/api/v1/projects/{{prjKey}}/
 //GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
 type Project struct {
-	Key                    string           `json:"project_key"`
-	DisplayName            string           `json:"display_name"`
-	Description            string           `json:"description"`
-	AdminPrivileges        AdminPrivileges  `json:"admin_privileges"`
-	StorageQuota           int              `json:"storage_quota_bytes"`
-	SoftLimit              bool             `json:"soft_limit"`
-	QuotaEmailNotification bool             `json:"storage_quota_email_notification"`
+	Key                    string          `json:"project_key"`
+	DisplayName            string          `json:"display_name"`
+	Description            string          `json:"description"`
+	AdminPrivileges        AdminPrivileges `json:"admin_privileges"`
+	StorageQuota           int             `json:"storage_quota_bytes"`
+	SoftLimit              bool            `json:"soft_limit"`
+	QuotaEmailNotification bool            `json:"storage_quota_email_notification"`
 }
 
 func (p Project) Id() string {
 	return p.Key
 }
 
-const projectsUrl = "/access/api/v1/projects/"
-const projectUsersUrl = projectsUrl + "%s/users/"
-const projectGroupsUrl = projectsUrl + "%s/groups/"
+const projectsUrl = "/access/api/v1/projects"
+const projectUrl = projectsUrl + "/{projectKey}"
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
 }
+
+var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
 func projectResource() *schema.Resource {
 
@@ -119,12 +117,12 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
-			Description: "Storage quota in GB. Must be 1 or larger. Set to -1 for unlimited storage.",
+			Description: "Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.",
 		},
 		"block_deployments_on_limit": {
-			Type:       schema.TypeBool,
-			Optional:   true,
-			Default:    false,
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
 			Description: "Block artifacts deployment if storage quota is exceeded.",
 		},
 		"email_notification": {
@@ -177,18 +175,58 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
 		},
+
+		"role": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+							validation.StringIsNotEmpty,
+							maxLength(64),
+						)),
+					},
+					"description": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					"type": {
+						Type:             schema.TypeString,
+						Required:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, fmt.Sprintf(`Only "%s" is supported`, customRoleType))),
+						Description:      fmt.Sprintf(`Type of role. Only "%s" is supported`, customRoleType),
+					},
+					"environments": {
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ", ")),
+					},
+					"actions": {
+						Type:        schema.TypeSet,
+						Required:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+						Description: fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ", ")),
+					},
+				},
+			},
+			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
+		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (string, Project, Membership, Membership, error) {
+	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, error) {
 		d := &ResourceData{data}
 
 		project := Project{
-			Key:                    d.getString("key", false),
-			DisplayName:            d.getString("display_name", false),
-			Description:            d.getString("description", false),
-			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes", false)),
-			SoftLimit:              d.getBool("block_deployments_on_limit", false),
-			QuotaEmailNotification: d.getBool("email_notification", false),
+			Key:                    d.getString("key"),
+			DisplayName:            d.getString("display_name"),
+			Description:            d.getString("description"),
+			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes")),
+			SoftLimit:              d.getBool("block_deployments_on_limit"),
+			QuotaEmailNotification: d.getBool("email_notification"),
 		}
 
 		if v, ok := d.GetOkExists("admin_privileges"); ok {
@@ -209,10 +247,12 @@ func projectResource() *schema.Resource {
 		users := unpackMembers(data, "member")
 		groups := unpackMembers(data, "group")
 
-		return project.Id(), project, users, groups, nil
+		roles := unpackRoles(data)
+
+		return project, users, groups, roles, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project *Project, users []Member, groups []Member) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
@@ -238,6 +278,10 @@ func projectResource() *schema.Resource {
 			errors = packMembers(d, "group", groups)
 		}
 
+		if len(roles) > 0 {
+			errors = packRoles(d, roles)
+		}
+
 		if len(errors) > 0 {
 			return diag.Errorf("failed to pack project %q", errors)
 		}
@@ -248,29 +292,37 @@ func projectResource() *schema.Resource {
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		project := Project{}
 
-		_, err := m.(*resty.Client).R().SetResult(&project).Get(projectsUrl + data.Id())
+		_, err := m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			SetResult(&project).
+			Get(projectUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		users, err := readMembers(fmt.Sprintf(projectUsersUrl, data.Id()), m)
+		users, err := readMembers(data.Id(), usersMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		groups, err := readMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), m)
+		groups, err := readMembers(data.Id(), groupssMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, &project, users, groups)
+		roles, err := readRoles(data.Id(), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, project, users, groups, roles)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		log.Printf("[DEBUG] createProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, groups, err := unpackProject(data)
+		project, users, groups, roles, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -280,14 +332,19 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		data.SetId(key)
+		data.SetId(project.Id())
 
-		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -299,24 +356,32 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] updateProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		key, project, users, groups, err := unpackProject(data)
+		project, users, groups, roles, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(*resty.Client).R().SetBody(project).Put(projectsUrl + data.Id())
+		_, err = m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			SetBody(project).
+			Put(projectUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		data.SetId(key)
+		data.SetId(project.Id())
 
-		_, err = updateMembers(fmt.Sprintf(projectUsersUrl, data.Id()), users, m)
+		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(fmt.Sprintf(projectGroupsUrl, data.Id()), groups, m)
+		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -328,7 +393,9 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] deleteProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		resp, err := m.(*resty.Client).R().Delete(projectsUrl + data.Id())
+		resp, err := m.(*resty.Client).R().
+			SetPathParam("projectKey", data.Id()).
+			Delete(projectUrl)
 		if err != nil && resp.StatusCode() == http.StatusNotFound {
 			data.SetId("")
 			return diag.FromErr(err)
@@ -348,7 +415,7 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema: projectSchema,
+		Schema:      projectSchema,
 		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.",
 	}
 }

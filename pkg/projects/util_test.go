@@ -28,7 +28,7 @@ func testAccProviders() map[string]func() (*schema.Provider, error) {
 func fmtMapToHcl(fields map[string]interface{}) string {
 	var allPairs []string
 	max := float64(0)
-	for key, _ := range fields {
+	for key := range fields {
 		max = math.Max(max, float64(len(key)))
 	}
 	for key, value := range fields {
@@ -134,11 +134,11 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func randSeq(n int) string {
 	rand.Seed(time.Now().UnixNano())
-    b := make([]rune, n)
-    for i := range b {
-        b[i] = letters[rand.Intn(len(letters))]
-    }
-    return string(b)
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 var randomInt = func() func() int {
@@ -147,11 +147,11 @@ var randomInt = func() func() int {
 }()
 
 func randBool() bool {
-	return randomInt() % 2 == 0
+	return randomInt()%2 == 0
 }
 
-func randSelect(items ... interface{}) interface{} {
-	return items[randomInt() % len(items)]
+func randSelect(items ...interface{}) interface{} {
+	return items[randomInt()%len(items)]
 }
 
 func createTestUser(t *testing.T, projectKey string, name string, email string) {
@@ -188,13 +188,13 @@ func deleteTestUser(t *testing.T, projectKey string, name string) {
 func createTestGroup(t *testing.T, projectKey string, name string) {
 
 	type ArtifactoryGroup struct {
-		Name    string `json:"name"`
+		Name string `json:"name"`
 	}
 
 	restyClient := getTestResty(t)
 
 	group := ArtifactoryGroup{
-		Name:    name,
+		Name: name,
 	}
 
 	_, err := restyClient.R().SetBody(group).Put("/artifactory/api/security/groups/" + name)

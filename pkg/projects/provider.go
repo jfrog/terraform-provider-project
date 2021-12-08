@@ -97,7 +97,7 @@ func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, er
 func checkArtifactoryLicense(client *resty.Client) error {
 
 	type License struct {
-		Type 		 string `json:"type"`
+		Type         string `json:"type"`
 		ValidThrough string `json:"validThrough"`
 		LicensedTo   string `json:"licensedTo"`
 	}

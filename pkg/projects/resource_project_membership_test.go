@@ -30,7 +30,7 @@ func TestAccProjectMember(t *testing.T) {
 		"contributorRole": contributorRole,
 	}
 
-	initialConfig := executeTemplate("TestAccProjectUser", `
+	initialConfig := executeTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
