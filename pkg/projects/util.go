@@ -75,17 +75,6 @@ func castToInterfaceArr(arr []string) []interface{} {
 	return cpy
 }
 
-func getMD5Hash(o interface{}) string {
-	if len(o.(string)) == 0 { // Don't hash empty strings
-		return ""
-	}
-
-	hasher := sha256.New()
-	hasher.Write([]byte(o.(string)))
-	hasher.Write([]byte("OQ9@#9i4$c8g$4^n%PKT8hUva3CC^5"))
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
 func mergeMaps(schemata ...map[string]interface{}) map[string]interface{} {
 	result := map[string]interface{}{}
 	for _, schma := range schemata {
@@ -126,23 +115,6 @@ func mkLens(d *schema.ResourceData) Lens {
 		return errors
 	}
 }
-
-func sendConfigurationPatch(content []byte, m interface{}) error {
-
-	_, err := m.(*resty.Client).R().SetBody(content).
-		SetHeader("Content-Type", "application/yaml").
-		Patch("projects/api/system/configuration")
-
-	return err
-}
-
-func BoolPtr(v bool) *bool { return &v }
-
-func IntPtr(v int) *int { return &v }
-
-func Int64Ptr(v int64) *int64 { return &v }
-
-func StringPtr(v string) *string { return &v }
 
 func BytesToGibibytes(bytes int) int {
 	if bytes <= -1 {
