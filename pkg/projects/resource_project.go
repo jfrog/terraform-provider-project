@@ -198,8 +198,8 @@ func projectResource() *schema.Resource {
 					"type": {
 						Type:             schema.TypeString,
 						Required:         true,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, fmt.Sprintf("Only \"%s\" is supported", customRoleType))),
-						Description:      fmt.Sprintf("Type of role. Only \"%s\" is supported", customRoleType),
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, fmt.Sprintf(`Only "%s" is supported`, customRoleType))),
+						Description:      fmt.Sprintf(`Type of role. Only "%s" is supported`, customRoleType),
 					},
 					"environments": {
 						Type:        schema.TypeSet,
