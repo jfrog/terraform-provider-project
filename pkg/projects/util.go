@@ -2,13 +2,10 @@ package projects
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"log"
 	"math"
 	"text/template"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
