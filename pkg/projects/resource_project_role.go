@@ -144,6 +144,17 @@ var packRoles = func(d *schema.ResourceData, roles []Role) []error {
 	return errors
 }
 
+func filterRoles(roles []Role, roleType string) []Role {
+	filteredRoles := roles[:0]
+	for _, role := range roles {
+		if role.Type == roleType {
+			filteredRoles = append(filteredRoles, role)
+		}
+	}
+
+	return filteredRoles
+}
+
 var readRoles = func(projectKey string, m interface{}) ([]Role, error) {
 	log.Println("[DEBUG] readRoles")
 
@@ -162,13 +173,7 @@ var readRoles = func(projectKey string, m interface{}) ([]Role, error) {
 
 	// REST API returns all project roles, including ones with PREDEFINED type which can't be altered.
 	// We are only interested in the "CUSTOM" types that we can manipulate.
-	customRoles := roles[:0]
-	for _, role := range roles {
-		if role.Type == customRoleType {
-			customRoles = append(customRoles, role)
-		}
-	}
-
+	customRoles := filterRoles(roles, customRoleType)
 	log.Printf("[TRACE] customRoles: %+v\n", customRoles)
 
 	return customRoles, nil
