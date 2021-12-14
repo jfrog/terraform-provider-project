@@ -9,11 +9,11 @@ import (
 )
 
 type Repo struct {
-	Name string
+	Key string
 }
 
 func (this Repo) Id() string {
-	return this.Name
+	return this.Key
 }
 
 func (this Repo) Equals(other Identifiable) bool {
@@ -55,7 +55,7 @@ var unpackRepos = func(data *schema.ResourceData) []Repo {
 			id := projectRepo.(map[string]interface{})
 
 			repo := Repo{
-				Name:      id["name"].(string),
+				Key: id["key"].(string),
 			}
 			repos = append(repos, repo)
 		}
@@ -66,21 +66,21 @@ var unpackRepos = func(data *schema.ResourceData) []Repo {
 
 var packRepos = func(d *schema.ResourceData, repos []Repo) []error {
 	log.Printf("[DEBUG] packRepos")
+	log.Printf("[TRACE] repos: %+v\n", repos)
 
 	setValue := mkLens(d)
 
 	var projectRepos []interface{}
 
 	for _, repo := range repos {
-		log.Printf("[TRACE] %+v\n", repo)
 		projectRepo := map[string]interface{}{
-			"name":  repo.Name,
+			"key": repo.Key,
 		}
 
 		projectRepos = append(projectRepos, projectRepo)
 	}
 
-	log.Printf("[TRACE] %+v\n", projectRepos)
+	log.Printf("[TRACE] projectRepos: %+v\n", projectRepos)
 
 	errors := setValue("repo", projectRepos)
 
@@ -90,30 +90,17 @@ var packRepos = func(d *schema.ResourceData, repos []Repo) []error {
 var readRepos = func(projectKey string, m interface{}) ([]Repo, error) {
 	log.Println("[DEBUG] readRepos")
 
-	type ArtifactoryRepo struct {
-		Key string
-	}
-
-	artifactoryRepos := []ArtifactoryRepo{}
+	repos := []Repo{}
 
 	_, err := m.(*resty.Client).R().
 		SetPathParam("projectKey", projectKey).
-		SetResult(&artifactoryRepos).
+		SetResult(&repos).
 		Get("/artifactory/api/repositories?project={projectKey}")
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("[TRACE] artifactoryRepos: %+v\n", artifactoryRepos)
-
-	var repos []Repo
-	for _, artifactoryRepo := range artifactoryRepos {
-		repo := Repo{
-			Name: artifactoryRepo.Key,
-		}
-		repos = append(repos, repo)
-	}
 	log.Printf("[TRACE] repos: %+v\n", repos)
 
 	return repos, nil
@@ -160,10 +147,10 @@ var addRepo = func(projectKey string, repo Repo, m interface{}) error {
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
-			"repoName":   repo.Name,
+			"repoKey":   repo.Key,
 		}).
 		SetQueryParam("force", "true").
-		Put(projectsUrl + "/_/attach/repositories/{repoName}/{projectKey}")
+		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
 
 	return err
 }
@@ -191,8 +178,8 @@ var deleteRepo = func(projectKey string, repo Repo, m interface{}) error {
 	log.Printf("[TRACE] %+v\n", repo)
 
 	_, err := m.(*resty.Client).R().
-		SetPathParam("repoName", repo.Name).
-		Delete(projectsUrl + "/_/attach/repositories/{repoName}")
+		SetPathParam("repoKey", repo.Key).
+		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
 
 	if err != nil {
 		return err

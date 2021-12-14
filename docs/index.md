@@ -66,13 +66,37 @@ resource "project" "myproject" {
   }
 
   group {
-    name = "dev-group"
+    name  = "dev-group"
     roles = ["developer"]
   }
 
   group {
-    name = "release-group"
+    name  = "release-group"
     roles = ["release manager"]
+  }
+
+  role {
+    name         = "developer"
+    description  = "Developer role"
+    type         = "CUSTOM"
+    environments = ["DEV"]
+    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
+  }
+
+  role {
+    name         = "devop"
+    description  = "DevOp role"
+    type         = "CUSTOM"
+    environments = ["DEV", "PROD"]
+    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+  }
+
+  repo {
+    name = "docker-local"
+  }
+
+  repo {
+    name = "rpm-local"
   }
 }
 ```
@@ -82,6 +106,7 @@ resource "project" "myproject" {
 The Artifactory Project provider supports one type of authentication using Bearer token.
 
 ### Bearer Token
+
 Artifactory access tokens may be used via the Authorization header by providing the `access_token` field to the provider block. Getting this value from the environment is supported with the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable
 
 Usage:

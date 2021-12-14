@@ -221,13 +221,14 @@ func projectResource() *schema.Resource {
 			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"name": {
+					"key": {
 						Type:     schema.TypeString,
 						Required: true,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.All(
 							validation.StringIsNotEmpty,
 							maxLength(64),
 						)),
+						Description: "Repository key",
 					},
 				},
 			},

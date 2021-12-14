@@ -36,7 +36,7 @@ func TestAccProjectRepo(t *testing.T) {
 			}
 
 			repo {
-				name  = "{{ .repo1 }}"
+				key = "{{ .repo1 }}"
 			}
 		}
 	`, params)
@@ -53,11 +53,11 @@ func TestAccProjectRepo(t *testing.T) {
 			}
 
 			repo {
-				name  = "{{ .repo1 }}"
+				key = "{{ .repo1 }}"
 			}
 
 			repo {
-				name  = "{{ .repo2 }}"
+				key = "{{ .repo2 }}"
 			}
 		}
 	`, params)
@@ -96,7 +96,7 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "repo.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "repo.0.name", repo1),
+					resource.TestCheckResourceAttr(resourceName, "repo.0.key", repo1),
 				),
 			},
 			{
@@ -106,8 +106,8 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "repo.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "repo.0.name", repo1),
-					resource.TestCheckResourceAttr(resourceName, "repo.1.name", repo2),
+					resource.TestCheckResourceAttr(resourceName, "repo.0.key", repo1),
+					resource.TestCheckResourceAttr(resourceName, "repo.1.key", repo2),
 				),
 			},
 			{
