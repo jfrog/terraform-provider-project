@@ -215,9 +215,27 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
 		},
+
+		"repo": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+							validation.StringIsNotEmpty,
+							maxLength(64),
+						)),
+					},
+				},
+			},
+			Description: "Existing repo to be assigned to the project.",
+		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, error) {
+	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []Repo, error) {
 		d := &ResourceData{data}
 
 		project := Project{
@@ -248,11 +266,12 @@ func projectResource() *schema.Resource {
 		groups := unpackMembers(data, "group")
 
 		roles := unpackRoles(data)
+		repos := unpackRepos(data)
 
-		return project, users, groups, roles, nil
+		return project, users, groups, roles, repos, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []Repo) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
@@ -280,6 +299,10 @@ func projectResource() *schema.Resource {
 
 		if len(roles) > 0 {
 			errors = packRoles(d, roles)
+		}
+
+		if len(repos) > 0 {
+			errors = packRepos(d, repos)
 		}
 
 		if len(errors) > 0 {
@@ -315,14 +338,19 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, project, users, groups, roles)
+		repos, err := readRepos(data.Id(), m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		return packProject(data, project, users, groups, roles, repos)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		log.Printf("[DEBUG] createProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		project, users, groups, roles, err := unpackProject(data)
+		project, users, groups, roles, repos, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -349,6 +377,11 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
+		_, err = updateRepos(data.Id(), repos, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		return readProject(ctx, data, m)
 	}
 
@@ -356,7 +389,7 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] updateProject")
 		log.Printf("[TRACE] %+v\n", data)
 
-		project, users, groups, roles, err := unpackProject(data)
+		project, users, groups, roles, repos, err := unpackProject(data)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -386,6 +419,11 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
+		_, err = updateRepos(data.Id(), repos, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		return readProject(ctx, data, m)
 	}
 
@@ -393,9 +431,20 @@ func projectResource() *schema.Resource {
 		log.Printf("[DEBUG] deleteProject")
 		log.Printf("[TRACE] %+v\n", data)
 
+		_, _, _, _, repos, err := unpackProject(data)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = deleteRepos(data.Id(), repos, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		resp, err := m.(*resty.Client).R().
 			SetPathParam("projectKey", data.Id()).
 			Delete(projectUrl)
+
 		if err != nil && resp.StatusCode() == http.StatusNotFound {
 			data.SetId("")
 			return diag.FromErr(err)
