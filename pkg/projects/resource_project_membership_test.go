@@ -87,12 +87,12 @@ func TestAccProjectMember(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			createTestUser(t, projectKey, username1, email1)
-			createTestUser(t, projectKey, username2, email2)
+			createTestUser(t, username1, email1)
+			createTestUser(t, username2, email2)
 		},
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestUser(t, projectKey, username1)
-			deleteTestUser(t, projectKey, username2)
+			deleteTestUser(t, username1)
+			deleteTestUser(t, username2)
 			resp, err := verifyProject(id, request)
 
 			return resp, err
@@ -216,12 +216,12 @@ func TestAccProjectGroup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			createTestGroup(t, projectKey, group1)
-			createTestGroup(t, projectKey, group2)
+			createTestGroup(t, group1)
+			createTestGroup(t, group2)
 		},
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestGroup(t, projectKey, group1)
-			deleteTestGroup(t, projectKey, group2)
+			deleteTestGroup(t, group1)
+			deleteTestGroup(t, group2)
 			resp, err := verifyProject(id, request)
 
 			return resp, err

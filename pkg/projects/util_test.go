@@ -154,7 +154,7 @@ func randSelect(items ...interface{}) interface{} {
 	return items[randomInt()%len(items)]
 }
 
-func createTestUser(t *testing.T, projectKey string, name string, email string) {
+func createTestUser(t *testing.T, name string, email string) {
 
 	type ArtifactoryUser struct {
 		Email    string `json:"email"`
@@ -176,7 +176,7 @@ func createTestUser(t *testing.T, projectKey string, name string, email string) 
 	}
 }
 
-func deleteTestUser(t *testing.T, projectKey string, name string) {
+func deleteTestUser(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
 	_, err := restyClient.R().Delete("/artifactory/api/security/users/" + name)
@@ -185,7 +185,7 @@ func deleteTestUser(t *testing.T, projectKey string, name string) {
 	}
 }
 
-func createTestGroup(t *testing.T, projectKey string, name string) {
+func createTestGroup(t *testing.T, name string) {
 
 	type ArtifactoryGroup struct {
 		Name string `json:"name"`
@@ -203,10 +203,39 @@ func createTestGroup(t *testing.T, projectKey string, name string) {
 	}
 }
 
-func deleteTestGroup(t *testing.T, projectKey string, name string) {
+func deleteTestGroup(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
 	_, err := restyClient.R().Delete("/artifactory/api/security/groups/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createTestRepo(t *testing.T, name string) {
+
+	type ArtifactoryRepo struct {
+		Name    string `json:"key"`
+		RClass  string `json:"rclass"`
+	}
+
+	restyClient := getTestResty(t)
+
+	repo := ArtifactoryRepo{
+		Name:   name,
+		RClass: "local",
+	}
+
+	_, err := restyClient.R().SetBody(repo).Put("/artifactory/api/repositories/" + name)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func deleteTestRepo(t *testing.T, name string) {
+	restyClient := getTestResty(t)
+
+	_, err := restyClient.R().Delete("/artifactory/api/repositories/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}

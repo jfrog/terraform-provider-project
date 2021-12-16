@@ -16,7 +16,7 @@ install:
 		terraform init
 
 clean:
-	rm -fR .terraform.d/ .terraform terraform.tfstate* terraform.d/
+	rm -fR .terraform.d/ .terraform terraform.tfstate* terraform.d/ .terraform.lock.hcl
 
 release:
 	@git tag v${NEXT_VERSION} && git push --mirror

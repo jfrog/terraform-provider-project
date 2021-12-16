@@ -1,12 +1,10 @@
-# Terraform Provider Projects
+# Terraform Provider Project
 
-[![Actions Status](https://github.com/jfrog/terraform-provider-projects/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-projects/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/terraform-provider-artifactory)](https://goreportcard.com/report/github.com/jfrog/terraform-provider-projects)
+[![Actions Status](https://github.com/jfrog/terraform-provider-project/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-project/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/terraform-provider-project)](https://goreportcard.com/report/github.com/jfrog/terraform-provider-project)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/jfrog/terraform)
 
-To use this provider in your Terraform module, follow the documentation [here](https://registry.terraform.io/providers/jfrog/artifactory/latest/docs).
-
-
+To use this provider in your Terraform module, follow the documentation [here](https://registry.terraform.io/providers/jfrog/project/latest/docs).
 
 ## License requirements:
 
@@ -14,8 +12,8 @@ This provider requires access to the APIs, which are only available in the _lice
 You can determine which license you have by accessing the following URL
 `${host}/artifactory/api/system/licenses/`
 
-You can either access it via api, or web browser - it does require admin level credentials, but it's one of the few
-APIs that will work without a license (side node: you can also install your license here with a `POST`)
+You can either access it via api, or web browser - it does require admin level credentials, but it's one of the few APIs that will work without a license (side node: you can also install your license here with a `POST`)
+
 ```bash
 curl -sL ${host}/artifactory/api/system/licenses/ | jq .
 {
@@ -23,8 +21,8 @@ curl -sL ${host}/artifactory/api/system/licenses/ | jq .
   "validThrough" : "Jan 29, 2022",
   "licensedTo" : "JFrog Ltd"
 }
-
 ```
+
 The following 3 license types (`jq .type`) do **NOT** support APIs:
 - Community Edition for C/C++
 - JCR Edition
@@ -32,55 +30,51 @@ The following 3 license types (`jq .type`) do **NOT** support APIs:
 
 ## Limitations of functionality
 
+Currently this provider does not support the followings:
+- Xray support for the project
 
 ## Build the Provider
-Simply run `make install` - this will compile the provider and install it to `~/terraform.d`. When running this, it will
-take the current tag and bump it 1 minor version. It does not actually create a new tag (that is `make release`).
-If you wish to use the locally installed provider, make sure your TF script refers to the new version number
+
+Simply run `make install` - this will compile the provider and install it to `~/terraform.d`. When running this, it will take the current tag and bump it 1 minor version. It does not actually create a new tag (that is `make release`). If you wish to use the locally installed provider, make sure your TF script refers to the new version number.
 
 Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
 - [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
 
 ## Testing
-How to run the tests isn't obvious.
-First, you need a running instance of the jfrog platform (RT and XR). However, there is no currently supported dockerized, local
-version. You can ask for an instance to test against in as part of your PR or by messaging the maintainer in gitter
-Alternatively, you can run the file [scripts/run-artifactory.sh](scripts/run-artifactory.sh), which, if have a file in the same
-directory called `artifactory.lic`, you can start just an artifactory instance. The license is not supplied, but  a [30 day trial
-liscense can be freely obtained](https://jfrog.com/start-free/#hosted) and will allow local developement
 
-Once you have that done you must set the following properties
+How to run the tests isn't obvious.
+
+First, you need a running instance of the JFrog platform (RT and XR). However, there is no currently supported Dockerized, local version. You can ask for an instance to test against in as part of your PR or by messaging the maintainer in gitter.
+
+Alternatively, you can run the file [scripts/run-artifactory.sh](scripts/run-artifactory.sh), which, if you have a license file in the same directory called `artifactory.lic`, you can start just an artifactory instance. The license is not supplied, but a [30 day trial license can be freely obtained](https://jfrog.com/start-free/#hosted) and will allow local development.
 
 Then, you have to set some environment variables as this is how the acceptance tests pick up their config
+
 ```bash
-JFROG_URL=http://localhost:8081
-JFROG_ACCESS_TOKEN=...
+PROJECTS_URL=http://localhost:8081
+PROJECTS_ACCESS_TOKEN=...
 TF_ACC=true
 ```
-a crucial env var to set is
-`TF_ACC=true` - you can literally set `TF_ACC` to anything you want, so long as it's set. The acceptance tests use
-terraform testing libraries that, if this flag isn't set, will skip all tests. See [Terraform doc](https://www.terraform.io/docs/extend/testing/acceptance-tests/index.html#running-acceptance-tests).
 
-You can then run the tests as
-`go test -v ./pkg/...`
-**DO NOT** remove the `-v` - terraform testing needs this (don't ask me why). This will recursively run all tests, including
-acceptance tests.
+A crucial env var to set is `TF_ACC=true` - you can literally set `TF_ACC` to anything you want, so long as it's set. The acceptance tests use terraform testing libraries that, if this flag isn't set, will skip all tests. See [Terraform doc](https://www.terraform.io/docs/extend/testing/acceptance-tests/index.html#running-acceptance-tests).
+
+You can then run the tests with:
+```sh
+$ go test -v ./pkg/...
+```
+
+**DO NOT** omit the `-v` - terraform testing needs this (don't ask me why). This will recursively run all tests, including acceptance tests.
 
 ## Debugging
 
 ### Debugger-based debugging
 
-Debugging a terraform provider is not straightforward. Terraform forks your provider as a separate process and then
-connects to it via RPC. Normally, when debugging, you would start the process to debug directly. However, with the
-terraform + go architecture, this isn't possible. So, you need to run terraform as you normally would and attach to the
-provider process by getting it's pid. This would be really tricky considering how fast the process can come up and be down.
-So, you need to actually halt the provider and have it wait for your debugger to attach.
+Debugging a terraform provider is not straightforward. Terraform forks your provider as a separate process and then connects to it via RPC. Normally, when debugging, you would start the process to debug directly. However, with the terraform + go architecture, this isn't possible. So, you need to run terraform as you normally would and attach to the provider process by getting its pid. This would be really tricky considering how fast the process can come up and be down. So, you need to actually halt the provider and have it wait for your debugger to attach.
 
 Having said all that, here are the steps:
 1. Install [delve](https://github.com/go-delve/delve)
-2. Keep in mind that terraform will
-   parallel process if it can, and it will start new instances of the TF provider process when running apply between the plan and confirmation
+2. Keep in mind that terraform will parallel process if it can, and it will start new instances of the TF provider process when running apply between the plan and confirmation.
    Add a snippet of go code to the close to where you need to break where in you install a busy sleep loop:
 ```go
 	debug := true
@@ -88,8 +82,7 @@ Having said all that, here are the steps:
 		time.Sleep(time.Second) // set breakpoint here
 	}
 ```
-Then set a breakpoint inside the loop. Once you have attached to the process you can set the `debug` value to `false`,
-thus breaking the sleep loop and allow you to continue.
+Then set a breakpoint inside the loop. Once you have attached to the process you can set the `debug` value to `false`, thus breaking the sleep loop and allow you to continue.
 2. Compile the provider with debug symbology (`go build -gcflags "all=-N -l"`)
 3. Install the provider (change as needed for your version)
 ```bash
@@ -103,32 +96,36 @@ make install
 A 1-liner for this whole process is:
 `dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $(pgrep terraform-provider-projects)`
 7. In intellij, setup a remote go debugging session (the default port is `2345`, but make sure it's set.) And click the `debug` button
-8. Your editor should immediately break at the breakpoint from step 2. At this point, in the watch window, edit the `debug`
-value and set it to false, and allow the debugger to continue. Be ready for your debugging as this will release the provider
-and continue executing normally.
+8. Your editor should immediately break at the breakpoint from step 2. At this point, in the watch window, edit the `debug` value and set it to false, and allow the debugger to continue. Be ready for your debugging as this will release the provider and continue executing normally.
 
-You will need to repeat steps 4-8 everytime you want to debug
+You will need to repeat steps 4-8 every time you want to debug
 
 ### Log-based debugging
 
-You can [turn on logging](https://www.terraform.io/docs/extend/debugging.html#turning-on-logging) for debug purpose by setting env var `TF_LOG` to `DEBUG`, i.e.
+You can [turn on logging](https://www.terraform.io/docs/extend/debugging.html#turning-on-logging) for debug purpose by setting env var `TF_LOG` to `DEBUG` or `TRACE`, i.e.
 
 ```sh
 export TF_LOG=DEBUG
 ```
 
-## Versioning
-In general, this project follows [semver](https://semver.org/) as closely as we
-can for tagging releases of the package. We've adopted the following versioning policy:
+Then use `log.Printf()` to print the data you want to the console.
 
-* We increment the **major version** with any incompatible change to
-	functionality, including changes to the exported Go API surface
-	or behavior of the API.
-* We increment the **minor version** with any backwards-compatible changes to
-	functionality.
+**Note** that you must include the log level as the prefix to the log message, e.g.
+
+```go
+log.Printf("[DEBUG] some thing happened")
+```
+
+## Versioning
+
+In general, this project follows [semver](https://semver.org/) as closely as we can for tagging releases of the package. We've adopted the following versioning policy:
+
+* We increment the **major version** with any incompatible change to functionality, including changes to the exported Go API surface or behavior of the API.
+* We increment the **minor version** with any backwards-compatible changes to functionality.
 * We increment the **patch version** with any backwards-compatible bug fixes.
 
 ## Contributors
+
 Pull requests, issues and comments are welcomed. For pull requests:
 
 * Add tests for new features and bug fixes
@@ -137,19 +134,15 @@ Pull requests, issues and comments are welcomed. For pull requests:
 
 See the existing issues for things to start contributing.
 
-For bigger changes, make sure you start a discussion first by creating
-an issue and explaining the intended change.
+For bigger changes, make sure you start a discussion first by creating an issue and explaining the intended change.
 
-JFrog requires contributors to sign a Contributor License Agreement,
-known as a CLA. This serves as a record stating that the contributor is
-entitled to contribute the code/documentation/translation to the project
-and is willing to have it used in distributions and derivative works
-(or is willing to transfer ownership).
+JFrog requires contributors to sign a Contributor License Agreement, known as a CLA. This serves as a record stating that the contributor is entitled to contribute the code/documentation/translation to the project and is willing to have it used in distributions and derivative works (or is willing to transfer ownership).
 
-[Sign the CLA](https://cla-assistant.io/jfrog/terraform-provider-projects)
+[Sign the CLA](https://cla-assistant.io/jfrog/terraform-provider-project)
 
 ## License
-Copyright (c) 2020 JFrog.
+
+Copyright (c) 2021 JFrog.
 
 Apache 2.0 licensed, see [LICENSE][LICENSE] file.
 
