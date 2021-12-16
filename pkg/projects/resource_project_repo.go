@@ -8,128 +8,113 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type Repo struct {
-	Key string
+type RepoKey string
+
+func (this RepoKey) Id() string {
+	return string(this)
 }
 
-func (this Repo) Id() string {
-	return this.Key
+func (this RepoKey) Equals(other Identifiable) bool {
+	return this == other
 }
 
-func (this Repo) Equals(other Identifiable) bool {
-	return this.Id() == other.Id()
-}
-
-func reposToEquatables(repos []Repo) []Equatable {
+func repoKeysToEquatables(repoKeys []RepoKey) []Equatable {
 	var equatables []Equatable
 
-	for _, repo := range repos {
-		equatables = append(equatables, repo)
+	for _, repoKey := range repoKeys {
+		equatables = append(equatables, repoKey)
 	}
 
 	return equatables
 }
 
-func equatablesToRepos(equatables []Equatable) []Repo {
-	var repos []Repo
+func equatablesToRepoKeys(equatables []Equatable) []RepoKey {
+	var repoKeys []RepoKey
 
 	for _, equatable := range equatables {
-		repos = append(repos, equatable.(Repo))
+		repoKeys = append(repoKeys, equatable.(RepoKey))
 	}
 
-	return repos
+	return repoKeys
 }
 
-var unpackRepos = func(data *schema.ResourceData) []Repo {
+var unpackRepos = func(data *schema.ResourceData) []RepoKey {
 	d := &ResourceData{data}
 
-	var repos []Repo
+	var repoKeys []RepoKey
 
-	if v, ok := d.GetOkExists("repo"); ok {
-		projectRepos := v.(*schema.Set).List()
-		if len(projectRepos) == 0 {
-			return repos
-		}
-
-		for _, projectRepo := range projectRepos {
-			id := projectRepo.(map[string]interface{})
-
-			repo := Repo{
-				Key: id["key"].(string),
-			}
-			repos = append(repos, repo)
+	if v, ok := d.GetOkExists("repos"); ok {
+		for _, key := range castToStringArr(v.(*schema.Set).List()) {
+			repoKeys = append(repoKeys, RepoKey(key))
 		}
 	}
 
-	return repos
+	return repoKeys
 }
 
-var packRepos = func(d *schema.ResourceData, repos []Repo) []error {
+var packRepos = func(d *schema.ResourceData, repoKeys []RepoKey) []error {
 	log.Printf("[DEBUG] packRepos")
-	log.Printf("[TRACE] repos: %+v\n", repos)
+	log.Printf("[TRACE] repos: %+v\n", repoKeys)
 
 	setValue := mkLens(d)
 
-	var projectRepos []interface{}
-
-	for _, repo := range repos {
-		projectRepo := map[string]interface{}{
-			"key": repo.Key,
-		}
-
-		projectRepos = append(projectRepos, projectRepo)
-	}
-
-	log.Printf("[TRACE] projectRepos: %+v\n", projectRepos)
-
-	errors := setValue("repo", projectRepos)
+	errors := setValue("repos", repoKeys)
 
 	return errors
 }
 
-var readRepos = func(projectKey string, m interface{}) ([]Repo, error) {
+var readRepos = func(projectKey string, m interface{}) ([]RepoKey, error) {
 	log.Println("[DEBUG] readRepos")
 
-	repos := []Repo{}
+	type ArtifactoryRepo struct {
+		Key string
+	}
+
+	artifactoryRepos := []ArtifactoryRepo{}
 
 	_, err := m.(*resty.Client).R().
 		SetPathParam("projectKey", projectKey).
-		SetResult(&repos).
+		SetResult(&artifactoryRepos).
 		Get("/artifactory/api/repositories?project={projectKey}")
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("[TRACE] repos: %+v\n", repos)
+	log.Printf("[TRACE] artifactoryRepos: %+v\n", artifactoryRepos)
 
-	return repos, nil
+	var repoKeys []RepoKey
+
+	for _, artifactoryRepo := range artifactoryRepos {
+		repoKeys = append(repoKeys, RepoKey(artifactoryRepo.Key))
+	}
+
+	return repoKeys, nil
 }
 
-var updateRepos = func(projectKey string, terraformRepos []Repo, m interface{}) ([]Repo, error) {
+var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interface{}) ([]RepoKey, error) {
 	log.Println("[DEBUG] updateRepos")
-	log.Printf("[TRACE] terraformRepos: %+v\n", terraformRepos)
+	log.Printf("[TRACE] terraformRepoKeys: %+v\n", terraformRepoKeys)
 
-	projectRepos, err := readRepos(projectKey, m)
-	log.Printf("[TRACE] projectRepos: %+v\n", projectRepos)
+	projectRepoKeys, err := readRepos(projectKey, m)
+	log.Printf("[TRACE] projectRepoKeys: %+v\n", projectRepoKeys)
 
-	reposToBeAdded := difference(reposToEquatables(terraformRepos), reposToEquatables(projectRepos))
-	log.Printf("[TRACE] reposToBeAdded: %+v\n", reposToBeAdded)
+	repoKeysToBeAdded := difference(repoKeysToEquatables(terraformRepoKeys), repoKeysToEquatables(projectRepoKeys))
+	log.Printf("[TRACE] repoKeysToBeAdded: %+v\n", repoKeysToBeAdded)
 
-	reposToBeDeleted := difference(reposToEquatables(projectRepos), reposToEquatables(terraformRepos))
-	log.Printf("[TRACE] reposToBeDeleted: %+v\n", reposToBeDeleted)
+	repoKeysToBeDeleted := difference(repoKeysToEquatables(projectRepoKeys), repoKeysToEquatables(terraformRepoKeys))
+	log.Printf("[TRACE] repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted)
 
 	var errs []error
 
-	for _, repo := range reposToBeAdded {
-		log.Printf("[TRACE] %+v\n", repo)
-		err := addRepo(projectKey, repo.(Repo), m)
+	for _, repoKey := range repoKeysToBeAdded {
+		err := addRepo(projectKey, repoKey.(RepoKey), m)
 		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	err = deleteRepos(projectKey, equatablesToRepos(reposToBeDeleted), m)
+	err = deleteRepos(projectKey, equatablesToRepoKeys(repoKeysToBeDeleted), m)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -141,13 +126,13 @@ var updateRepos = func(projectKey string, terraformRepos []Repo, m interface{}) 
 	return readRepos(projectKey, m)
 }
 
-var addRepo = func(projectKey string, repo Repo, m interface{}) error {
+var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
-			"repoKey":   repo.Key,
+			"repoKey":    string(repoKey),
 		}).
 		SetQueryParam("force", "true").
 		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
@@ -155,12 +140,12 @@ var addRepo = func(projectKey string, repo Repo, m interface{}) error {
 	return err
 }
 
-var deleteRepos = func(projectKey string, repos []Repo, m interface{}) error {
+var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepos")
 
 	var errs []error
-	for _, repo := range repos {
-		err := deleteRepo(projectKey, repo, m)
+	for _, repoKey := range repoKeys {
+		err := deleteRepo(projectKey, repoKey, m)
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -173,12 +158,12 @@ var deleteRepos = func(projectKey string, repos []Repo, m interface{}) error {
 	return nil
 }
 
-var deleteRepo = func(projectKey string, repo Repo, m interface{}) error {
+var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
-	log.Printf("[TRACE] %+v\n", repo)
+	log.Printf("[TRACE] %+v\n", repoKey)
 
 	_, err := m.(*resty.Client).R().
-		SetPathParam("repoKey", repo.Key).
+		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
 
 	if err != nil {

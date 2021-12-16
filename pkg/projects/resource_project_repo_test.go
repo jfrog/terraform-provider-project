@@ -35,9 +35,7 @@ func TestAccProjectRepo(t *testing.T) {
 				index_resources = true
 			}
 
-			repo {
-				key = "{{ .repo1 }}"
-			}
+			repos = ["{{ .repo1 }}"]
 		}
 	`, params)
 
@@ -52,13 +50,7 @@ func TestAccProjectRepo(t *testing.T) {
 				index_resources = true
 			}
 
-			repo {
-				key = "{{ .repo1 }}"
-			}
-
-			repo {
-				key = "{{ .repo2 }}"
-			}
+			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
 		}
 	`, params)
 
@@ -95,8 +87,8 @@ func TestAccProjectRepo(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "repo.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "repo.0.key", repo1),
+					resource.TestCheckResourceAttr(resourceName, "repos.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
 				),
 			},
 			{
@@ -105,9 +97,9 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "repo.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "repo.0.key", repo1),
-					resource.TestCheckResourceAttr(resourceName, "repo.1.key", repo2),
+					resource.TestCheckResourceAttr(resourceName, "repos.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
+					resource.TestCheckResourceAttr(resourceName, "repos.1", repo2),
 				),
 			},
 			{
@@ -116,7 +108,7 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "repo"),
+					resource.TestCheckNoResourceAttr(resourceName, "repos"),
 				),
 			},
 		},

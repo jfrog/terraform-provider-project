@@ -216,27 +216,15 @@ func projectResource() *schema.Resource {
 			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
 		},
 
-		"repo": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"key": {
-						Type:     schema.TypeString,
-						Required: true,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.All(
-							validation.StringIsNotEmpty,
-							maxLength(64),
-						)),
-						Description: "Repository key",
-					},
-				},
-			},
-			Description: "Existing repo to be assigned to the project.",
+		"repos": {
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description: "List of existing repo keys to be assigned to the project.",
 		},
 	}
 
-	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []Repo, error) {
+	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
 		d := &ResourceData{data}
 
 		project := Project{
@@ -272,7 +260,7 @@ func projectResource() *schema.Resource {
 		return project, users, groups, roles, repos, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []Repo) diag.Diagnostics {
+	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []RepoKey) diag.Diagnostics {
 		var errors []error
 		setValue := mkLens(d)
 
