@@ -62,13 +62,7 @@ resource "project" "myproject" {
     actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
   }
 
-  repo {
-    name = "docker-local"
-  }
-
-  repo {
-    name = "rpm-local"
-  }
+  repos = ["docker-local", "rpm-local"]
 }
 ```
 
@@ -90,7 +84,7 @@ resource "project" "myproject" {
 - **id** (String) The ID of this resource.
 - **max_storage_in_gibibytes** (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - **member** (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- **repo** (Block Set) Existing repo to be assigned to the project. (see [below for nested schema](#nestedblock--repo))
+- **repos** (Set of String) List of existing repo keys to be assigned to the project.
 - **role** (Block Set) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 
 <a id="nestedblock--admin_privileges"></a>
@@ -119,14 +113,6 @@ Required:
 
 - **name** (String) Must be existing Artifactory user
 - **roles** (Set of String) List of pre-defined Project or custom roles
-
-
-<a id="nestedblock--repo"></a>
-### Nested Schema for `repo`
-
-Required:
-
-- **name** (String) Repository key
 
 
 <a id="nestedblock--role"></a>
