@@ -15,12 +15,14 @@ func TestAccProjectRole(t *testing.T) {
 
 	role1 := "role 1"
 	role2 := "role 2"
+	role3 := "role 3"
 
 	params := map[string]interface{}{
 		"name":        name,
 		"project_key": projectKey,
 		"role1":       role1,
 		"role2":       role2,
+		"role3":       role3,
 	}
 
 	initialConfig := executeTemplate("TestAccProjectRole", `
@@ -41,10 +43,18 @@ func TestAccProjectRole(t *testing.T) {
 				environments = ["DEV"]
 				actions = ["READ_REPOSITORY"]
 			}
+
+			role {
+				name = "{{ .role2 }}"
+				description = "test description"
+				type = "CUSTOM"
+				environments = ["DEV"]
+				actions = ["READ_REPOSITORY"]
+			}
 		}
 	`, params)
 
-	addUserConfig := executeTemplate("TestAccProjectRole", `
+	addRoleConfig := executeTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -68,6 +78,14 @@ func TestAccProjectRole(t *testing.T) {
 				description = "test description 2"
 				type = "CUSTOM"
 				environments = ["DEV", "PROD"]
+				actions = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY"]
+			}
+
+			role {
+				name = "{{ .role3 }}"
+				description = "test description 3"
+				type = "CUSTOM"
+				environments = ["PROD"]
 				actions = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY"]
 			}
 		}
@@ -98,21 +116,26 @@ func TestAccProjectRole(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "role.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.name", role1),
 					resource.TestCheckResourceAttr(resourceName, "role.0.environments.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.environments.0", "DEV"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.actions.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.actions.0", "READ_REPOSITORY"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.name", role2),
+					resource.TestCheckResourceAttr(resourceName, "role.1.environments.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.environments.0", "DEV"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.actions.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.actions.0", "READ_REPOSITORY"),
 				),
 			},
 			{
-				Config: addUserConfig,
+				Config: addRoleConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "3"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.name", role2),
 					resource.TestCheckResourceAttr(resourceName, "role.0.environments.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.environments.0", "DEV"),
@@ -120,12 +143,18 @@ func TestAccProjectRole(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "role.0.actions.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.actions.0", "ANNOTATE_REPOSITORY"),
 					resource.TestCheckResourceAttr(resourceName, "role.0.actions.1", "READ_REPOSITORY"),
-					resource.TestCheckResourceAttr(resourceName, "role.1.name", role1),
-					resource.TestCheckResourceAttr(resourceName, "role.1.environments.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "role.1.environments.0", "DEV"),
-					resource.TestCheckResourceAttr(resourceName, "role.1.environments.1", "PROD"),
-					resource.TestCheckResourceAttr(resourceName, "role.1.actions.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "role.1.actions.0", "READ_REPOSITORY"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.name", role3),
+					resource.TestCheckResourceAttr(resourceName, "role.1.environments.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.environments.0", "PROD"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.actions.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.actions.0", "ANNOTATE_REPOSITORY"),
+					resource.TestCheckResourceAttr(resourceName, "role.1.actions.1", "READ_REPOSITORY"),
+					resource.TestCheckResourceAttr(resourceName, "role.2.name", role1),
+					resource.TestCheckResourceAttr(resourceName, "role.2.environments.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "role.2.environments.0", "DEV"),
+					resource.TestCheckResourceAttr(resourceName, "role.2.environments.1", "PROD"),
+					resource.TestCheckResourceAttr(resourceName, "role.2.actions.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "role.2.actions.0", "READ_REPOSITORY"),
 				),
 			},
 			{

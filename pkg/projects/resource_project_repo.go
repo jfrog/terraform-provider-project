@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/sync/errgroup"
 )
 
 type RepoKey string
@@ -97,6 +98,9 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	log.Printf("[TRACE] terraformRepoKeys: %+v\n", terraformRepoKeys)
 
 	projectRepoKeys, err := readRepos(projectKey, m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch repos for project: %s", err)
+	}
 	log.Printf("[TRACE] projectRepoKeys: %+v\n", projectRepoKeys)
 
 	repoKeysToBeAdded := difference(repoKeysToEquatables(terraformRepoKeys), repoKeysToEquatables(projectRepoKeys))
@@ -105,22 +109,19 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	repoKeysToBeDeleted := difference(repoKeysToEquatables(projectRepoKeys), repoKeysToEquatables(terraformRepoKeys))
 	log.Printf("[TRACE] repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted)
 
-	var errs []error
+	g := new(errgroup.Group)
 
 	for _, repoKey := range repoKeysToBeAdded {
-		err := addRepo(projectKey, repoKey.(RepoKey), m)
-		if err != nil {
-			errs = append(errs, err)
-		}
+		projectKey, repoKey, m := projectKey, repoKey.(RepoKey), m
+
+		g.Go(func() error {
+			return addRepo(projectKey, repoKey, m)
+		})
 	}
 
-	err = deleteRepos(projectKey, equatablesToRepoKeys(repoKeysToBeDeleted), m)
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("failed to update repos for project: %s", errs)
+	deleteRepos(projectKey, equatablesToRepoKeys(repoKeysToBeDeleted), m, g)
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to update repos for project: %s", err)
 	}
 
 	return readRepos(projectKey, m)
@@ -140,27 +141,20 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	return err
 }
 
-var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}) error {
+var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}, g *errgroup.Group) {
 	log.Println("[DEBUG] deleteRepos")
 
-	var errs []error
 	for _, repoKey := range repoKeys {
-		err := deleteRepo(projectKey, repoKey, m)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
+		projectKey, repoKey, m := projectKey, repoKey, m
 
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to delete repos from project: %v", errs)
+		g.Go(func() error {
+			return deleteRepo(projectKey, repoKey, m)
+		})
 	}
-
-	return nil
 }
 
 var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
-	log.Printf("[TRACE] %+v\n", repoKey)
 
 	_, err := m.(*resty.Client).R().
 		SetPathParam("repoKey", string(repoKey)).

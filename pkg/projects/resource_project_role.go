@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/sync/errgroup"
 )
 
 const projectRolesUrl = projectUrl + "/roles"
@@ -184,6 +185,9 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 	log.Printf("[TRACE] terraformRoles: %+v\n", terraformRoles)
 
 	projectRoles, err := readRoles(projectKey, m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch roles for project: %s", err)
+	}
 	log.Printf("[TRACE] projectRoles: %+v\n", projectRoles)
 
 	rolesToBeAdded := difference(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
@@ -195,31 +199,27 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 	rolesToBeDeleted := difference(rolesToEquatables(projectRoles), rolesToEquatables(terraformRoles))
 	log.Printf("[TRACE] rolesToBeDeleted: %+v\n", rolesToBeDeleted)
 
-	var errs []error
+	g := new(errgroup.Group)
 
 	for _, role := range rolesToBeAdded {
-		log.Printf("[TRACE] %+v\n", role)
-		err := addRole(projectKey, role.(Role), m)
-		if err != nil {
-			errs = append(errs, err)
-		}
+		projectKey, role, m := projectKey, role.(Role), m
+
+		g.Go(func() error {
+			return addRole(projectKey, role, m)
+		})
 	}
 
 	for _, role := range rolesToBeUpdated {
-		log.Printf("[TRACE] %+v\n", role)
-		err := updateRole(projectKey, role.(Role), m)
-		if err != nil {
-			errs = append(errs, err)
-		}
+		projectKey, role, m := projectKey, role.(Role), m
+		g.Go(func() error {
+			return updateRole(projectKey, role, m)
+		})
 	}
 
-	err = deleteRoles(projectKey, equatablesToRoles(rolesToBeDeleted), m)
-	if err != nil {
-		errs = append(errs, err)
-	}
+	deleteRoles(projectKey, equatablesToRoles(rolesToBeDeleted), m, g)
 
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("failed to update roles for project: %s", errs)
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to update roles for project: %s", err)
 	}
 
 	return readRoles(projectKey, m)
@@ -250,22 +250,16 @@ var updateRole = func(projectKey string, role Role, m interface{}) error {
 	return err
 }
 
-var deleteRoles = func(projectKey string, roles []Role, m interface{}) error {
+var deleteRoles = func(projectKey string, roles []Role, m interface{}, g *errgroup.Group) {
 	log.Println("[DEBUG] deleteRoles")
 
-	var errs []error
 	for _, role := range roles {
-		err := deleteRole(projectKey, role, m)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
+		projectKey, role, m := projectKey, role, m
 
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to delete roles from project: %v", errs)
+		g.Go(func() error {
+			return deleteRole(projectKey, role, m)
+		})
 	}
-
-	return nil
 }
 
 var deleteRole = func(projectKey string, role Role, m interface{}) error {

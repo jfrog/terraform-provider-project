@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"golang.org/x/sync/errgroup"
 )
 
 type AdminPrivileges struct {
@@ -425,8 +426,9 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		err = deleteRepos(data.Id(), repos, m)
-		if err != nil {
+		g := new(errgroup.Group)
+		deleteRepos(data.Id(), repos, m, g)
+		if err := g.Wait(); err != nil {
 			return diag.FromErr(err)
 		}
 

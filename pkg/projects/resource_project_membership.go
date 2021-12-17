@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/sync/errgroup"
 )
 
 const projectMembershipsUrl = projectUrl + "/{membershipType}"
@@ -144,6 +145,9 @@ var updateMembers = func(projectKey string, membershipType string, terraformMemb
 	}
 
 	projectMembers, err := readMembers(projectKey, membershipType, m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch memberships for project: %s", err)
+	}
 	log.Printf("[TRACE] projectMembers: %+v\n", projectMembers)
 
 	membersToBeAdded := difference(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
@@ -155,23 +159,20 @@ var updateMembers = func(projectKey string, membershipType string, terraformMemb
 	membersToBeDeleted := difference(membersToEquatables(projectMembers), membersToEquatables(terraformMembership.Members))
 	log.Printf("[TRACE] membersToBeDeleted: %+v\n", membersToBeDeleted)
 
-	var errs []error
+	g := new(errgroup.Group)
 
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
-		log.Printf("[TRACE] %+v\n", member)
-		err := updateMember(projectKey, membershipType, member.(Member), m)
-		if err != nil {
-			errs = append(errs, err)
-		}
+		projectKey, membershipType, member, m := projectKey, membershipType, member.(Member), m
+
+		g.Go(func() error {
+			return updateMember(projectKey, membershipType, member, m)
+		})
 	}
 
-	err = deleteMembers(projectKey, membershipType, equatablesToMembers(membersToBeDeleted), m)
-	if err != nil {
-		errs = append(errs, err)
-	}
+	deleteMembers(projectKey, membershipType, equatablesToMembers(membersToBeDeleted), m, g)
 
-	if len(errs) > 0 {
-		return nil, fmt.Errorf("failed to update members for project: %s", errs)
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to update memberships for project: %v", err)
 	}
 
 	return readMembers(projectKey, membershipType, m)
@@ -196,26 +197,16 @@ var updateMember = func(projectKey string, membershipType string, member Member,
 	return err
 }
 
-var deleteMembers = func(projectKey string, membershipType string, members []Member, m interface{}) error {
+var deleteMembers = func(projectKey string, membershipType string, members []Member, m interface{}, g *errgroup.Group) {
 	log.Println("[DEBUG] deleteMembers")
 
-	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
-		return fmt.Errorf("Invalid membershipType: %s", membershipType)
-	}
-
-	var errs []error
 	for _, member := range members {
-		err := deleteMember(projectKey, membershipType, member, m)
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
+		projectKey, membershipType, member, m := projectKey, membershipType, member, m
 
-	if len(errs) > 0 {
-		return fmt.Errorf("failed to delete members from project: %v", errs)
+		g.Go(func() error {
+			return deleteMember(projectKey, membershipType, member, m)
+		})
 	}
-
-	return nil
 }
 
 var deleteMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
