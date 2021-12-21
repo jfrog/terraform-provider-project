@@ -119,3 +119,7 @@ provider "project" {
 
 - **access_token** (String, Sensitive) This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.
 - **url** (String) URL of Artifactory. This can also be sourced from the `PROJECTS_URL` or `JFROG_URL` environment variable. Default to 'http://localhost:8081' if not set.
+
+### Optional
+
+- **check_license** (Boolean) Toggle for pre-flight checking of Artifactory Enterprise license. Default to `true`.

@@ -35,6 +35,12 @@ func Provider() *schema.Provider {
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 				Description:      "This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.",
 			},
+			"check_license": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Toggle for pre-flight checking of Artifactory Enterprise license. Default to `true`.",
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -121,8 +127,8 @@ func checkArtifactoryLicense(client *resty.Client) error {
 		licenseType = licensesWrapper.Type
 	}
 
-	if matched, _ := regexp.MatchString(`(?:Enterprise|Commercial)`, licenseType); !matched {
-		return fmt.Errorf("Artifactory requires Pro or Enterprise license to work with Terraform!")
+	if matched, _ := regexp.MatchString(`Enterprise`, licenseType); !matched {
+		return fmt.Errorf("Artifactory Projects requires Enterprise license to work with Terraform!")
 	}
 
 	return nil
@@ -145,9 +151,12 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 		return nil, err
 	}
 
-	err = checkArtifactoryLicense(restyBase)
-	if err != nil {
-		return nil, err
+	checkLicense := d.Get("check_license").(bool)
+	if checkLicense {
+		err = checkArtifactoryLicense(restyBase)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	_, err = sendUsageRepo(restyBase, terraformVersion)
