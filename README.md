@@ -1,10 +1,90 @@
-# Terraform Provider Project
+# Terraform Provider for Artifactory Project
 
 [![Actions Status](https://github.com/jfrog/terraform-provider-project/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-project/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jfrog/terraform-provider-project)](https://goreportcard.com/report/github.com/jfrog/terraform-provider-project)
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/jfrog/terraform)
 
-To use this provider in your Terraform module, follow the documentation [here](https://registry.terraform.io/providers/jfrog/project/latest/docs).
+## Quick Start
+
+Create a new Terrform file with `project` resource (also see [sample.tf](./sample.tf)):
+
+<details><summary>HCL Example</summary>
+
+```terraform
+# Required for Terraform 0.13 and up (https://www.terraform.io/upgrade-guides/0-13.html)
+terraform {
+  required_providers {
+    project = {
+      source  = "registry.terraform.io/jfrog/project"
+      version = "0.9.1"
+    }
+  }
+}
+
+resource "project" "myproject" {
+  key = "myproj"
+  display_name = "My Project"
+  description  = "My Project"
+  admin_privileges {
+    manage_members   = true
+    manage_resources = true
+    index_resources  = true
+  }
+  max_storage_in_gibibytes   = 10
+  block_deployments_on_limit = false
+  email_notification         = true
+
+  member {
+    name  = "user1"
+    roles = ["developer","project admin"]
+  }
+
+  member {
+    name  = "user2"
+    roles = ["developer"]
+  }
+
+  group {
+    name  = "dev-group"
+    roles = ["developer"]
+  }
+
+  group {
+    name  = "release-group"
+    roles = ["release manager"]
+  }
+
+  role {
+    name         = "developer"
+    description  = "Developer role"
+    type         = "CUSTOM"
+    environments = ["DEV"]
+    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
+  }
+
+  role {
+    name         = "devop"
+    description  = "DevOp role"
+    type         = "CUSTOM"
+    environments = ["DEV", "PROD"]
+    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+  }
+
+  repos = ["docker-local", "rpm-local"]
+}
+```
+</details>
+
+Initialize Terrform:
+```sh
+$ terraform init
+```
+
+Plan (or Apply):
+```sh
+$ terraform plan
+```
+
+Detailed documentation of the resource and attributes are on [Terraform Registry](https://registry.terraform.io/providers/jfrog/project/latest/docs).
 
 ## License requirements:
 

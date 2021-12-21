@@ -3,7 +3,7 @@ terraform {
   required_providers {
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "0.0.2"
+      version = "0.9.1"
     }
   }
 }
