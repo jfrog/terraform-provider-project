@@ -190,6 +190,26 @@ Simply run `make install` - this will compile the provider and install it to `~/
 Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
 - [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
+- [gnu-sed](https://formulae.brew.sh/formula/gnu-sed)
+
+### gnu-sed
+
+After installing with brew, get the GNU sed information:
+
+```sh
+$ brew info gnu-sed
+```
+
+You should see something like:
+```
+GNU "sed" has been installed as "gsed".
+If you need to use it as "sed", you can add a "gnubin" directory
+to your PATH from your bashrc like:
+
+     PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
+```
+
+Add the `gnubin` directory to your `.bashrc` or `.zshrc`.
 
 ## Testing
 
