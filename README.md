@@ -68,18 +68,17 @@ resource "artifactory_group" "release-group" {
   admin_privileges = false
 }
 
-resource "artifactory_local_repository" "docker-local" {
-  key          = "docker-local"
-  package_type = "docker"
-  xray_index   = false
-  description  = "hello docker-local"
+resource "artifactory_local_docker_v2_repository" "docker-local" {
+  key             = "docker-local"
+  description     = "hello docker-local"
+  tag_retention   = 3
+  max_unique_tags = 5
 }
 
-resource "artifactory_remote_repository" "npm-remote" {
-  key          = "npm-remote"
-  package_type = "npm"
-  url          = "https://registry.npmjs.org"
-  xray_index   = true
+resource "artifactory_remote_npm_repository" "npm-remote" {
+  key                                  = "npm-remote"
+  url                                  = "https://registry.npmjs.org"
+  mismatching_mime_types_override_list = "application/json,application/xml"
 }
 
 resource "project" "myproject" {
@@ -138,8 +137,8 @@ resource "project" "myproject" {
     artifactory_user.user2,
     artifactory_group.qa-group,
     artifactory_group.release-group,
-    artifactory_local_repository.docker-local,
-    artifactory_remote_repository.npm-remote,
+    artifactory_local_docker_v2_repository.docker-local,
+    artifactory_remote_npm_repository.npm-remote,
   ]
 }
 ```
