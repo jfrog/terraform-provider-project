@@ -1,11 +1,65 @@
 # Required for Terraform 0.13 and up (https://www.terraform.io/upgrade-guides/0-13.html)
 terraform {
   required_providers {
+    artifactory = {
+      source  = "registry.terraform.io/jfrog/artifactory"
+      version = "2.6.24"
+    }
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "0.9.1"
+      version = "0.9.2"
     }
   }
+}
+
+variable "qa_roles" {
+  type = list(string)
+  default = ["READ_REPOSITORY","READ_RELEASE_BUNDLE", "READ_BUILD", "READ_SOURCES_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "TRIGGER_PIPELINE"]
+}
+
+variable "devop_roles" {
+  type = list(string)
+  default = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+}
+
+resource "artifactory_user" "user1" {
+  name     = "user1"
+  email    = "test-user1@artifactory-terraform.com"
+  groups   = ["readers"]
+  password = "Passw0rd!"
+}
+
+resource "artifactory_user" "user2" {
+  name     = "user2"
+  email    = "test-user2@artifactory-terraform.com"
+  groups   = ["readers"]
+  password = "Passw0rd!"
+}
+
+resource "artifactory_group" "qa-group" {
+  name             = "qa"
+  description      = "QA group"
+  admin_privileges = false
+}
+
+resource "artifactory_group" "release-group" {
+  name             = "release"
+  description      = "release group"
+  admin_privileges = false
+}
+
+resource "artifactory_local_repository" "docker-local" {
+  key          = "docker-local"
+  package_type = "docker"
+  xray_index   = false
+  description  = "hello docker-local"
+}
+
+resource "artifactory_remote_repository" "npm-remote" {
+  key          = "npm-remote"
+  package_type = "npm"
+  url          = "https://registry.npmjs.org"
+  xray_index   = true
 }
 
 resource "project" "myproject" {
@@ -23,30 +77,30 @@ resource "project" "myproject" {
 
   member {
     name  = "user1"
-    roles = ["developer","project admin"]
+    roles = ["Developer", "Project Admin"]
   }
 
   member {
     name  = "user2"
-    roles = ["developer"]
+    roles = ["Developer"]
   }
 
   group {
-    name  = "dev-group"
-    roles = ["developer"]
+    name  = "qa"
+    roles = ["qa"]
   }
 
   group {
-    name  = "release-group"
-    roles = ["release manager"]
+    name  = "release"
+    roles = ["Release Manager"]
   }
 
   role {
-    name         = "developer"
-    description  = "Developer role"
+    name         = "qa"
+    description  = "QA role"
     type         = "CUSTOM"
     environments = ["DEV"]
-    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
+    actions      = var.qa_roles
   }
 
   role {
@@ -54,8 +108,17 @@ resource "project" "myproject" {
     description  = "DevOp role"
     type         = "CUSTOM"
     environments = ["DEV", "PROD"]
-    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+    actions      = var.devop_roles
   }
 
-  repos = ["docker-local", "rpm-local"]
+  repos = ["docker-local", "npm-remote"]
+
+  depends_on = [
+    artifactory_user.user1,
+    artifactory_user.user2,
+    artifactory_group.qa-group,
+    artifactory_group.release-group,
+    artifactory_local_repository.docker-local,
+    artifactory_remote_repository.npm-remote,
+  ]
 }
