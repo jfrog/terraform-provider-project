@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
+	"regexp"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -34,6 +34,12 @@ func Provider() *schema.Provider {
 				DefaultFunc:      schema.MultiEnvDefaultFunc([]string{"PROJECTS_ACCESS_TOKEN", "JFROG_ACCESS_TOKEN"}, ""),
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 				Description:      "This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.",
+			},
+			"check_license": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Toggle for pre-flight checking of Artifactory Enterprise license. Default to `true`.",
 			},
 		},
 
@@ -79,7 +85,7 @@ func buildResty(URL string) (*resty.Client, error) {
 	}).
 		SetHeader("content-type", "application/json").
 		SetHeader("accept", "*/*").
-		SetHeader("user-agent", "jfrog/terraform-provider-projects:"+Version).
+		SetHeader("user-agent", "jfrog/terraform-provider-project:"+Version).
 		SetRetryCount(5)
 
 	restyBase.DisableWarn = true
@@ -97,19 +103,32 @@ func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, er
 func checkArtifactoryLicense(client *resty.Client) error {
 
 	type License struct {
-		Type         string `json:"type"`
-		ValidThrough string `json:"validThrough"`
-		LicensedTo   string `json:"licensedTo"`
+		Type string `json:"type"`
 	}
 
-	license := License{}
-	_, err := client.R().SetResult(&license).Get("/artifactory/api/system/licenses/")
+	type LicensesWrapper struct {
+		License
+		Licenses []License `json:"licenses"` // HA licenses returns as an array instead
+	}
+
+	licensesWrapper := LicensesWrapper{}
+	_, err := client.R().
+		SetResult(&licensesWrapper).
+		Get("/artifactory/api/system/licenses")
+
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to check for license. %s", err)
 	}
 
-	if !strings.Contains(license.Type, "Enterprise") {
-		return fmt.Errorf("Artifactory requires Enterprise license to work with Terraform!")
+	var licenseType string
+	if len(licensesWrapper.Licenses) > 0 {
+		licenseType = licensesWrapper.Licenses[0].Type
+	} else {
+		licenseType = licensesWrapper.Type
+	}
+
+	if matched, _ := regexp.MatchString(`Enterprise`, licenseType); !matched {
+		return fmt.Errorf("Artifactory Projects requires Enterprise license to work with Terraform!")
 	}
 
 	return nil
@@ -132,9 +151,12 @@ func providerConfigure(d *schema.ResourceData, terraformVersion string) (interfa
 		return nil, err
 	}
 
-	err = checkArtifactoryLicense(restyBase)
-	if err != nil {
-		return nil, err
+	checkLicense := d.Get("check_license").(bool)
+	if checkLicense {
+		err = checkArtifactoryLicense(restyBase)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	_, err = sendUsageRepo(restyBase, terraformVersion)

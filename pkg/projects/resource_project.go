@@ -352,17 +352,18 @@ func projectResource() *schema.Resource {
 
 		data.SetId(project.Id())
 
+		// Role should be updated first before members or groups as they may depend on roles defined by the users
+		_, err = updateRoles(data.Id(), roles, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -394,17 +395,18 @@ func projectResource() *schema.Resource {
 
 		data.SetId(project.Id())
 
+		// Role should be updated first before members or groups as they may depend on roles defined by the users
+		_, err = updateRoles(data.Id(), roles, m)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		_, err = updateRoles(data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
