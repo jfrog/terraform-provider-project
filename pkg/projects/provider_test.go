@@ -21,7 +21,7 @@ func TestProvider_impl(t *testing.T) {
 
 func getTestResty(t *testing.T) *resty.Client {
 	if v := os.Getenv("JFROG_URL"); v == "" {
-		t.Fatal("PROJECT_URL must be set for acceptance tests")
+		t.Fatal("JFROG_URL must be set for acceptance tests")
 	}
 	restyClient, err := buildResty(os.Getenv("JFROG_URL"))
 	if err != nil {
