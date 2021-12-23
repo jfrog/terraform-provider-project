@@ -184,6 +184,7 @@ pipelines:
             - echo "Unset ARTIFACTORY_USERNAME and ARTIFACTORY_PASSWORD, acceptance test will use XRAY_ACCESS_TOKEN instead"
             - unset ARTIFACTORY_USERNAME && unset ARTIFACTORY_PASSWORD
             - export TF_ACC=1
+            - printenv
             - make acceptance
             - make install -e TARGET_ARCH=linux_amd64
           onSuccess:
