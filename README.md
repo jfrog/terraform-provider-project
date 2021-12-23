@@ -29,7 +29,7 @@ provider "artifactory" {
 }
 
 provider "project" {
-  // supply PROJECTS_URL and PROJECTS_ACCESS_TOKEN as env vars
+  // supply PROJECT_URL and PROJECT_ACCESS_TOKEN as env vars
 }
 
 variable "qa_roles" {
@@ -202,8 +202,8 @@ Alternatively, you can run the file [scripts/run-artifactory.sh](scripts/run-art
 Then, you have to set some environment variables as this is how the acceptance tests pick up their config
 
 ```bash
-PROJECTS_URL=http://localhost:8081
-PROJECTS_ACCESS_TOKEN=...
+PROJECT_URL=http://localhost:8081
+PROJECT_ACCESS_TOKEN=...
 TF_ACC=true
 ```
 

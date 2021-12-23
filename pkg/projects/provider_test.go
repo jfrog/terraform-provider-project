@@ -27,7 +27,7 @@ func getTestResty(t *testing.T) *resty.Client {
 	if err != nil {
 		t.Fatal(err)
 	}
-	accessToken := os.Getenv("PROJECT_ACCESS_TOKEN")
+	accessToken := os.Getenv("JFROG_ACCESS_TOKEN")
 	restyClient, err = addAuthToResty(restyClient, accessToken)
 	if err != nil {
 		t.Fatal(err)
