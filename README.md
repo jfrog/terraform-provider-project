@@ -191,6 +191,33 @@ Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
 - [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
 
+### Building on macOS
+
+This provider uses [GNU sed](https://www.gnu.org/software/sed/) as part of the build toolchain, in both Linux and macOS. This provides consistency across OSes.
+
+If you are building this on macOS, you have two options:
+- Install [gnu-sed using brew](https://formulae.brew.sh/formula/gnu-sed), OR
+- Use a Linux Docker image/container
+
+#### Using gnu-sed
+
+After installing with brew, get the GNU sed information:
+
+```sh
+$ brew info gnu-sed
+```
+
+You should see something like:
+```
+GNU "sed" has been installed as "gsed".
+If you need to use it as "sed", you can add a "gnubin" directory
+to your PATH from your bashrc like:
+
+     PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
+```
+
+Add the `gnubin` directory to your `.bashrc` or `.zshrc` per instruction so that `sed` command uses gnu-sed.
+
 ## Testing
 
 How to run the tests isn't obvious.

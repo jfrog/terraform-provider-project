@@ -2,7 +2,7 @@ TEST?=./...
 TARGET_ARCH?=darwin_amd64
 PKG_NAME=pkg/projects
 PKG_VERSION_PATH=github.com/jfrog/terraform-provider-project/${PKG_NAME}
-VERSION := $(shell git tag --sort=-creatordate | head -1 | sed  -n 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\1.\2.\3/p')
+VERSION := $(shell git tag --sort=-creatordate | head -1 | sed -n 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)\(?:.*\)/\1.\2.\3/p')
 NEXT_VERSION := $(shell echo ${VERSION}| awk -F '.' '{print $$1 "." $$2 "." $$3 +1 }' )
 BINARY_NAME=terraform-provider-project
 BUILD_PATH=terraform.d/plugins/registry.terraform.io/jfrog/project/${NEXT_VERSION}/${TARGET_ARCH}
@@ -14,7 +14,7 @@ install:
 		(test -f ${BINARY_NAME} || go build -o ./${BINARY_NAME} -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}'") && \
 		mv ${BINARY_NAME} ${BUILD_PATH} && \
 		rm -f .terraform.lock.hcl && \
-		sed -ie 's/version = ".*"/version = "${NEXT_VERSION}"/' sample.tf && \
+		sed -i 's/version = ".*"/version = "${NEXT_VERSION}"/' sample.tf && \
 		terraform init
 
 clean:
