@@ -194,6 +194,8 @@ Requirements:
 
 ### gnu-sed
 
+This provider uses [GNU sed](https://www.gnu.org/software/sed/) as part of the build toolchain, in both Linux and macOS. This provides consistency across OSes. If you are building this on macOS, you will need to install [gnu-sed using brew](https://formulae.brew.sh/formula/gnu-sed).
+
 After installing with brew, get the GNU sed information:
 
 ```sh
@@ -209,7 +211,7 @@ to your PATH from your bashrc like:
      PATH="$(brew --prefix)/opt/gnu-sed/libexec/gnubin:$PATH"
 ```
 
-Add the `gnubin` directory to your `.bashrc` or `.zshrc`.
+Add the `gnubin` directory to your `.bashrc` or `.zshrc` per instruction so that `sed` command uses gnu-sed.
 
 ## Testing
 
