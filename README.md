@@ -319,8 +319,6 @@ For bigger changes, make sure you start a discussion first by creating an issue 
 
 JFrog requires contributors to sign a Contributor License Agreement, known as a CLA. This serves as a record stating that the contributor is entitled to contribute the code/documentation/translation to the project and is willing to have it used in distributions and derivative works (or is willing to transfer ownership).
 
-[Sign the CLA](https://cla-assistant.io/jfrog/terraform-provider-project)
-
 ## License
 
 Copyright (c) 2021 JFrog.
