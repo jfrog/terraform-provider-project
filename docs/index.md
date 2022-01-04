@@ -164,7 +164,7 @@ The Artifactory Project provider supports one type of authentication using Beare
 
 ### Bearer Token
 
-Artifactory access tokens may be used via the Authorization header by providing the `access_token` field to the provider block. Getting this value from the environment is supported with the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable
+Artifactory access tokens may be used via the Authorization header by providing the `access_token` field to the provider block. Getting this value from the environment is supported with the `PROJECT_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable
 
 Usage:
 ```hcl
@@ -180,8 +180,8 @@ provider "project" {
 
 ### Required
 
-- **access_token** (String, Sensitive) This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECTS_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.
-- **url** (String) URL of Artifactory. This can also be sourced from the `PROJECTS_URL` or `JFROG_URL` environment variable. Default to 'http://localhost:8081' if not set.
+- **access_token** (String, Sensitive) This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECT_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.
+- **url** (String) URL of Artifactory. This can also be sourced from the `PROJECT_URL` or `JFROG_URL` environment variable. Default to 'http://localhost:8081' if not set.
 
 ### Optional
 
