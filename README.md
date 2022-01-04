@@ -190,11 +190,16 @@ Simply run `make install` - this will compile the provider and install it to `~/
 Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
 - [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
-- [gnu-sed](https://formulae.brew.sh/formula/gnu-sed)
 
-### gnu-sed
+### Building on macOS
 
-This provider uses [GNU sed](https://www.gnu.org/software/sed/) as part of the build toolchain, in both Linux and macOS. This provides consistency across OSes. If you are building this on macOS, you will need to install [gnu-sed using brew](https://formulae.brew.sh/formula/gnu-sed).
+This provider uses [GNU sed](https://www.gnu.org/software/sed/) as part of the build toolchain, in both Linux and macOS. This provides consistency across OSes.
+
+If you are building this on macOS, you have two options:
+- Install [gnu-sed using brew](https://formulae.brew.sh/formula/gnu-sed), OR
+- Use a Linux Docker image/container
+
+#### Using gnu-sed
 
 After installing with brew, get the GNU sed information:
 
