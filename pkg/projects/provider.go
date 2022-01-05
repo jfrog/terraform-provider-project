@@ -114,7 +114,7 @@ func checkArtifactoryLicense(client *resty.Client) error {
 	licensesWrapper := LicensesWrapper{}
 	_, err := client.R().
 		SetResult(&licensesWrapper).
-		Get("/artifactory/api/system/licenses")
+		Get("/artifactory/api/system/license")
 
 	if err != nil {
 		return fmt.Errorf("Failed to check for license. %s", err)
