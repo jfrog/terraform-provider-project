@@ -326,7 +326,7 @@ JFrog requires contributors to sign a Contributor License Agreement, known as a 
 
 ## License
 
-Copyright (c) 2021 JFrog.
+Copyright (c) 2022 JFrog.
 
 Apache 2.0 licensed, see [LICENSE][LICENSE] file.
 
