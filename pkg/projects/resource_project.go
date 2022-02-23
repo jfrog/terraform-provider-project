@@ -53,6 +53,7 @@ func projectResource() *schema.Resource {
 		"key": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 			ValidateDiagFunc: validation.ToDiagFunc(
 				validation.StringMatch(regexp.MustCompile("^[a-z0-9]{3,6}$"), "key must be 3 - 6 lowercase alphanumeric characters"),
 			),
