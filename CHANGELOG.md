@@ -2,4 +2,4 @@
 
 BUG FIXES:
 
-* resource/project: Add `ForceNew` field to `key` attribute to ensure resource is destroyed and recreated when key is changed. [GH-]
+* resource/project: Add `ForceNew` field to `key` attribute to ensure resource is destroyed and recreated when key is changed. [GH-24]
