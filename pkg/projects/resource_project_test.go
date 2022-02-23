@@ -82,10 +82,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 	}
 }
 
-func TestAccProjectInvalidDisplayName(t *testing.T) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(20))
-	resourceName := fmt.Sprintf("project.%s", name)
-
+func testProjectConfig(name, key string) string {
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   rand.Intn(100),
 		"block_deployments_on_limit": randBool(),
@@ -94,9 +91,9 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 		"manage_resources":           randBool(),
 		"index_resources":            randBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(6)),
+		"project_key":                key,
 	}
-	project := executeTemplate("TestAccProjects", `
+	return executeTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -111,6 +108,12 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 			email_notification = {{ .email_notification }}
 		}
 	`, params)
+}
+
+func TestAccProjectInvalidDisplayName(t *testing.T) {
+	name := fmt.Sprintf("invalidtestprojects%s", randSeq(20))
+	resourceName := fmt.Sprintf("project.%s", name)
+	project := testProjectConfig(name, strings.ToLower(randSeq(6)))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -120,6 +123,38 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 			{
 				Config:      project,
 				ExpectError: regexp.MustCompile(`.*string must be less than or equal 32 characters long.*`),
+			},
+		},
+	})
+}
+
+func TestAccProjectUpdateKey(t *testing.T) {
+	name := fmt.Sprintf("testprojects%s", randSeq(20))
+	resourceName := fmt.Sprintf("project.%s", name)
+	key1 := strings.ToLower(randSeq(6))
+	config := testProjectConfig(name, key1)
+
+	key2 := strings.ToLower(randSeq(6))
+	configWithNewKey := testProjectConfig(name, key2)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
+		ProviderFactories: testAccProviders(),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check:  resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", key1),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+				),
+			},
+			{
+				Config: configWithNewKey,
+				Check:  resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", key2),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+				),
 			},
 		},
 	})
