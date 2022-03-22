@@ -122,8 +122,8 @@ var readMembers = func(projectKey string, membershipType string, m interface{}) 
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
-		   "projectKey": projectKey,
-		   "membershipType": membershipType,
+			"projectKey":     projectKey,
+			"membershipType": membershipType,
 		}).
 		SetResult(&membership).
 		Get(projectMembershipsUrl)
@@ -187,9 +187,9 @@ var updateMember = func(projectKey string, membershipType string, member Member,
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
-		   "projectKey": projectKey,
-		   "membershipType": membershipType,
-		   "memberName": member.Name,
+			"projectKey":     projectKey,
+			"membershipType": membershipType,
+			"memberName":     member.Name,
 		}).
 		SetBody(member).
 		Put(projectMembershipUrl)
@@ -219,9 +219,9 @@ var deleteMember = func(projectKey string, membershipType string, member Member,
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
-		   "projectKey": projectKey,
-		   "membershipType": membershipType,
-		   "memberName": member.Name,
+			"projectKey":     projectKey,
+			"membershipType": membershipType,
+			"memberName":     member.Name,
 		}).
 		Delete(projectMembershipUrl)
 	if err != nil {

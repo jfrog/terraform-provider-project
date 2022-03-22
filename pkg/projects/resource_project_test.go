@@ -48,7 +48,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
-				ExpectError: regexp.MustCompile(`.*key must be 3 - 6 lowercase alphanumeric characters.*`),
+				ExpectError: regexp.MustCompile(`.*key must be 3 - 10 lowercase alphanumeric characters.*`),
 			},
 		},
 	}
@@ -67,7 +67,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 		},
 		{
 			Name:  "TooLong",
-			Value: strings.ToLower(randSeq(7)),
+			Value: strings.ToLower(randSeq(11)),
 		},
 		{
 			Name:  "HasUppercase",
@@ -144,14 +144,14 @@ func TestAccProjectUpdateKey(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: config,
-				Check:  resource.ComposeTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", key1),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 				),
 			},
 			{
 				Config: configWithNewKey,
-				Check:  resource.ComposeTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", key2),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 				),
