@@ -51,13 +51,11 @@ func projectResource() *schema.Resource {
 
 	var projectSchema = map[string]*schema.Schema{
 		"key": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-			ValidateDiagFunc: validation.ToDiagFunc(
-				validation.StringMatch(regexp.MustCompile("^[a-z0-9]{3,6}$"), "key must be 3 - 6 lowercase alphanumeric characters"),
-			),
-			Description: "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.",
+			Type:             schema.TypeString,
+			Required:         true,
+			ForceNew:         true,
+			ValidateDiagFunc: projectKeyValidator,
+			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.",
 		},
 		"display_name": {
 			Required: true,

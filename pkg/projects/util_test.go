@@ -215,8 +215,8 @@ func deleteTestGroup(t *testing.T, name string) {
 func createTestRepo(t *testing.T, name string) {
 
 	type ArtifactoryRepo struct {
-		Name    string `json:"key"`
-		RClass  string `json:"rclass"`
+		Name   string `json:"key"`
+		RClass string `json:"rclass"`
 	}
 
 	restyClient := getTestResty(t)

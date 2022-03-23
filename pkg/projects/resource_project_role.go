@@ -241,8 +241,8 @@ var updateRole = func(projectKey string, role Role, m interface{}) error {
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
-		   "projectKey": projectKey,
-		   "roleName": role.Name,
+			"projectKey": projectKey,
+			"roleName":   role.Name,
 		}).
 		SetBody(role).
 		Put(projectRoleUrl)
@@ -268,8 +268,8 @@ var deleteRole = func(projectKey string, role Role, m interface{}) error {
 
 	_, err := m.(*resty.Client).R().
 		SetPathParams(map[string]string{
-		   "projectKey": projectKey,
-		   "roleName": role.Name,
+			"projectKey": projectKey,
+			"roleName":   role.Name,
 		}).
 		SetBody(role).
 		Delete(projectRoleUrl)
