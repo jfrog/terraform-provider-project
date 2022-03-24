@@ -1,4 +1,4 @@
-module github.com/jfrog/terraform-provider-projects
+module github.com/jfrog/terraform-provider-project
 
 require (
 	github.com/go-resty/resty/v2 v2.6.1-0.20210916045937-1792d629c3c6
