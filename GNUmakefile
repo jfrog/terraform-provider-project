@@ -23,6 +23,11 @@ clean:
 release:
 	@git tag v${NEXT_VERSION} && git push --mirror
 	@echo "Pushed v${NEXT_VERSION}"
+	GOPROXY=https://proxy.golang.org GO111MODULE=on go get github.com/jfrog/${BINARY_NAME}@v${NEXT_VERSION}
+	@echo "Updated pkg cache"
+
+update_pkg_cache:
+	GOPROXY=https://proxy.golang.org GO111MODULE=on go get github.com/jfrog/${BINARY_NAME}@v${VERSION}
 
 build: fmtcheck
 	go build -ldflags="-X '${PKG_VERSION_PATH}.Version=${NEXT_VERSION}'"
