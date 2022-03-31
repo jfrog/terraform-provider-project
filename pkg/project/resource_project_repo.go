@@ -130,7 +130,9 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
-	_, err := m.(*resty.Client).R().
+	exReq := &ExRequest{r: m.(*resty.Client).R()}
+	_, err := exReq.
+		Limit("ATTACH_REPO_TO_PROJECT_API").
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"repoKey":    string(repoKey),
@@ -156,13 +158,11 @@ var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}, g *
 var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
 
-	_, err := m.(*resty.Client).R().
+	exReq := &ExRequest{r: m.(*resty.Client).R()}
+	_, err := exReq.
+		Limit("DETACH_REPO_TO_PROJECT_API").
 		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
