@@ -93,11 +93,6 @@ func buildResty(URL string) (*resty.Client, error) {
 	return restyBase, nil
 }
 
-func cloneResty(c *resty.Client) *resty.Client {
-	copy := *c
-	return &copy
-}
-
 func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, error) {
 	if accessToken != "" {
 		return client.SetAuthToken(accessToken), nil

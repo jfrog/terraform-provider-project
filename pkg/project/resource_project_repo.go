@@ -2,12 +2,10 @@ package project
 
 import (
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"golang.org/x/sync/errgroup"
+	"log"
 )
 
 type RepoKey string
@@ -131,22 +129,7 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
-	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(3).
-		SetRetryWaitTime(5*time.Second).
-		SetRetryMaxWaitTime(20*time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
-		R().
-		SetPathParams(map[string]string{
-			"projectKey": projectKey,
-			"repoKey":    string(repoKey),
-		}).
-		SetQueryParam("force", "true").
-		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
-
-	/*exReq := &ExRequest{r: m.(*resty.Client).R()}
+	exReq := &ExRequest{r: m.(*resty.Client).R()}
 	_, err := exReq.
 		Limit("ATTACH_REPO_TO_PROJECT_API").
 		SetPathParams(map[string]string{
@@ -154,7 +137,7 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 			"repoKey":    string(repoKey),
 		}).
 		SetQueryParam("force", "true").
-		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")*/
+		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
 
 	return err
 }
@@ -174,22 +157,11 @@ var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}, g *
 var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
 
-	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(3).
-		SetRetryWaitTime(5*time.Second).
-		SetRetryMaxWaitTime(20*time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
-		R().
-		SetPathParam("repoKey", string(repoKey)).
-		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
-
-	/*exReq := &ExRequest{r: m.(*resty.Client).R()}
+	exReq := &ExRequest{r: m.(*resty.Client).R()}
 	_, err := exReq.
 		Limit("DETACH_REPO_TO_PROJECT_API").
 		SetPathParam("repoKey", string(repoKey)).
-		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")*/
+		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
 
 	return err
 }

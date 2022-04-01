@@ -10,8 +10,8 @@ import (
 
 var rateLimiterMap = map[string]*rate.Limiter{
 	"GLOBAL":                     rate.NewLimiter(rate.Every(1*time.Second), 1),
-	"REPO_CREATE_API":            rate.NewLimiter(rate.Every(2*time.Second), 4),
-	"REPO_DELETE_API":            rate.NewLimiter(rate.Every(2*time.Second), 4),
+	"REPO_CREATE_API":            rate.NewLimiter(rate.Every(10*time.Second), 10),
+	"REPO_DELETE_API":            rate.NewLimiter(rate.Every(10*time.Second), 10),
 	"ATTACH_REPO_TO_PROJECT_API": rate.NewLimiter(rate.Every(1*time.Second), 1),
 	"DETACH_REPO_TO_PROJECT_API": rate.NewLimiter(rate.Every(1*time.Second), 1),
 }
