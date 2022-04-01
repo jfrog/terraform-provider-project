@@ -231,7 +231,7 @@ func createTestRepo(t *testing.T, name string) {
 	}
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(3).
+		SetRetryCount(5).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
@@ -240,11 +240,6 @@ func createTestRepo(t *testing.T, name string) {
 		R().
 		SetBody(repo).
 		Put("/artifactory/api/repositories/" + name)
-
-	/*exReq := &ExRequest{r: restyClient.R()}
-	_, err := exReq.Limit("REPO_CREATE_API").
-		SetBody(repo).
-		Put("/artifactory/api/repositories/" + name)*/
 
 	if err != nil {
 		t.Fatal(err)
@@ -255,7 +250,7 @@ func deleteTestRepo(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(3).
+		SetRetryCount(5).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
@@ -263,10 +258,6 @@ func deleteTestRepo(t *testing.T, name string) {
 		}).*/
 		R().
 		Delete("/artifactory/api/repositories/" + name)
-
-	/*exReq := &ExRequest{r: restyClient.R()}
-	_, err := exReq.Limit("REPO_DELETE_API").
-		Delete("/artifactory/api/repositories/" + name)*/
 
 	if err != nil {
 		t.Fatal(err)
