@@ -143,9 +143,9 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	preCheck := func(t *testing.T, numRepo int) func() {
 		return func() {
 			testAccPreCheck(t)
-			for i := 0; i < numRepo; i++ {
+			/*for i := 0; i < numRepo; i++ {
 				createTestRepo(t, "repo"+strconv.Itoa(i))
-			}
+			}*/
 		}
 	}
 
@@ -155,7 +155,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		"repos":       repoNamesStr(numRepos),
 	}
 
-	initialConfig := executeTemplate("TestAccProjectRepo", `
+	/*initialConfig := executeTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -166,7 +166,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 				index_resources = true
 			}
 		}
-	`, params)
+	`, params)*/
 
 	addRepoConfig := executeTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
@@ -206,7 +206,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		}),
 		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
-			{
+			/*{
 				Config: initialConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
@@ -215,7 +215,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "0"),
 					//resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
 				),
-			},
+			},*/
 			{
 				Config: addRepoConfig,
 				Check: resource.ComposeTestCheckFunc(
