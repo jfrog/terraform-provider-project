@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -118,7 +117,7 @@ func TestAccProjectRepo(t *testing.T) {
 /*
 Test to assign large number of repositories to a project
 */
-func TestAccAssignMultipleReposInProject(t *testing.T) {
+/*func TestAccAssignMultipleReposInProject(t *testing.T) {
 
 	const numRepos = 200
 	const repoNameInitial = "repo-"
@@ -238,4 +237,4 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 			},
 		},
 	})
-}
+}*/
