@@ -234,6 +234,7 @@ func createTestRepo(t *testing.T, name string) {
 		SetRetryCount(500).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(retry5xxRange).
 		R().
 		SetBody(repo).
 		Put("/artifactory/api/repositories/" + name)
@@ -251,6 +252,7 @@ func deleteTestRepo(t *testing.T, name string) {
 		SetRetryCount(500).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(retry5xxRange).
 		R().
 		Delete("/artifactory/api/repositories/" + name)
 

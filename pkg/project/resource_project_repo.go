@@ -128,6 +128,10 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	return readRepos(projectKey, m)
 }
 
+var retry5xxRange = func(response *resty.Response, err error) bool {
+	return response.StatusCode() >= 500 && response.StatusCode() <= 599
+}
+
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
@@ -135,6 +139,7 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 		SetRetryCount(500).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
+		AddRetryCondition(retry5xxRange).
 		R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
@@ -165,6 +170,7 @@ var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 		SetRetryCount(500).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
+		AddRetryCondition(retry5xxRange).
 		R().
 		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
