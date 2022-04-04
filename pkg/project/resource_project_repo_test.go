@@ -121,7 +121,7 @@ Test to assign large number of repositories to a project
 func TestAccAssignMultipleReposInProject(t *testing.T) {
 
 	const numRepos = 200
-	const repoNameInitial = "repo"
+	const repoNameInitial = "repo-"
 
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
