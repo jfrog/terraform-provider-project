@@ -231,7 +231,7 @@ func createTestRepo(t *testing.T, name string) {
 	}
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(5).
+		SetRetryCount(500).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		R().
@@ -247,7 +247,7 @@ func deleteTestRepo(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(5).
+		SetRetryCount(500).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		R().

@@ -132,7 +132,7 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
 	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(5).
+		SetRetryCount(500).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
 		R().
@@ -162,7 +162,7 @@ var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
 
 	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(5).
+		SetRetryCount(500).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
 		R().
