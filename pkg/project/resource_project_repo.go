@@ -135,9 +135,6 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 		SetRetryCount(5).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
 		R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
@@ -168,9 +165,6 @@ var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 		SetRetryCount(5).
 		SetRetryWaitTime(5*time.Second).
 		SetRetryMaxWaitTime(20*time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
 		R().
 		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")

@@ -234,9 +234,6 @@ func createTestRepo(t *testing.T, name string) {
 		SetRetryCount(5).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
 		R().
 		SetBody(repo).
 		Put("/artifactory/api/repositories/" + name)
@@ -253,9 +250,6 @@ func deleteTestRepo(t *testing.T, name string) {
 		SetRetryCount(5).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
-		/*SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-			return 0, errors.New("quota exceeded")
-		}).*/
 		R().
 		Delete("/artifactory/api/repositories/" + name)
 
