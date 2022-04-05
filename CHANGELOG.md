@@ -1,3 +1,9 @@
+## 1.0.5 (Apr 05, 2022)
+
+IMPROVEMENTS:
+
+* Documentation improved for `project` resource to include limitations in Note section. [GH-30]
+
 ## 1.0.4 (Mar 22, 2022)
 
 BUG FIXES:
