@@ -2,10 +2,16 @@ package project
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"math"
+	"net/http"
+	"os"
+	"regexp"
+	"strconv"
 	"text/template"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -175,3 +181,27 @@ var intersection = apply(func(bs []Equatable, a Equatable) bool {
 var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
+
+var getBoolEnvVar = func(key string, fallback bool) (bool, error) {
+	value, exists := os.LookupEnv(key)
+	if exists {
+		boolValue, err := strconv.ParseBool(value)
+		if err == nil {
+			return boolValue, nil
+		} else {
+			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Boolean. Setting to a fallback value %t", key, fallback)
+		}
+	}
+	return fallback, nil
+}
+
+func retryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {
+	return func(response *resty.Response, err error) bool {
+		var responseBodyRegex = regexp.MustCompile(matchString)
+		return responseBodyRegex.MatchString(string(response.Body()[:]))
+	}
+}
+
+var retryOnServiceUnavailable = func(response *resty.Response, err error) bool {
+	return response.StatusCode() == http.StatusServiceUnavailable
+}
