@@ -24,10 +24,7 @@ resource "project" "myproject" {
   }
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
-  email_not
-
-
-ification         = true
+  email_notification         = true
 
   member {
     name  = "user1"
@@ -54,8 +51,7 @@ ification         = true
     description  = "Developer role"
     type         = "CUSTOM"
     environments = ["DEV"]
-    actions      = ["READ_REPOSITORY", "ANNOT
-      ATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
+    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
   }
 
   role {
