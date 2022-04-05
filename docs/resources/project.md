@@ -130,4 +130,7 @@ Optional:
 - **description** (String)
 
 ## Note
-- Project provider has limitations assigning large number of repositories through `repos` attribute.    
+### Repository assignment & unassignment Limitations
+- Project provider has limitations while assigning or de-assigning large number of repositories through repos attribute. With large number of repos you might observe system disruptions and all the repositories might not get assigned/unassigned to/from desired project.
+- Try to limit number of repos with in 10 to get a desired result.
+- Engineering team is working on further improvement.
