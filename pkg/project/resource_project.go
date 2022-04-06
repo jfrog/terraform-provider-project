@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -222,8 +223,15 @@ func projectResource() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
-			MinItems:    0,
-			MaxItems:    125,
+			MinItems: 0,
+			MaxItems: func() int {
+				rlv := os.Getenv("REPO_LIMIT_OVERRIDE")
+				iRlv, err := strconv.Atoi(rlv)
+				if rlv != "" && err == nil {
+					return iRlv
+				}
+				return 100
+			}(),
 			Description: "List of existing repo keys to be assigned to the project.",
 		},
 	}

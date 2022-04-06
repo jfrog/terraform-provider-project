@@ -231,7 +231,7 @@ func createTestRepo(t *testing.T, name string) {
 	}
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(500).
+		SetRetryCount(20).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		AddRetryCondition(retry5xxRange).
@@ -240,8 +240,7 @@ func createTestRepo(t *testing.T, name string) {
 		Put("/artifactory/api/repositories/" + name)
 
 	if err != nil {
-		//t.Fatal(err)
-		fmt.Println(err)
+		t.Fatal(err)
 	}
 }
 
@@ -249,7 +248,7 @@ func deleteTestRepo(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
 	_, err := cloneResty(restyClient).
-		SetRetryCount(500).
+		SetRetryCount(20).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
 		AddRetryCondition(retry5xxRange).
@@ -257,7 +256,6 @@ func deleteTestRepo(t *testing.T, name string) {
 		Delete("/artifactory/api/repositories/" + name)
 
 	if err != nil {
-		//t.Fatal(err)
-		fmt.Println(err)
+		t.Fatal(err)
 	}
 }
