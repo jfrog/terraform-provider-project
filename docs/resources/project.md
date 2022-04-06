@@ -130,7 +130,5 @@ Optional:
 - **description** (String)
 
 ## Note
-### Repository assignment & unassignment Limitations
-- Project provider has limitations while assigning or de-assigning large number of repositories through repos attribute. With large number of repos you might observe system disruptions and all the repositories might not get assigned/unassigned to/from desired project.
-- Try to limit number of repos with in 10 to get a desired result.
-- Engineering team is working on further improvement.
+### Limitations of Repository assign/unassign to/from Project 
+Project provider has limitations to assign or unassign large number of repositories through repos attribute. With large number of repos you might observe system disruptions and all the repositories might not get assigned/unassigned to/from desired project. Try to limit number of repos with in 10 to get a desired result. JFrog Engineering team is working on further improvement to ensure better user experience.
