@@ -224,7 +224,7 @@ func projectResource() *schema.Resource {
 				//ValidateDiagFunc: projectKeyValidator,
 			},
 			MinItems:    0,
-			MaxItems:    90,
+			MaxItems:    100,
 			Description: "List of existing repo keys to be assigned to the project.",
 		},
 	}
