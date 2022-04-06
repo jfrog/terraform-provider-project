@@ -217,9 +217,14 @@ func projectResource() *schema.Resource {
 		},
 
 		"repos": {
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+				//ValidateDiagFunc: projectKeyValidator,
+			},
+			MinItems:    0,
+			MaxItems:    50,
 			Description: "List of existing repo keys to be assigned to the project.",
 		},
 	}
