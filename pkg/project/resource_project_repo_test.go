@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -117,9 +118,9 @@ func TestAccProjectRepo(t *testing.T) {
 /*
 Test to assign large number of repositories to a project
 */
-/*func TestAccAssignMultipleReposInProject(t *testing.T) {
+func TestAccAssignMultipleReposInProject(t *testing.T) {
 
-	const numRepos = 200
+	const numRepos = 80
 	const repoNameInitial = "repo-"
 
 	name := "tftestprojects" + randSeq(10)
@@ -143,7 +144,7 @@ Test to assign large number of repositories to a project
 		return func() {
 			testAccPreCheck(t)
 			for i := 0; i < numRepo; i++ {
-				createTestRepo(t, "repo"+strconv.Itoa(i))
+				createTestRepo(t, repoNameInitial+strconv.Itoa(i))
 			}
 		}
 	}
@@ -195,10 +196,10 @@ Test to assign large number of repositories to a project
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: preCheck(t, 200),
+		PreCheck: preCheck(t, numRepos),
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			for i := 0; i < numRepos; i++ {
-				deleteTestRepo(t, "repo"+strconv.Itoa(i))
+				deleteTestRepo(t, repoNameInitial+strconv.Itoa(i))
 			}
 			resp, err := verifyProject(id, request)
 			return resp, err
@@ -237,4 +238,4 @@ Test to assign large number of repositories to a project
 			},
 		},
 	})
-}*/
+}
