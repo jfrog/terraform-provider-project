@@ -212,6 +212,10 @@ func deleteTestGroup(t *testing.T, name string) {
 	}
 }
 
+var alwaysRetry = func(response *resty.Response, err error) bool {
+	return true
+}
+
 func createTestRepo(t *testing.T, name string) {
 
 	type ArtifactoryRepo struct {
@@ -226,17 +230,34 @@ func createTestRepo(t *testing.T, name string) {
 		RClass: "local",
 	}
 
-	_, err := restyClient.R().SetBody(repo).Put("/artifactory/api/repositories/" + name)
+	_, err := cloneResty(restyClient).
+		SetRetryCount(500).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(retry5xxRange).
+		R().
+		SetBody(repo).
+		Put("/artifactory/api/repositories/" + name)
+
 	if err != nil {
-		t.Fatal(err)
+		//t.Fatal(err)
+		fmt.Println(err)
 	}
 }
 
 func deleteTestRepo(t *testing.T, name string) {
 	restyClient := getTestResty(t)
 
-	_, err := restyClient.R().Delete("/artifactory/api/repositories/" + name)
+	_, err := cloneResty(restyClient).
+		SetRetryCount(500).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(retry5xxRange).
+		R().
+		Delete("/artifactory/api/repositories/" + name)
+
 	if err != nil {
-		t.Fatal(err)
+		//t.Fatal(err)
+		fmt.Println(err)
 	}
 }
