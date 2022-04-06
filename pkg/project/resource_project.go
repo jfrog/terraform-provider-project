@@ -223,7 +223,7 @@ func projectResource() *schema.Resource {
 				Type: schema.TypeString,
 			},
 			MinItems:    0,
-			MaxItems:    150,
+			MaxItems:    125,
 			Description: "List of existing repo keys to be assigned to the project.",
 		},
 	}
