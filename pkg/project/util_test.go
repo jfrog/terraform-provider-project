@@ -212,10 +212,6 @@ func deleteTestGroup(t *testing.T, name string) {
 	}
 }
 
-var alwaysRetry = func(response *resty.Response, err error) bool {
-	return true
-}
-
 func createTestRepo(t *testing.T, name string) {
 
 	type ArtifactoryRepo struct {
