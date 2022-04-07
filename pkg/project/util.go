@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"math"
+	"os"
 	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -175,3 +176,11 @@ var intersection = apply(func(bs []Equatable, a Equatable) bool {
 var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
+
+var getEnvVar = func(key string, fallback string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		value = fallback
+	}
+	return value
+}
