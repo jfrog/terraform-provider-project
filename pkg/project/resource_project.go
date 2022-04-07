@@ -225,10 +225,10 @@ func projectResource() *schema.Resource {
 			},
 			MinItems: 0,
 			MaxItems: func() int {
-				rlv := os.Getenv("REPO_LIMIT_OVERRIDE")
-				iRlv, err := strconv.Atoi(rlv)
-				if rlv != "" && err == nil {
-					return iRlv
+				repoLimitOverride := os.Getenv("REPO_LIMIT_OVERRIDE")
+				iRepolimitoverride, err := strconv.Atoi(repoLimitOverride)
+				if repoLimitOverride != "" && err == nil {
+					return iRepolimitoverride
 				}
 				return 100
 			}(),
