@@ -3,7 +3,6 @@ package project
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -135,11 +134,7 @@ var retry5xxRange = func(response *resty.Response, err error) bool {
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
-	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(20).
-		SetRetryWaitTime(5*time.Second).
-		SetRetryMaxWaitTime(20*time.Second).
-		AddRetryCondition(retry5xxRange).
+	_, err := m.(*resty.Client).
 		R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
@@ -166,11 +161,7 @@ var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}, g *
 var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] deleteRepo")
 
-	_, err := cloneResty(m.(*resty.Client)).
-		SetRetryCount(20).
-		SetRetryWaitTime(5*time.Second).
-		SetRetryMaxWaitTime(20*time.Second).
-		AddRetryCondition(retry5xxRange).
+	_, err := m.(*resty.Client).
 		R().
 		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")

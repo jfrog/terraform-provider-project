@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -86,16 +87,14 @@ func buildResty(URL string) (*resty.Client, error) {
 		SetHeader("content-type", "application/json").
 		SetHeader("accept", "*/*").
 		SetHeader("user-agent", "jfrog/terraform-provider-project:"+Version).
-		SetRetryCount(5)
+		SetRetryCount(20).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(retry5xxRange)
 
 	restyBase.DisableWarn = true
 
 	return restyBase, nil
-}
-
-func cloneResty(c *resty.Client) *resty.Client {
-	copy := *c
-	return &copy
 }
 
 func addAuthToResty(client *resty.Client, accessToken string) (*resty.Client, error) {
