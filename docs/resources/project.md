@@ -84,7 +84,7 @@ resource "project" "myproject" {
 - **id** (String) The ID of this resource.
 - **max_storage_in_gibibytes** (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - **member** (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- **repos** (Set of String) List of existing repo keys to be assigned to the project. You can set a maximum 100 repo keys. (see [below for limitations on maximum number of repos](#repoNumLimitations)). You can override the default value by setting an environment value `REPO_LIMIT_OVERRIDE`
+- **repos** (Set of String) List of existing repo keys to be assigned to the project. You can set a maximum 100 repo keys. (see [below for limitations on maximum number of repos](#repoNumLimitations)). You can override the default value by setting an environment value `REPO_LIMIT_OVERRIDE`. E.g. To override the default maximum allowable repos from 100 to 200 use `export REPO_LIMIT_OVERRIDE=200`.
 - **role** (Block Set) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 
 <a id="nestedblock--admin_privileges"></a>
