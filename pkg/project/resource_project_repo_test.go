@@ -1,6 +1,7 @@
 package project
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -132,11 +133,11 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		for i := 0; i < repoCount; i++ {
 			repoNames = append(repoNames, repoNameInitial+strconv.Itoa(i))
 		}
-		quote := "\""
-		if len(repoNames) > 0 {
-			return fmt.Sprintf("%[1]s%[2]s%[1]s", quote, strings.Join(repoNames[:], "\",\""))
+		j, err := json.Marshal(repoNames)
+		if err != nil {
+			return "[]"
 		} else {
-			return fmt.Sprintf("%v", strings.Join(repoNames[:], "\",\""))
+			return fmt.Sprint(string(j))
 		}
 	}
 
@@ -178,7 +179,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
-			repos = [{{ .repos }}]
+			repos = {{ .repos }}
 		}
 	`, params)
 
