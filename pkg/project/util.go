@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"strconv"
 	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -177,10 +178,13 @@ var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
 
-var getEnvVar = func(key string, fallback string) string {
+var getEnvIntVar = func(key string, fallback int) int {
 	value, exists := os.LookupEnv(key)
-	if !exists {
-		value = fallback
+	if exists {
+		intValue, err := strconv.Atoi(value)
+		if err == nil {
+			return intValue
+		}
 	}
-	return value
+	return fallback
 }
