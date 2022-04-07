@@ -134,12 +134,11 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		for i := 0; i < repoCount; i++ {
 			repoNames = append(repoNames, repoNameInitial+strconv.Itoa(i))
 		}
-		j, err := json.Marshal(repoNames)
+		jsonStr, err := json.Marshal(repoNames)
 		if err != nil {
 			return "[]"
-		} else {
-			return fmt.Sprint(string(j))
 		}
+		return fmt.Sprint(string(jsonStr))
 	}
 
 	preCheck := func(t *testing.T, numRepo int) func() {
