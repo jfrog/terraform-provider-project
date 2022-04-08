@@ -191,3 +191,12 @@ var getEnvIntVar = func(key string, fallback int) (int, error) {
 	}
 	return fallback, nil
 }
+
+func containsInt(ints []int, i int) bool {
+	for _, v := range ints {
+		if v == i {
+			return true
+		}
+	}
+	return false
+}

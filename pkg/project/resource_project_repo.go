@@ -128,7 +128,8 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 }
 
 var retry5xxRange = func(response *resty.Response, err error) bool {
-	return response.StatusCode() >= 500 && response.StatusCode() <= 599
+	retryableHttpStatusCode := []int{408, 500, 502, 503, 504}
+	return containsInt(retryableHttpStatusCode, response.StatusCode())
 }
 
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
