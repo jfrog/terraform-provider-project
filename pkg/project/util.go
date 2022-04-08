@@ -2,6 +2,7 @@ package project
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -178,13 +179,15 @@ var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
 
-var getEnvIntVar = func(key string, fallback int) int {
+var getEnvIntVar = func(key string, fallback int) (int, error) {
 	value, exists := os.LookupEnv(key)
 	if exists {
 		intValue, err := strconv.Atoi(value)
 		if err == nil {
-			return intValue
+			return intValue, nil
+		} else {
+			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Integer. Setting to a fallback value %d", key, fallback)
 		}
 	}
-	return fallback
+	return fallback, nil
 }

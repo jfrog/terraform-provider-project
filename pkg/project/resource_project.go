@@ -225,7 +225,13 @@ func projectResource() *schema.Resource {
 			MinItems: 0,
 			MaxItems: func() int {
 				defaultMaxItems := 100
-				return getEnvIntVar("REPO_LIMIT_OVERRIDE", defaultMaxItems)
+				return func() int {
+					value, err := getEnvIntVar("REPO_LIMIT_OVERRIDE", defaultMaxItems)
+					if err != nil {
+						fmt.Println(err)
+					}
+					return value
+				}()
 			}(),
 			Description: "List of existing repo keys to be assigned to the project.",
 		},

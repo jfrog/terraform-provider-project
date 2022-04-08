@@ -132,7 +132,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	repoNamesStr := func(repoCount int) string {
 		var repoNames []string
 		for i := 0; i < repoCount; i++ {
-			repoNames = append(repoNames, fmt.Sprintf("%s%d", repoNameInitial, strconv.Itoa(i)))
+			repoNames = append(repoNames, fmt.Sprintf("%s%d", repoNameInitial, i))
 		}
 		jsonStr, err := json.Marshal(repoNames)
 		if err != nil {
@@ -145,7 +145,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		return func() {
 			testAccPreCheck(t)
 			for i := 0; i < numRepo; i++ {
-				createTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, strconv.Itoa(i)))
+				createTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, i))
 			}
 		}
 	}
@@ -200,7 +200,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		PreCheck: preCheck(t, numRepos),
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			for i := 0; i < numRepos; i++ {
-				deleteTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, strconv.Itoa(i)))
+				deleteTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, i))
 			}
 			resp, err := verifyProject(id, request)
 			return resp, err
