@@ -90,7 +90,7 @@ func buildResty(URL string) (*resty.Client, error) {
 		SetRetryCount(20).
 		SetRetryWaitTime(5 * time.Second).
 		SetRetryMaxWaitTime(20 * time.Second).
-		AddRetryCondition(retry5xxRange)
+		AddRetryCondition(retryableOnUnresponsiveService)
 
 	restyBase.DisableWarn = true
 

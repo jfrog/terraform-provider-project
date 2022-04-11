@@ -3,6 +3,7 @@ package project
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -127,8 +128,15 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	return readRepos(projectKey, m)
 }
 
-var retry5xxRange = func(response *resty.Response, err error) bool {
-	retryableHttpStatusCode := []int{408, 500, 502, 503, 504}
+var retryableOnUnresponsiveService = func(response *resty.Response, err error) bool {
+
+	retryableHttpStatusCode := []int{
+		http.StatusRequestTimeout,
+		http.StatusInternalServerError,
+		http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout,
+	}
 	return containsInt(retryableHttpStatusCode, response.StatusCode())
 }
 
