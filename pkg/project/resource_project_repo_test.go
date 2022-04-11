@@ -138,7 +138,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		if err != nil {
 			return "[]"
 		}
-		return fmt.Sprint(string(jsonStr))
+		return string(jsonStr)
 	}
 
 	preCheck := func(t *testing.T, numRepo int) func() {
