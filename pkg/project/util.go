@@ -186,7 +186,7 @@ var getBoolEnvVar = func(key string, fallback bool) (bool, error) {
 		if err == nil {
 			return boolValue, nil
 		} else {
-			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Boolean. Setting to a fallback value %d", key, fallback)
+			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Boolean. Setting to a fallback value %t", key, fallback)
 		}
 	}
 	return fallback, nil
