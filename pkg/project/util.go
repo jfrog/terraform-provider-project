@@ -179,14 +179,14 @@ var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
 
-var getEnvIntVar = func(key string, fallback int) (int, error) {
+var getBoolEnvVar = func(key string, fallback bool) (bool, error) {
 	value, exists := os.LookupEnv(key)
 	if exists {
-		intValue, err := strconv.Atoi(value)
+		boolValue, err := strconv.ParseBool(value)
 		if err == nil {
-			return intValue, nil
+			return boolValue, nil
 		} else {
-			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Integer. Setting to a fallback value %d", key, fallback)
+			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Boolean. Setting to a fallback value %d", key, fallback)
 		}
 	}
 	return fallback, nil

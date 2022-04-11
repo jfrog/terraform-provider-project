@@ -49,6 +49,28 @@ var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType)
 
 func projectResource() *schema.Resource {
 
+	var reposSchema = func() *schema.Schema {
+		defaultMaxItems := 100
+		skeema := &schema.Schema{
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			MinItems:    0,
+			Description: "List of existing repo keys to be assigned to the project.",
+		}
+		isOverride, err := getBoolEnvVar("REPO_LIMIT_OVERRIDE", false)
+		if err != nil {
+			//TODO terraform-plugin-log
+			fmt.Println(err)
+		}
+		if !isOverride {
+			skeema.MaxItems = defaultMaxItems
+		}
+		return skeema
+	}
+
 	var projectSchema = map[string]*schema.Schema{
 		"key": {
 			Type:             schema.TypeString,
@@ -216,25 +238,7 @@ func projectResource() *schema.Resource {
 			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
 		},
 
-		"repos": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-			MinItems: 0,
-			MaxItems: func() int {
-				defaultMaxItems := 100
-				return func() int {
-					value, err := getEnvIntVar("REPO_LIMIT_OVERRIDE", defaultMaxItems)
-					if err != nil {
-						fmt.Println(err)
-					}
-					return value
-				}()
-			}(),
-			Description: "List of existing repo keys to be assigned to the project.",
-		},
+		"repos": reposSchema(),
 	}
 
 	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
