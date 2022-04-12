@@ -3,7 +3,6 @@ package project
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -128,23 +127,14 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	return readRepos(projectKey, m)
 }
 
-var retryableOnUnresponsiveService = func(response *resty.Response, err error) bool {
-
-	retryableHttpStatusCode := []int{
-		http.StatusRequestTimeout,
-		http.StatusInternalServerError,
-		http.StatusBadGateway,
-		http.StatusServiceUnavailable,
-		http.StatusGatewayTimeout,
-	}
-	return containsInt(retryableHttpStatusCode, response.StatusCode())
-}
-
 var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	log.Println("[DEBUG] addRepo")
 
 	_, err := m.(*resty.Client).
 		R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"repoKey":    string(repoKey),
@@ -172,6 +162,9 @@ var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 
 	_, err := m.(*resty.Client).
 		R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
 		SetPathParam("repoKey", string(repoKey)).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
 

@@ -228,6 +228,9 @@ func createTestRepo(t *testing.T, name string) {
 
 	_, err := restyClient.
 		R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
 		SetBody(repo).
 		Put("/artifactory/api/repositories/" + name)
 
@@ -238,9 +241,11 @@ func createTestRepo(t *testing.T, name string) {
 
 func deleteTestRepo(t *testing.T, name string) {
 	restyClient := getTestResty(t)
-
 	_, err := restyClient.
 		R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
 		Delete("/artifactory/api/repositories/" + name)
 
 	if err != nil {

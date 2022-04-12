@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"text/template"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -192,11 +195,13 @@ var getBoolEnvVar = func(key string, fallback bool) (bool, error) {
 	return fallback, nil
 }
 
-func containsInt(ints []int, i int) bool {
-	for _, v := range ints {
-		if v == i {
-			return true
-		}
+func retryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {
+	return func(response *resty.Response, err error) bool {
+		var responseBodyRegex = regexp.MustCompile(matchString)
+		return responseBodyRegex.MatchString(string(response.Body()[:]))
 	}
-	return false
+}
+
+var retryOnServiceUnavailable = func(response *resty.Response, err error) bool {
+	return response.StatusCode() == http.StatusServiceUnavailable
 }

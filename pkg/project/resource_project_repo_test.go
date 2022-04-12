@@ -129,11 +129,15 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
-	repoNamesStr := func(repoCount int) string {
+	randomRepoNames := func(repoCount int) []string {
 		var repoNames []string
 		for i := 0; i < repoCount; i++ {
-			repoNames = append(repoNames, fmt.Sprintf("%s%d", repoNameInitial, i))
+			repoNames = append(repoNames, fmt.Sprintf("%s%s", repoNameInitial, randSeq(10)))
 		}
+		return repoNames
+	}(numRepos)
+
+	repoNamesStr := func(repoNames []string) string {
 		jsonStr, err := json.Marshal(repoNames)
 		if err != nil {
 			return "[]"
@@ -141,11 +145,11 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		return string(jsonStr)
 	}
 
-	preCheck := func(t *testing.T, numRepo int) func() {
+	preCheck := func(t *testing.T, repoNames []string) func() {
 		return func() {
 			testAccPreCheck(t)
-			for i := 0; i < numRepo; i++ {
-				createTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, i))
+			for _, repoName := range repoNames {
+				createTestRepo(t, repoName)
 			}
 		}
 	}
@@ -153,7 +157,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	params := map[string]interface{}{
 		"name":        name,
 		"project_key": projectKey,
-		"repos":       repoNamesStr(numRepos),
+		"repos":       repoNamesStr(randomRepoNames),
 	}
 
 	initialConfig := executeTemplate("TestAccProjectRepo", `
@@ -197,10 +201,10 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: preCheck(t, numRepos),
+		PreCheck: preCheck(t, randomRepoNames),
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			for i := 0; i < numRepos; i++ {
-				deleteTestRepo(t, fmt.Sprintf("%s%d", repoNameInitial, i))
+			for _, repoName := range randomRepoNames {
+				deleteTestRepo(t, repoName)
 			}
 			resp, err := verifyProject(id, request)
 			return resp, err
