@@ -218,7 +218,6 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckNoResourceAttr(resourceName, "repos"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "0"),
-					//resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
 				),
 			},
 			{
@@ -228,8 +227,6 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", strconv.Itoa(numRepos)),
-					//resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
-					//resource.TestCheckResourceAttr(resourceName, "repos.1", repo2),
 				),
 			},
 			{

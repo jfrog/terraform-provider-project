@@ -2,7 +2,6 @@ package project
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -182,17 +181,15 @@ var difference = apply(func(bs []Equatable, a Equatable) bool {
 	return !contains(bs, a)
 })
 
-var getBoolEnvVar = func(key string, fallback bool) (bool, error) {
+var getBoolEnvVar = func(key string, fallback bool) bool {
 	value, exists := os.LookupEnv(key)
 	if exists {
 		boolValue, err := strconv.ParseBool(value)
 		if err == nil {
-			return boolValue, nil
-		} else {
-			return fallback, fmt.Errorf("WARN: environment value of %s should be of type Boolean. Setting to a fallback value %t", key, fallback)
+			return boolValue
 		}
 	}
-	return fallback, nil
+	return fallback
 }
 
 func retryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {

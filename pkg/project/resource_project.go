@@ -224,7 +224,7 @@ func projectResource() *schema.Resource {
 			},
 			MinItems: 0,
 			MaxItems: func() int {
-				if isOverride, _ := getBoolEnvVar("REPO_LIMIT_OVERRIDE", false); isOverride {
+				if isOverride := getBoolEnvVar("REPO_LIMIT_OVERRIDE", false); isOverride {
 					return 1<<(32-1) - 1
 				}
 				return 100
