@@ -217,10 +217,19 @@ func projectResource() *schema.Resource {
 		},
 
 		"repos": {
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Description: "List of existing repo keys to be assigned to the project.",
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			MinItems: 0,
+			MaxItems: func() int {
+				if isOverride := getBoolEnvVar("REPO_LIMIT_OVERRIDE", false); isOverride {
+					return 2147483647
+				}
+				return 100
+			}(),
+			Description: "(Optional) List of existing repo keys to be assigned to the project.",
 		},
 	}
 

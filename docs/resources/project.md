@@ -84,7 +84,7 @@ resource "project" "myproject" {
 - **id** (String) The ID of this resource.
 - **max_storage_in_gibibytes** (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - **member** (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- **repos** (Set of String) List of existing repo keys to be assigned to the project.
+- **repos** (Set of String) List of existing repo keys to be assigned to the project. By default, `repos` is capped at 100 keys. (see [below for limitations on the maximum number of repos](#repoNumLimitations)). You can remove the system's cap by setting an environment value `REPO_LIMIT_OVERRIDE` to `true`. This setting will remove the restriction of maximum allowable elements in the `repos` attribute. The default value of `REPO_LIMIT_OVERRIDE` is `false`, e.g. To override use export REPO_LIMIT_OVERRIDE=true` in the shell.
 - **role** (Block Set) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 
 <a id="nestedblock--admin_privileges"></a>
@@ -128,3 +128,8 @@ Required:
 Optional:
 
 - **description** (String)
+
+## Note
+<a name="repoNumLimitations"></a>
+### Limitations of Repository assign/unassign to/from Project
+Artifactory's [Move Repository in a Project](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-MoveRepositoryinaProject) & [Unassign a Project from a Repository](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UnassignaProjectfromaRepository) APIs have limitations to assign or unassign a large number of repositories to or from project. With more than a certain number of repos you might observe system disruptions and all the repositories might not be assigned/unassigned to/from the desired project. As per our analysis, it is **recommended to limit the number of repo keys to 100** to avoid internal platform limitations. The JFrog Engineering team is working on further improvement to ensure a better user experience.
