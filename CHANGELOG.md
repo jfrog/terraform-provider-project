@@ -2,7 +2,7 @@
 
 IMPROVEMENTS:
 
-* Documentation improved for `project` resource to include limitations in Note section. [GH-30]
+* Documentation improved for `project` resource to include limitations in Note section. [GH-32]
 
 ## 1.0.4 (Mar 22, 2022)
 
