@@ -229,7 +229,7 @@ func projectResource() *schema.Resource {
 				}
 				return 100
 			}(),
-			Description: "List of existing repo keys to be assigned to the project.",
+			Description: "(Optional) List of existing repo keys to be assigned to the project.",
 		},
 	}
 
