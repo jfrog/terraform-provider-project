@@ -158,7 +158,7 @@ func createTestUser(t *testing.T, name string, email string) {
 
 	type ArtifactoryUser struct {
 		Email    string `json:"email"`
-		Password string `json:"Password1!"`
+		Password string `json:"password"`
 		Admin    bool   `json:"admin"`
 	}
 
