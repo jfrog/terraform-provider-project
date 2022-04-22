@@ -141,10 +141,10 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-var randomInt = func() func() int {
+func randomInt() int {
 	rand.Seed(time.Now().UnixNano())
-	return rand.Int
-}()
+	return rand.Int()
+}
 
 func randBool() bool {
 	return randomInt()%2 == 0

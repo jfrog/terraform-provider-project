@@ -66,28 +66,8 @@ func (r Role) Id() string {
 	return r.Name
 }
 
-func (a Role) Equals(b Identifiable) bool {
+func (a Role) Equals(b Equatable) bool {
 	return a.Id() == b.Id()
-}
-
-func rolesToEquatables(roles []Role) []Equatable {
-	var equatables []Equatable
-
-	for _, role := range roles {
-		equatables = append(equatables, role)
-	}
-
-	return equatables
-}
-
-func equatablesToRoles(equatables []Equatable) []Role {
-	var roles []Role
-
-	for _, equatable := range equatables {
-		roles = append(roles, equatable.(Role))
-	}
-
-	return roles
 }
 
 var unpackRoles = func(data *schema.ResourceData) []Role {
@@ -190,19 +170,22 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 	}
 	log.Printf("[TRACE] projectRoles: %+v\n", projectRoles)
 
-	rolesToBeAdded := difference(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
+	terraformRolesSet := SetFromSlice(terraformRoles)
+	projectRolesSet := SetFromSlice(projectRoles)
+
+	rolesToBeAdded := terraformRolesSet.Difference(projectRolesSet)
 	log.Printf("[TRACE] rolesToBeAdded: %+v\n", rolesToBeAdded)
 
-	rolesToBeUpdated := intersection(rolesToEquatables(terraformRoles), rolesToEquatables(projectRoles))
+	rolesToBeUpdated := terraformRolesSet.Intersection(projectRolesSet)
 	log.Printf("[TRACE] rolesToBeUpdated: %+v\n", rolesToBeUpdated)
 
-	rolesToBeDeleted := difference(rolesToEquatables(projectRoles), rolesToEquatables(terraformRoles))
+	rolesToBeDeleted := projectRolesSet.Difference(terraformRolesSet)
 	log.Printf("[TRACE] rolesToBeDeleted: %+v\n", rolesToBeDeleted)
 
 	g := new(errgroup.Group)
 
 	for _, role := range rolesToBeAdded {
-		projectKey, role, m := projectKey, role.(Role), m
+		projectKey, role, m := projectKey, role, m
 
 		g.Go(func() error {
 			return addRole(projectKey, role, m)
@@ -210,13 +193,13 @@ var updateRoles = func(projectKey string, terraformRoles []Role, m interface{}) 
 	}
 
 	for _, role := range rolesToBeUpdated {
-		projectKey, role, m := projectKey, role.(Role), m
+		projectKey, role, m := projectKey, role, m
 		g.Go(func() error {
 			return updateRole(projectKey, role, m)
 		})
 	}
 
-	deleteRoles(projectKey, equatablesToRoles(rolesToBeDeleted), m, g)
+	deleteRoles(projectKey, rolesToBeDeleted, m, g)
 
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to update roles for project: %s", err)

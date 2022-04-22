@@ -15,28 +15,8 @@ func (this RepoKey) Id() string {
 	return string(this)
 }
 
-func (this RepoKey) Equals(other Identifiable) bool {
+func (this RepoKey) Equals(other Equatable) bool {
 	return this == other
-}
-
-func repoKeysToEquatables(repoKeys []RepoKey) []Equatable {
-	var equatables []Equatable
-
-	for _, repoKey := range repoKeys {
-		equatables = append(equatables, repoKey)
-	}
-
-	return equatables
-}
-
-func equatablesToRepoKeys(equatables []Equatable) []RepoKey {
-	var repoKeys []RepoKey
-
-	for _, equatable := range equatables {
-		repoKeys = append(repoKeys, equatable.(RepoKey))
-	}
-
-	return repoKeys
 }
 
 var unpackRepos = func(data *schema.ResourceData) []RepoKey {
@@ -103,23 +83,26 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 	}
 	log.Printf("[TRACE] projectRepoKeys: %+v\n", projectRepoKeys)
 
-	repoKeysToBeAdded := difference(repoKeysToEquatables(terraformRepoKeys), repoKeysToEquatables(projectRepoKeys))
+	terraformRepoKeysSet := SetFromSlice(terraformRepoKeys)
+	projectRepoKeysSet := SetFromSlice(projectRepoKeys)
+
+	repoKeysToBeAdded := terraformRepoKeysSet.Difference(projectRepoKeysSet)
 	log.Printf("[TRACE] repoKeysToBeAdded: %+v\n", repoKeysToBeAdded)
 
-	repoKeysToBeDeleted := difference(repoKeysToEquatables(projectRepoKeys), repoKeysToEquatables(terraformRepoKeys))
+	repoKeysToBeDeleted := projectRepoKeysSet.Difference(terraformRepoKeysSet)
 	log.Printf("[TRACE] repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted)
 
 	g := new(errgroup.Group)
 
 	for _, repoKey := range repoKeysToBeAdded {
-		projectKey, repoKey, m := projectKey, repoKey.(RepoKey), m
+		projectKey, repoKey, m := projectKey, repoKey, m
 
 		g.Go(func() error {
 			return addRepo(projectKey, repoKey, m)
 		})
 	}
 
-	deleteRepos(projectKey, equatablesToRepoKeys(repoKeysToBeDeleted), m, g)
+	deleteRepos(projectKey, repoKeysToBeDeleted, m, g)
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to update repos for project: %s", err)
 	}
