@@ -20,18 +20,29 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func getTestResty(t *testing.T) *resty.Client {
-	if v := os.Getenv("PROJECT_URL"); v == "" {
-		t.Fatal("PROJECT_URL must be set for acceptance tests")
+	var ok bool
+	var projectUrl string
+	if projectUrl, ok = os.LookupEnv("PROJECT_URL"); !ok {
+		if projectUrl, ok = os.LookupEnv("JFROG_URL"); !ok {
+			t.Fatal("PROJECT_URL or JFROG_URL must be set for acceptance tests")
+		}
 	}
-	restyClient, err := buildResty(os.Getenv("PROJECT_URL"))
+	restyClient, err := buildResty(projectUrl)
 	if err != nil {
 		t.Fatal(err)
 	}
-	accessToken := os.Getenv("PROJECT_ACCESS_TOKEN")
+
+	var accessToken string
+	if accessToken, ok = os.LookupEnv("PROJECT_ACCESS_TOKEN"); !ok {
+		if accessToken, ok = os.LookupEnv("JFROG_ACCESS_TOKEN"); !ok {
+			t.Fatal("PROJECT_ACCESS_TOKEN or JFROG_ACCESS_TOKEN must be set for acceptance tests")
+		}
+	}
 	restyClient, err = addAuthToResty(restyClient, accessToken)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	return restyClient
 }
 

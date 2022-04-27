@@ -170,8 +170,8 @@ func TestAccProject(t *testing.T) {
 	email2 := username2 + "@tempurl.org"
 	group1 := "group1"
 	group2 := "group2"
-	repo1 := "repo1"
-	repo2 := "repo2"
+	repo1 := fmt.Sprintf("repo%d", randomInt())
+	repo2 := fmt.Sprintf("repo%d", randomInt())
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   rand.Intn(100),
@@ -295,8 +295,8 @@ func TestAccProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "group.1.roles.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "group.1.roles.0", "release manager"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
-					resource.TestCheckResourceAttr(resourceName, "repos.1", repo2),
+					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo1),
+					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo2),
 				),
 			},
 		},

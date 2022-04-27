@@ -25,28 +25,8 @@ func (m Member) Id() string {
 	return m.Name
 }
 
-func (a Member) Equals(b Identifiable) bool {
+func (a Member) Equals(b Equatable) bool {
 	return a.Id() == b.Id()
-}
-
-func membersToEquatables(members []Member) []Equatable {
-	var equatables []Equatable
-
-	for _, member := range members {
-		equatables = append(equatables, member)
-	}
-
-	return equatables
-}
-
-func equatablesToMembers(equatables []Equatable) []Member {
-	var members []Member
-
-	for _, equatable := range equatables {
-		members = append(members, equatable.(Member))
-	}
-
-	return members
 }
 
 // Use by both project user and project group, as they shared identical data structure
@@ -131,14 +111,14 @@ var readMembers = func(projectKey string, membershipType string, m interface{}) 
 		return nil, err
 	}
 
-	log.Printf("[TRACE] %+v\n", membership)
+	log.Printf("[TRACE] readMembers: %+v\n", membership)
 
 	return membership.Members, nil
 }
 
 var updateMembers = func(projectKey string, membershipType string, terraformMembership Membership, m interface{}) ([]Member, error) {
 	log.Println("[DEBUG] updateMembers")
-	log.Printf("[TRACE] terraformMembership: %+v\n", terraformMembership)
+	log.Printf("[TRACE] terraformMembership.Members: %+v\n", terraformMembership.Members)
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
@@ -150,26 +130,26 @@ var updateMembers = func(projectKey string, membershipType string, terraformMemb
 	}
 	log.Printf("[TRACE] projectMembers: %+v\n", projectMembers)
 
-	membersToBeAdded := difference(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
+	terraformMembersSet := SetFromSlice(terraformMembership.Members)
+	projectMembersSet := SetFromSlice(projectMembers)
+	membersToBeAdded := terraformMembersSet.Difference(projectMembersSet)
 	log.Printf("[TRACE] membersToBeAdded: %+v\n", membersToBeAdded)
-
-	membersToBeUpdated := intersection(membersToEquatables(terraformMembership.Members), membersToEquatables(projectMembers))
+	membersToBeUpdated := terraformMembersSet.Intersection(projectMembersSet)
 	log.Printf("[TRACE] membersToBeUpdated: %+v\n", membersToBeUpdated)
-
-	membersToBeDeleted := difference(membersToEquatables(projectMembers), membersToEquatables(terraformMembership.Members))
+	membersToBeDeleted := projectMembersSet.Difference(terraformMembersSet)
 	log.Printf("[TRACE] membersToBeDeleted: %+v\n", membersToBeDeleted)
 
 	g := new(errgroup.Group)
 
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
-		projectKey, membershipType, member, m := projectKey, membershipType, member.(Member), m
+		projectKey, membershipType, member, m := projectKey, membershipType, member, m
 
 		g.Go(func() error {
 			return updateMember(projectKey, membershipType, member, m)
 		})
 	}
 
-	deleteMembers(projectKey, membershipType, equatablesToMembers(membersToBeDeleted), m, g)
+	deleteMembers(projectKey, membershipType, membersToBeDeleted, m, g)
 
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to update memberships for project: %v", err)
@@ -180,6 +160,7 @@ var updateMembers = func(projectKey string, membershipType string, terraformMemb
 
 var updateMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
 	log.Println("[DEBUG] updateMember")
+	log.Printf("[TRACE] member: %v", member)
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return fmt.Errorf("Invalid membershipType: %s", membershipType)

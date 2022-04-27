@@ -16,8 +16,8 @@ func TestAccProjectRepo(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
-	repo1 := "repo1"
-	repo2 := "repo2"
+	repo1 := fmt.Sprintf("repo%d", randomInt())
+	repo2 := fmt.Sprintf("repo%d", randomInt())
 
 	params := map[string]interface{}{
 		"name":        name,
@@ -100,8 +100,8 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "repos.0", repo1),
-					resource.TestCheckResourceAttr(resourceName, "repos.1", repo2),
+					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo1),
+					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo2),
 				),
 			},
 			{
