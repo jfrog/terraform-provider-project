@@ -1,11 +1,13 @@
 package project
 
 import (
+	"context"
 	"fmt"
-	"log"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jfrog/terraform-provider-shared/util"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -34,7 +36,7 @@ type Membership struct {
 	Members []Member
 }
 
-func getMembers(d *ResourceData, membershipKey string) []Member {
+func getMembers(d *util.ResourceData, membershipKey string) []Member {
 	var members []Member
 
 	if v, ok := d.GetOkExists(membershipKey); ok {
@@ -48,7 +50,7 @@ func getMembers(d *ResourceData, membershipKey string) []Member {
 
 			member := Member{
 				Name:  id["name"].(string),
-				Roles: castToStringArr(id["roles"].(*schema.Set).List()),
+				Roles: util.CastToStringArr(id["roles"].(*schema.Set).List()),
 			}
 			members = append(members, member)
 		}
@@ -58,7 +60,7 @@ func getMembers(d *ResourceData, membershipKey string) []Member {
 }
 
 var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
-	d := &ResourceData{data}
+	d := &util.ResourceData{data}
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
 	}
@@ -66,15 +68,15 @@ var unpackMembers = func(data *schema.ResourceData, membershipKey string) Member
 	return membership
 }
 
-var packMembers = func(d *schema.ResourceData, membershipKey string, members []Member) []error {
-	log.Printf("[DEBUG] packMembership")
+var packMembers = func(ctx context.Context, d *schema.ResourceData, membershipKey string, members []Member) []error {
+	tflog.Debug(ctx, "packMembership")
 
-	setValue := mkLens(d)
+	setValue := util.MkLens(d)
 
 	var projectMembers []interface{}
 
 	for _, member := range members {
-		log.Printf("[TRACE] %+v\n", member)
+		tflog.Trace(ctx, fmt.Sprintf("%+v\n", member))
 		projectMember := map[string]interface{}{
 			"name":  member.Name,
 			"roles": member.Roles,
@@ -83,16 +85,16 @@ var packMembers = func(d *schema.ResourceData, membershipKey string, members []M
 		projectMembers = append(projectMembers, projectMember)
 	}
 
-	log.Printf("[TRACE] %s\n", membershipKey)
-	log.Printf("[TRACE] %+v\n", projectMembers)
+	tflog.Trace(ctx, fmt.Sprintf("%s\n", membershipKey))
+	tflog.Trace(ctx, fmt.Sprintf("%+v\n", projectMembers))
 
 	errors := setValue(membershipKey, projectMembers)
 
 	return errors
 }
 
-var readMembers = func(projectKey string, membershipType string, m interface{}) ([]Member, error) {
-	log.Println("[DEBUG] readMembers")
+var readMembers = func(ctx context.Context, projectKey string, membershipType string, m interface{}) ([]Member, error) {
+	tflog.Debug(ctx, "readMembers")
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
@@ -111,33 +113,33 @@ var readMembers = func(projectKey string, membershipType string, m interface{}) 
 		return nil, err
 	}
 
-	log.Printf("[TRACE] readMembers: %+v\n", membership)
+	tflog.Trace(ctx, fmt.Sprintf("readMembers: %+v\n", membership))
 
 	return membership.Members, nil
 }
 
-var updateMembers = func(projectKey string, membershipType string, terraformMembership Membership, m interface{}) ([]Member, error) {
-	log.Println("[DEBUG] updateMembers")
-	log.Printf("[TRACE] terraformMembership.Members: %+v\n", terraformMembership.Members)
+var updateMembers = func(ctx context.Context, projectKey string, membershipType string, terraformMembership Membership, m interface{}) ([]Member, error) {
+	tflog.Debug(ctx, "updateMembers")
+	tflog.Trace(ctx, fmt.Sprintf("terraformMembership.Members: %+v\n", terraformMembership.Members))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
 	}
 
-	projectMembers, err := readMembers(projectKey, membershipType, m)
+	projectMembers, err := readMembers(ctx, projectKey, membershipType, m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch memberships for project: %s", err)
 	}
-	log.Printf("[TRACE] projectMembers: %+v\n", projectMembers)
+	tflog.Trace(ctx, fmt.Sprintf("projectMembers: %+v\n", projectMembers))
 
 	terraformMembersSet := SetFromSlice(terraformMembership.Members)
 	projectMembersSet := SetFromSlice(projectMembers)
 	membersToBeAdded := terraformMembersSet.Difference(projectMembersSet)
-	log.Printf("[TRACE] membersToBeAdded: %+v\n", membersToBeAdded)
+	tflog.Trace(ctx, fmt.Sprintf("membersToBeAdded: %+v\n", membersToBeAdded))
 	membersToBeUpdated := terraformMembersSet.Intersection(projectMembersSet)
-	log.Printf("[TRACE] membersToBeUpdated: %+v\n", membersToBeUpdated)
+	tflog.Trace(ctx, fmt.Sprintf("membersToBeUpdated: %+v\n", membersToBeUpdated))
 	membersToBeDeleted := projectMembersSet.Difference(terraformMembersSet)
-	log.Printf("[TRACE] membersToBeDeleted: %+v\n", membersToBeDeleted)
+	tflog.Trace(ctx, fmt.Sprintf("membersToBeDeleted: %+v\n", membersToBeDeleted))
 
 	g := new(errgroup.Group)
 
@@ -145,22 +147,22 @@ var updateMembers = func(projectKey string, membershipType string, terraformMemb
 		projectKey, membershipType, member, m := projectKey, membershipType, member, m
 
 		g.Go(func() error {
-			return updateMember(projectKey, membershipType, member, m)
+			return updateMember(ctx, projectKey, membershipType, member, m)
 		})
 	}
 
-	deleteMembers(projectKey, membershipType, membersToBeDeleted, m, g)
+	deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m, g)
 
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to update memberships for project: %v", err)
 	}
 
-	return readMembers(projectKey, membershipType, m)
+	return readMembers(ctx, projectKey, membershipType, m)
 }
 
-var updateMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
-	log.Println("[DEBUG] updateMember")
-	log.Printf("[TRACE] member: %v", member)
+var updateMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {
+	tflog.Debug(ctx, "updateMember")
+	tflog.Trace(ctx, fmt.Sprintf("member: %v", member))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return fmt.Errorf("Invalid membershipType: %s", membershipType)
@@ -178,21 +180,21 @@ var updateMember = func(projectKey string, membershipType string, member Member,
 	return err
 }
 
-var deleteMembers = func(projectKey string, membershipType string, members []Member, m interface{}, g *errgroup.Group) {
-	log.Println("[DEBUG] deleteMembers")
+var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}, g *errgroup.Group) {
+	tflog.Debug(ctx, "deleteMembers")
 
 	for _, member := range members {
 		projectKey, membershipType, member, m := projectKey, membershipType, member, m
 
 		g.Go(func() error {
-			return deleteMember(projectKey, membershipType, member, m)
+			return deleteMember(ctx, projectKey, membershipType, member, m)
 		})
 	}
 }
 
-var deleteMember = func(projectKey string, membershipType string, member Member, m interface{}) error {
-	log.Println("[DEBUG] deleteMember")
-	log.Printf("[TRACE] %+v\n", member)
+var deleteMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {
+	tflog.Debug(ctx, "deleteMember")
+	tflog.Trace(ctx, fmt.Sprintf("%+v\n", member))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
 		return fmt.Errorf("Invalid membershipType: %s", membershipType)

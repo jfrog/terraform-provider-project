@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/test"
 )
 
 func TestAccProjectMember(t *testing.T) {
@@ -30,7 +31,7 @@ func TestAccProjectMember(t *testing.T) {
 		"contributorRole": contributorRole,
 	}
 
-	initialConfig := executeTemplate("TestAccProjectMember", `
+	initialConfig := test.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -48,7 +49,7 @@ func TestAccProjectMember(t *testing.T) {
 		}
 	`, params)
 
-	addUserConfig := executeTemplate("TestAccProjectMember", `
+	addUserConfig := test.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -71,7 +72,7 @@ func TestAccProjectMember(t *testing.T) {
 		}
 	`, params)
 
-	noUserConfig := executeTemplate("TestAccProjectMember", `
+	noUserConfig := test.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -133,7 +134,7 @@ func TestAccProjectMember(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "member"),
+					resource.TestCheckResourceAttr(resourceName, "member.#", "0"),
 				),
 			},
 		},
@@ -159,7 +160,7 @@ func TestAccProjectGroup(t *testing.T) {
 		"contributorRole": contributorRole,
 	}
 
-	initialConfig := executeTemplate("TestAccProjectGroup", `
+	initialConfig := test.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -177,7 +178,7 @@ func TestAccProjectGroup(t *testing.T) {
 		}
 	`, params)
 
-	addGroupConfig := executeTemplate("TestAccProjectGroup", `
+	addGroupConfig := test.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -200,7 +201,7 @@ func TestAccProjectGroup(t *testing.T) {
 		}
 	`, params)
 
-	noGroupConfig := executeTemplate("TestAccProjectGroup", `
+	noGroupConfig := test.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -262,7 +263,7 @@ func TestAccProjectGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "group"),
+					resource.TestCheckResourceAttr(resourceName, "group.#", "0"),
 				),
 			},
 		},

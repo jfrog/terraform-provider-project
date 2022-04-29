@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/test"
 )
 
 func TestAccProjectRepo(t *testing.T) {
@@ -16,8 +17,8 @@ func TestAccProjectRepo(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
-	repo1 := fmt.Sprintf("repo%d", randomInt())
-	repo2 := fmt.Sprintf("repo%d", randomInt())
+	repo1 := fmt.Sprintf("repo%d", test.RandomInt())
+	repo2 := fmt.Sprintf("repo%d", test.RandomInt())
 
 	params := map[string]interface{}{
 		"name":        name,
@@ -26,7 +27,7 @@ func TestAccProjectRepo(t *testing.T) {
 		"repo2":       repo2,
 	}
 
-	initialConfig := executeTemplate("TestAccProjectRepo", `
+	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -41,7 +42,7 @@ func TestAccProjectRepo(t *testing.T) {
 		}
 	`, params)
 
-	addRepoConfig := executeTemplate("TestAccProjectRepo", `
+	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -56,7 +57,7 @@ func TestAccProjectRepo(t *testing.T) {
 		}
 	`, params)
 
-	noReposConfig := executeTemplate("TestAccProjectRepo", `
+	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -110,7 +111,7 @@ func TestAccProjectRepo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "repos"),
+					resource.TestCheckResourceAttr(resourceName, "repos.#", "0"),
 				),
 			},
 		},
@@ -160,7 +161,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		"repos":       repoNamesStr(randomRepoNames),
 	}
 
-	initialConfig := executeTemplate("TestAccProjectRepo", `
+	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -173,7 +174,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		}
 	`, params)
 
-	addRepoConfig := executeTemplate("TestAccProjectRepo", `
+	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -187,7 +188,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 		}
 	`, params)
 
-	noReposConfig := executeTemplate("TestAccProjectRepo", `
+	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -235,7 +236,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "repos"),
+					resource.TestCheckResourceAttr(resourceName, "repos.#", "0"),
 				),
 			},
 		},

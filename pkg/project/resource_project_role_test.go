@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/test"
 )
 
 func TestAccProjectRole(t *testing.T) {
@@ -25,7 +26,7 @@ func TestAccProjectRole(t *testing.T) {
 		"role3":       role3,
 	}
 
-	initialConfig := executeTemplate("TestAccProjectRole", `
+	initialConfig := test.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -54,7 +55,7 @@ func TestAccProjectRole(t *testing.T) {
 		}
 	`, params)
 
-	addRoleConfig := executeTemplate("TestAccProjectRole", `
+	addRoleConfig := test.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -91,7 +92,7 @@ func TestAccProjectRole(t *testing.T) {
 		}
 	`, params)
 
-	noUserConfig := executeTemplate("TestAccProjectRole", `
+	noUserConfig := test.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -163,7 +164,7 @@ func TestAccProjectRole(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
-					resource.TestCheckNoResourceAttr(resourceName, "role"),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "0"),
 				),
 			},
 		},
