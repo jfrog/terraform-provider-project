@@ -1,11 +1,13 @@
 package project
 
 import (
+	"context"
 	"fmt"
-	"log"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/jfrog/terraform-provider-shared/util"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -20,12 +22,12 @@ func (this RepoKey) Equals(other Equatable) bool {
 }
 
 var unpackRepos = func(data *schema.ResourceData) []RepoKey {
-	d := &ResourceData{data}
+	d := &util.ResourceData{data}
 
 	var repoKeys []RepoKey
 
 	if v, ok := d.GetOkExists("repos"); ok {
-		for _, key := range castToStringArr(v.(*schema.Set).List()) {
+		for _, key := range util.CastToStringArr(v.(*schema.Set).List()) {
 			repoKeys = append(repoKeys, RepoKey(key))
 		}
 	}
@@ -33,19 +35,19 @@ var unpackRepos = func(data *schema.ResourceData) []RepoKey {
 	return repoKeys
 }
 
-var packRepos = func(d *schema.ResourceData, repoKeys []RepoKey) []error {
-	log.Printf("[DEBUG] packRepos")
-	log.Printf("[TRACE] repos: %+v\n", repoKeys)
+var packRepos = func(ctx context.Context, d *schema.ResourceData, repoKeys []RepoKey) []error {
+	tflog.Debug(ctx, "packRepos")
+	tflog.Trace(ctx, fmt.Sprintf("repos: %+v\n", repoKeys))
 
-	setValue := mkLens(d)
+	setValue := util.MkLens(d)
 
 	errors := setValue("repos", repoKeys)
 
 	return errors
 }
 
-var readRepos = func(projectKey string, m interface{}) ([]RepoKey, error) {
-	log.Println("[DEBUG] readRepos")
+var readRepos = func(ctx context.Context, projectKey string, m interface{}) ([]RepoKey, error) {
+	tflog.Debug(ctx, "readRepos")
 
 	type ArtifactoryRepo struct {
 		Key string
@@ -62,7 +64,7 @@ var readRepos = func(projectKey string, m interface{}) ([]RepoKey, error) {
 		return nil, err
 	}
 
-	log.Printf("[TRACE] artifactoryRepos: %+v\n", artifactoryRepos)
+	tflog.Trace(ctx, fmt.Sprintf("artifactoryRepos: %+v\n", artifactoryRepos))
 
 	var repoKeys []RepoKey
 
@@ -73,24 +75,24 @@ var readRepos = func(projectKey string, m interface{}) ([]RepoKey, error) {
 	return repoKeys, nil
 }
 
-var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interface{}) ([]RepoKey, error) {
-	log.Println("[DEBUG] updateRepos")
-	log.Printf("[TRACE] terraformRepoKeys: %+v\n", terraformRepoKeys)
+var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys []RepoKey, m interface{}) ([]RepoKey, error) {
+	tflog.Debug(ctx, "updateRepos")
+	tflog.Trace(ctx, fmt.Sprintf("terraformRepoKeys: %+v\n", terraformRepoKeys))
 
-	projectRepoKeys, err := readRepos(projectKey, m)
+	projectRepoKeys, err := readRepos(ctx, projectKey, m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch repos for project: %s", err)
 	}
-	log.Printf("[TRACE] projectRepoKeys: %+v\n", projectRepoKeys)
+	tflog.Trace(ctx, fmt.Sprintf("projectRepoKeys: %+v\n", projectRepoKeys))
 
 	terraformRepoKeysSet := SetFromSlice(terraformRepoKeys)
 	projectRepoKeysSet := SetFromSlice(projectRepoKeys)
 
 	repoKeysToBeAdded := terraformRepoKeysSet.Difference(projectRepoKeysSet)
-	log.Printf("[TRACE] repoKeysToBeAdded: %+v\n", repoKeysToBeAdded)
+	tflog.Trace(ctx, fmt.Sprintf("repoKeysToBeAdded: %+v\n", repoKeysToBeAdded))
 
 	repoKeysToBeDeleted := projectRepoKeysSet.Difference(terraformRepoKeysSet)
-	log.Printf("[TRACE] repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted)
+	tflog.Trace(ctx, fmt.Sprintf("repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted))
 
 	g := new(errgroup.Group)
 
@@ -98,20 +100,20 @@ var updateRepos = func(projectKey string, terraformRepoKeys []RepoKey, m interfa
 		projectKey, repoKey, m := projectKey, repoKey, m
 
 		g.Go(func() error {
-			return addRepo(projectKey, repoKey, m)
+			return addRepo(ctx, projectKey, repoKey, m)
 		})
 	}
 
-	deleteRepos(projectKey, repoKeysToBeDeleted, m, g)
+	deleteRepos(ctx, projectKey, repoKeysToBeDeleted, m, g)
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to update repos for project: %s", err)
 	}
 
-	return readRepos(projectKey, m)
+	return readRepos(ctx, projectKey, m)
 }
 
-var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
-	log.Println("[DEBUG] addRepo")
+var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
+	tflog.Debug(ctx, "addRepo")
 
 	_, err := m.(*resty.Client).
 		R().
@@ -128,20 +130,20 @@ var addRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
 	return err
 }
 
-var deleteRepos = func(projectKey string, repoKeys []RepoKey, m interface{}, g *errgroup.Group) {
-	log.Println("[DEBUG] deleteRepos")
+var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}, g *errgroup.Group) {
+	tflog.Debug(ctx, "deleteRepos")
 
 	for _, repoKey := range repoKeys {
 		projectKey, repoKey, m := projectKey, repoKey, m
 
 		g.Go(func() error {
-			return deleteRepo(projectKey, repoKey, m)
+			return deleteRepo(ctx, projectKey, repoKey, m)
 		})
 	}
 }
 
-var deleteRepo = func(projectKey string, repoKey RepoKey, m interface{}) error {
-	log.Println("[DEBUG] deleteRepo")
+var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
+	tflog.Debug(ctx, "deleteRepo")
 
 	_, err := m.(*resty.Client).
 		R().

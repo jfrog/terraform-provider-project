@@ -1,26 +1,15 @@
 package project
 
-import (
-	"log"
-)
-
 type Set[T Equatable] []T
 
 func SetFromSlice[T Equatable](values []T) Set[T] {
 	set := make(Set[T], 0)
 	set = append(set, values...)
-	log.Printf("[TRACE] set: %v", set)
 	return set
 }
 
 func (s Set[T]) Contains(b T) bool {
-	log.Printf("[DEBUG] Set.Contains")
-	log.Printf("[TRACE] s: %+v", s)
-	log.Printf("[TRACE] b: %+v", b)
-
 	for _, a := range s {
-		log.Printf("[TRACE] a: %+v\n", a)
-		log.Printf("[TRACE] a.Equals(b): %+v", a.Equals(b))
 		if a.Equals(b) {
 			return true
 		}

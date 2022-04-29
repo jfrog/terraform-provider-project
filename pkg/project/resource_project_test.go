@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/test"
 )
 
 func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
@@ -17,15 +18,15 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   rand.Intn(100),
-		"block_deployments_on_limit": randBool(),
-		"email_notification":         randBool(),
-		"manage_members":             randBool(),
-		"manage_resources":           randBool(),
-		"index_resources":            randBool(),
+		"block_deployments_on_limit": test.RandBool(),
+		"email_notification":         test.RandBool(),
+		"manage_members":             test.RandBool(),
+		"manage_resources":           test.RandBool(),
+		"index_resources":            test.RandBool(),
 		"name":                       name,
 		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
 	}
-	project := executeTemplate("TestAccProjects", `
+	project := test.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -85,15 +86,15 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 func testProjectConfig(name, key string) string {
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   rand.Intn(100),
-		"block_deployments_on_limit": randBool(),
-		"email_notification":         randBool(),
-		"manage_members":             randBool(),
-		"manage_resources":           randBool(),
-		"index_resources":            randBool(),
+		"block_deployments_on_limit": test.RandBool(),
+		"email_notification":         test.RandBool(),
+		"manage_members":             test.RandBool(),
+		"manage_resources":           test.RandBool(),
+		"index_resources":            test.RandBool(),
 		"name":                       name,
 		"project_key":                key,
 	}
-	return executeTemplate("TestAccProjects", `
+	return test.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -170,16 +171,16 @@ func TestAccProject(t *testing.T) {
 	email2 := username2 + "@tempurl.org"
 	group1 := "group1"
 	group2 := "group2"
-	repo1 := fmt.Sprintf("repo%d", randomInt())
-	repo2 := fmt.Sprintf("repo%d", randomInt())
+	repo1 := fmt.Sprintf("repo%d", test.RandomInt())
+	repo2 := fmt.Sprintf("repo%d", test.RandomInt())
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   rand.Intn(100),
-		"block_deployments_on_limit": randBool(),
-		"email_notification":         randBool(),
-		"manage_members":             randBool(),
-		"manage_resources":           randBool(),
-		"index_resources":            randBool(),
+		"block_deployments_on_limit": test.RandBool(),
+		"email_notification":         test.RandBool(),
+		"manage_members":             test.RandBool(),
+		"manage_resources":           test.RandBool(),
+		"index_resources":            test.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(6)),
 		"username1":                  username1,
@@ -190,7 +191,7 @@ func TestAccProject(t *testing.T) {
 		"repo2":                      repo2,
 	}
 
-	project := executeTemplate("TestAccProjects", `
+	project := test.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"

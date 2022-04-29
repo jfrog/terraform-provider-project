@@ -290,7 +290,7 @@ Then use `log.Printf()` to print the data you want to the console.
 **Note** that you must include the log level as the prefix to the log message, e.g.
 
 ```go
-log.Printf("[DEBUG] some thing happened")
+tflog.Debug("some thing happened")
 ```
 
 ## Registry documentation generation

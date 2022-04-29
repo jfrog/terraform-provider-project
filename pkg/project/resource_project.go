@@ -3,16 +3,18 @@ package project
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/validator"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -54,7 +56,7 @@ func projectResource() *schema.Resource {
 			Type:             schema.TypeString,
 			Required:         true,
 			ForceNew:         true,
-			ValidateDiagFunc: projectKeyValidator,
+			ValidateDiagFunc: validator.ProjectKey,
 			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.",
 		},
 		"display_name": {
@@ -234,15 +236,15 @@ func projectResource() *schema.Resource {
 	}
 
 	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
-		d := &ResourceData{data}
+		d := &util.ResourceData{data}
 
 		project := Project{
-			Key:                    d.getString("key"),
-			DisplayName:            d.getString("display_name"),
-			Description:            d.getString("description"),
-			StorageQuota:           GibibytesToBytes(d.getInt("max_storage_in_gibibytes")),
-			SoftLimit:              d.getBool("block_deployments_on_limit"),
-			QuotaEmailNotification: d.getBool("email_notification"),
+			Key:                    d.GetString("key", false),
+			DisplayName:            d.GetString("display_name", false),
+			Description:            d.GetString("description", false),
+			StorageQuota:           GibibytesToBytes(d.GetInt("max_storage_in_gibibytes", false)),
+			SoftLimit:              d.GetBool("block_deployments_on_limit", false),
+			QuotaEmailNotification: d.GetBool("email_notification", false),
 		}
 
 		if v, ok := d.GetOkExists("admin_privileges"); ok {
@@ -269,9 +271,9 @@ func projectResource() *schema.Resource {
 		return project, users, groups, roles, repos, nil
 	}
 
-	var packProject = func(d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []RepoKey) diag.Diagnostics {
+	var packProject = func(ctx context.Context, d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []RepoKey) diag.Diagnostics {
 		var errors []error
-		setValue := mkLens(d)
+		setValue := util.MkLens(d)
 
 		setValue("key", project.Key)
 		setValue("display_name", project.DisplayName)
@@ -288,19 +290,19 @@ func projectResource() *schema.Resource {
 		})
 
 		if len(users) > 0 {
-			errors = packMembers(d, "member", users)
+			errors = packMembers(ctx, d, "member", users)
 		}
 
 		if len(groups) > 0 {
-			errors = packMembers(d, "group", groups)
+			errors = packMembers(ctx, d, "group", groups)
 		}
 
 		if len(roles) > 0 {
-			errors = packRoles(d, roles)
+			errors = packRoles(ctx, d, roles)
 		}
 
 		if len(repos) > 0 {
-			errors = packRepos(d, repos)
+			errors = packRepos(ctx, d, repos)
 		}
 
 		if len(errors) > 0 {
@@ -321,32 +323,32 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		users, err := readMembers(data.Id(), usersMembershipType, m)
+		users, err := readMembers(ctx, data.Id(), usersMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		groups, err := readMembers(data.Id(), groupssMembershipType, m)
+		groups, err := readMembers(ctx, data.Id(), groupssMembershipType, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		roles, err := readRoles(data.Id(), m)
+		roles, err := readRoles(ctx, data.Id(), m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		repos, err := readRepos(data.Id(), m)
+		repos, err := readRepos(ctx, data.Id(), m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		return packProject(data, project, users, groups, roles, repos)
+		return packProject(ctx, data, project, users, groups, roles, repos)
 	}
 
 	var createProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		log.Printf("[DEBUG] createProject")
-		log.Printf("[TRACE] %+v\n", data)
+		tflog.Debug(ctx, "createProject")
+		tflog.Trace(ctx, fmt.Sprintf("%+v\n", data))
 
 		project, users, groups, roles, repos, err := unpackProject(data)
 		if err != nil {
@@ -361,22 +363,22 @@ func projectResource() *schema.Resource {
 		data.SetId(project.Id())
 
 		// Role should be updated first before members or groups as they may depend on roles defined by the users
-		_, err = updateRoles(data.Id(), roles, m)
+		_, err = updateRoles(ctx, data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
+		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
+		_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateRepos(data.Id(), repos, m)
+		_, err = updateRepos(ctx, data.Id(), repos, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -385,8 +387,8 @@ func projectResource() *schema.Resource {
 	}
 
 	var updateProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		log.Printf("[DEBUG] updateProject")
-		log.Printf("[TRACE] %+v\n", data)
+		tflog.Debug(ctx, "updateProject")
+		tflog.Trace(ctx, fmt.Sprintf("%+v\n", data))
 
 		project, users, groups, roles, repos, err := unpackProject(data)
 		if err != nil {
@@ -404,22 +406,22 @@ func projectResource() *schema.Resource {
 		data.SetId(project.Id())
 
 		// Role should be updated first before members or groups as they may depend on roles defined by the users
-		_, err = updateRoles(data.Id(), roles, m)
+		_, err = updateRoles(ctx, data.Id(), roles, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(data.Id(), usersMembershipType, users, m)
+		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateMembers(data.Id(), groupssMembershipType, groups, m)
+		_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		_, err = updateRepos(data.Id(), repos, m)
+		_, err = updateRepos(ctx, data.Id(), repos, m)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -428,8 +430,8 @@ func projectResource() *schema.Resource {
 	}
 
 	var deleteProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		log.Printf("[DEBUG] deleteProject")
-		log.Printf("[TRACE] %+v\n", data)
+		tflog.Debug(ctx, "deleteProject")
+		tflog.Trace(ctx, fmt.Sprintf("%+v\n", data))
 
 		_, _, _, _, repos, err := unpackProject(data)
 		if err != nil {
@@ -437,7 +439,7 @@ func projectResource() *schema.Resource {
 		}
 
 		g := new(errgroup.Group)
-		deleteRepos(data.Id(), repos, m, g)
+		deleteRepos(ctx, data.Id(), repos, m, g)
 		if err := g.Wait(); err != nil {
 			return diag.FromErr(err)
 		}
