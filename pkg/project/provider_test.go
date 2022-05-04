@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/jfrog/terraform-provider-shared/client"
 )
 
 func TestProvider(t *testing.T) {
@@ -27,7 +28,7 @@ func getTestResty(t *testing.T) *resty.Client {
 			t.Fatal("PROJECT_URL or JFROG_URL must be set for acceptance tests")
 		}
 	}
-	restyClient, err := buildResty(projectUrl)
+	restyClient, err := client.Build(projectUrl, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func getTestResty(t *testing.T) *resty.Client {
 			t.Fatal("PROJECT_ACCESS_TOKEN or JFROG_ACCESS_TOKEN must be set for acceptance tests")
 		}
 	}
-	restyClient, err = addAuthToResty(restyClient, accessToken)
+	restyClient, err = client.AddAuth(restyClient, "", accessToken)
 	if err != nil {
 		t.Fatal(err)
 	}
