@@ -1,6 +1,6 @@
 TEST?=./...
 TARGET_ARCH?=darwin_amd64
-PKG_NAME=pkg/projects
+PKG_NAME=pkg/project
 PKG_VERSION_PATH=github.com/jfrog/terraform-provider-project/${PKG_NAME}
 VERSION := $(shell git tag --sort=-creatordate | head -1 | sed -n 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\1.\2.\3/p')
 NEXT_VERSION := $(shell echo ${VERSION}| awk -F '.' '{print $$1 "." $$2 "." $$3 +1 }' )
