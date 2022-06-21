@@ -1,6 +1,7 @@
 package project
 
 import (
+	"github.com/jfrog/terraform-provider-shared/util"
 	"math"
 	"net/http"
 	"os"
@@ -26,12 +27,8 @@ func GibibytesToBytes(bytes int) int {
 	return bytes * int(math.Pow(1024, 3))
 }
 
-type Identifiable interface {
-	Id() string
-}
-
 type Equatable interface {
-	Identifiable
+	util.Identifiable
 	Equals(other Equatable) bool
 }
 
