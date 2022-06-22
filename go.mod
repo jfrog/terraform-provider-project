@@ -1,5 +1,8 @@
 module github.com/jfrog/terraform-provider-project
 
+// if you need to do local dev, literally just uncomment the line below
+//replace github.com/jfrog/terraform-provider-shared => ../terraform-provider-shared
+
 require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/hashicorp/terraform-plugin-docs v0.7.0
