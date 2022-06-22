@@ -3,9 +3,13 @@ terraform {
   required_providers {
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "1.0.5"
+      version = "1.1.2"
     }
   }
+}
+
+provider "project" {
+  //  supply PROJECT_ACCESS_TOKEN / JFROG_ACCESS_TOKEN / PROJECT_URL / JFROG_URL as env vars
 }
 
 variable "qa_roles" {
