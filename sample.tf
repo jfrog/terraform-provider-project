@@ -8,6 +8,10 @@ terraform {
   }
 }
 
+provider "project" {
+  //  supply PROJECT_ACCESS_TOKEN / JFROG_ACCESS_TOKEN / PROJECT_URL / JFROG_URL as env vars
+}
+
 variable "qa_roles" {
   type    = list(string)
   default = ["READ_REPOSITORY", "READ_RELEASE_BUNDLE", "READ_BUILD", "READ_SOURCES_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "TRIGGER_PIPELINE"]
