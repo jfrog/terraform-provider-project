@@ -1,3 +1,9 @@
+## 1.1.3 (July 1, 2022). Tested on Artifactory 7.39.4 and Xray 3.51.3
+
+BUG FIXES:
+
+* provider: Fix hardcoded HTTP user-agent string. PR: [#46](https://github.com/jfrog/terraform-provider-project/pull/46/)
+
 ## 1.1.2 (June 21, 2022). Tested on Artifactory 7.39.4 and Xray 3.51.3
 
 IMPROVEMENTS:
