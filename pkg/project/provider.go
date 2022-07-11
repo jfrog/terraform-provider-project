@@ -12,7 +12,8 @@ import (
 )
 
 var Version = "0.0.1"
- // needs to be exported so make file can update this
+
+// needs to be exported so make file can update this
 var productId = "terraform-provider-project/" + Version
 
 // Provider Projects provider that supports configuration via username+password or a token
