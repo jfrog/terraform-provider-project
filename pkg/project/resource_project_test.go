@@ -68,7 +68,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 		},
 		{
 			Name:  "TooLong",
-			Value: strings.ToLower(randSeq(11)),
+			Value: strings.ToLower(randSeq(26)),
 		},
 		{
 			Name:  "HasUppercase",
