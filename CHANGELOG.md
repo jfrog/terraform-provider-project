@@ -3,6 +3,7 @@
 IMPROVEMENTS:
 
 * Update `project_key` attribute validation to expand characters limit from 3-10 to 3-25. PR: [#48](https://github.com/jfrog/terraform-provider-project/pull/48)
+* Fix module vulnerability from [Dependabot](https://github.com/jfrog/terraform-provider-project/security/dependabot/2)
 
 ## 1.1.4 (July 11, 2022). Tested on Artifactory 7.39.4 and Xray 3.51.3
 
