@@ -1,3 +1,10 @@
+## 1.1.5 (Aug 1, 2022)
+
+BUG FIXES:
+
+* provider: Fix license check to include license type. PR: [#52](https://github.com/jfrog/terraform-provider-project/pull/52)
+* Update package `github.com/Masterminds/goutils` to 1.1.1 for [Dependeabot alert](https://github.com/jfrog/terraform-provider-project/security/dependabot/2)
+
 ## 1.1.4 (July 11, 2022). Tested on Artifactory 7.39.4 and Xray 3.51.3
 
 BUG FIXES:
