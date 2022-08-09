@@ -1,3 +1,9 @@
+## 1.1.6 (Aug 9, 2022)
+
+BUG FIXES:
+
+* resource/project: Update `key` attribute to support hyphen character. PR: [#53](https://github.com/jfrog/terraform-provider-project/pull/53)
+
 ## 1.1.5 (Aug 1, 2022)
 
 BUG FIXES:
