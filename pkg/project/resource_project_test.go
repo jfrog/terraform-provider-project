@@ -49,7 +49,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
-				ExpectError: regexp.MustCompile(`.*key must be 3 - 10 lowercase alphanumeric characters.*`),
+				ExpectError: regexp.MustCompile(".*project_key must be 3 - 10 lowercase alphanumeric and hyphen characters.*"),
 			},
 		},
 	}
@@ -77,7 +77,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 	}
 
 	for _, invalidProjectKey := range invalidProjectKeys {
-		t.Run(fmt.Sprintf("TestProjectKey%s", invalidProjectKey.Name), func(t *testing.T) {
+		t.Run(invalidProjectKey.Name, func(t *testing.T) {
 			resource.Test(makeInvalidProjectKeyTestCase(invalidProjectKey.Value, t))
 		})
 	}
