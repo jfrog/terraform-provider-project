@@ -53,7 +53,7 @@ pipelines:
             - echo "Preparing for work..."
             - echo "Create GKE cluster and deploy Artifactory and Xray, latest versions form Helm repo"
           onExecute:
-            - GKE_CLUSTER=tf-provider-project-$(date +%s)
+            - add_run_variables GKE_CLUSTER=tf-provider-project-$(date +%s)
             - add_run_variables CLEANUP_RESOURCES=${CLEANUP_RESOURCES}
             - fozzie checkout native-steps
             - echo "Whitelist Pipelines Node CIDR to be able to run Artifactory and Xray tests. Same variable is used in gke/create_cluster step to restrict access to the control plane."
