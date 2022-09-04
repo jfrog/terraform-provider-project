@@ -1,14 +1,12 @@
 package project
 
 import (
-	"github.com/jfrog/terraform-provider-shared/util"
 	"math"
 	"net/http"
-	"os"
 	"regexp"
-	"strconv"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func BytesToGibibytes(bytes int) int {
@@ -30,17 +28,6 @@ func GibibytesToBytes(bytes int) int {
 type Equatable interface {
 	util.Identifiable
 	Equals(other Equatable) bool
-}
-
-var getBoolEnvVar = func(key string, fallback bool) bool {
-	value, exists := os.LookupEnv(key)
-	if exists {
-		boolValue, err := strconv.ParseBool(value)
-		if err == nil {
-			return boolValue
-		}
-	}
-	return fallback
 }
 
 func retryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {

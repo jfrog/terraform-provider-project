@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
-	"golang.org/x/sync/errgroup"
 )
 
 const projectMembershipsUrl = projectUrl + "/{membershipType}"
@@ -141,20 +140,20 @@ var updateMembers = func(ctx context.Context, projectKey string, membershipType 
 	membersToBeDeleted := projectMembersSet.Difference(terraformMembersSet)
 	tflog.Trace(ctx, fmt.Sprintf("membersToBeDeleted: %+v\n", membersToBeDeleted))
 
-	g := new(errgroup.Group)
-
+	errors := []error{}
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
-		projectKey, membershipType, member, m := projectKey, membershipType, member, m
-
-		g.Go(func() error {
-			return updateMember(ctx, projectKey, membershipType, member, m)
-		})
+		err := updateMember(ctx, projectKey, membershipType, member, m)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+	if len(errors) > 0 {
+		return nil, fmt.Errorf("failed to update repos for project: %s", errors)
 	}
 
-	deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m, g)
-
-	if err := g.Wait(); err != nil {
-		return nil, fmt.Errorf("failed to update memberships for project: %v", err)
+	deleteErrs := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m)
+	if len(deleteErrs) > 0 {
+		return nil, fmt.Errorf("failed to delete members for project: %s", deleteErrs)
 	}
 
 	return readMembers(ctx, projectKey, membershipType, m)
@@ -180,16 +179,17 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 	return err
 }
 
-var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}, g *errgroup.Group) {
+var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}) []error {
 	tflog.Debug(ctx, "deleteMembers")
 
+	errors := []error{}
 	for _, member := range members {
-		projectKey, membershipType, member, m := projectKey, membershipType, member, m
-
-		g.Go(func() error {
-			return deleteMember(ctx, projectKey, membershipType, member, m)
-		})
+		err := deleteMember(ctx, projectKey, membershipType, member, m)
+		if err != nil {
+			errors = append(errors, err)
+		}
 	}
+	return errors
 }
 
 var deleteMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {

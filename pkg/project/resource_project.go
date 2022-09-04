@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/jfrog/terraform-provider-shared/util"
 	"github.com/jfrog/terraform-provider-shared/validator"
-	"golang.org/x/sync/errgroup"
 )
 
 type AdminPrivileges struct {
@@ -224,13 +223,7 @@ func projectResource() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
-			MinItems: 0,
-			MaxItems: func() int {
-				if isOverride := getBoolEnvVar("REPO_LIMIT_OVERRIDE", false); isOverride {
-					return 2147483647
-				}
-				return 100
-			}(),
+			MinItems:    0,
 			Description: "(Optional) List of existing repo keys to be assigned to the project.",
 		},
 	}
@@ -438,10 +431,9 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		g := new(errgroup.Group)
-		deleteRepos(ctx, data.Id(), repos, m, g)
-		if err := g.Wait(); err != nil {
-			return diag.FromErr(err)
+		deleteErrs := deleteRepos(ctx, data.Id(), repos, m)
+		if len(deleteErrs) > 0 {
+			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErrs))
 		}
 
 		resp, err := m.(*resty.Client).R().
