@@ -144,11 +144,11 @@ var updateMembers = func(ctx context.Context, projectKey string, membershipType 
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
 		err := updateMember(ctx, projectKey, membershipType, member, m)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to update members %s: %s", member, err))
 		}
 	}
 	if len(errors) > 0 {
-		return nil, fmt.Errorf("failed to update repos for project: %s", errors)
+		return nil, fmt.Errorf("failed to update members for project: %s", errors)
 	}
 
 	deleteErrs := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m)
@@ -186,7 +186,7 @@ var deleteMembers = func(ctx context.Context, projectKey string, membershipType 
 	for _, member := range members {
 		err := deleteMember(ctx, projectKey, membershipType, member, m)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to delete %s %s: %s", membershipType, member, err))
 		}
 	}
 	return errors

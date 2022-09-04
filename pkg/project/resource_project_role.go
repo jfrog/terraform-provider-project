@@ -187,15 +187,22 @@ var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []
 	for _, role := range rolesToBeAdded {
 		err := addRole(ctx, projectKey, role, m)
 		if err != nil {
-			addErrs = append(addErrs, err)
+			addErrs = append(addErrs, fmt.Errorf("failed to add role %s: %s", role, err))
 		}
 	}
+	if len(addErrs) > 0 {
+		return nil, fmt.Errorf("failed to add roles for project: %s", addErrs)
+	}
 
+	updateErrs := []error{}
 	for _, role := range rolesToBeUpdated {
 		err := updateRole(ctx, projectKey, role, m)
 		if err != nil {
-			addErrs = append(addErrs, err)
+			updateErrs = append(updateErrs, fmt.Errorf("failed to update role %s: %s", role, err))
 		}
+	}
+	if len(updateErrs) > 0 {
+		return nil, fmt.Errorf("failed to update roles for project: %s", updateErrs)
 	}
 
 	deleteErrs := deleteRoles(ctx, projectKey, rolesToBeDeleted, m)
@@ -238,7 +245,7 @@ var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m i
 	for _, role := range roles {
 		err := deleteRole(ctx, projectKey, role, m)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to delete role %s: %s", role, err))
 		}
 	}
 

@@ -95,7 +95,7 @@ var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys
 
 	errors := addRepos(ctx, projectKey, repoKeysToBeAdded, m)
 	if len(errors) > 0 {
-		return nil, fmt.Errorf("failed to update repos for project: %s", errors)
+		return nil, fmt.Errorf("failed to add repos for project: %s", errors)
 	}
 
 	deleteErrs := deleteRepos(ctx, projectKey, repoKeysToBeDeleted, m)
@@ -113,7 +113,7 @@ var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, 
 	for _, repoKey := range repoKeys {
 		err := addRepo(ctx, projectKey, repoKey, m)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to add repo %s: %s", repoKey, err))
 		}
 	}
 
@@ -145,7 +145,7 @@ var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKe
 	for _, repoKey := range repoKeys {
 		err := deleteRepo(ctx, projectKey, repoKey, m)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, fmt.Errorf("failed to delete repo %s: %s", repoKey, err))
 		}
 	}
 
