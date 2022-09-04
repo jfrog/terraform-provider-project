@@ -1,3 +1,9 @@
+## 1.1.7 (Sep 5, 2022)
+
+BUG FIXES:
+
+* Remove parallel requests when adding/removing repos, users, groups, and roles with project. PR: [#54](https://github.com/jfrog/terraform-provider-project/pull/54)
+
 ## 1.1.6 (Aug 9, 2022). Tested on Artifactory 7.41.7 and Xray 3.54.5
 
 BUG FIXES:
