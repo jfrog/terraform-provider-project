@@ -93,31 +93,30 @@ var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys
 	repoKeysToBeDeleted := projectRepoKeysSet.Difference(terraformRepoKeysSet)
 	tflog.Trace(ctx, fmt.Sprintf("repoKeysToBeDeleted: %+v\n", repoKeysToBeDeleted))
 
-	errors := addRepos(ctx, projectKey, repoKeysToBeAdded, m)
-	if len(errors) > 0 {
-		return nil, fmt.Errorf("failed to add repos for project: %s", errors)
+	addErr := addRepos(ctx, projectKey, repoKeysToBeAdded, m)
+	if addErr != nil {
+		return nil, fmt.Errorf("failed to add repos for project: %s", addErr)
 	}
 
-	deleteErrs := deleteRepos(ctx, projectKey, repoKeysToBeDeleted, m)
-	if len(deleteErrs) > 0 {
-		return nil, fmt.Errorf("failed to delete repos for project: %s", deleteErrs)
+	deleteErr := deleteRepos(ctx, projectKey, repoKeysToBeDeleted, m)
+	if deleteErr != nil {
+		return nil, fmt.Errorf("failed to delete repos for project: %s", deleteErr)
 	}
 
 	return readRepos(ctx, projectKey, m)
 }
 
-var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) []error {
+var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepos: %s", repoKeys))
 
-	errors := []error{}
 	for _, repoKey := range repoKeys {
 		err := addRepo(ctx, projectKey, repoKey, m)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to add repo %s: %s", repoKey, err))
+			return fmt.Errorf("failed to add repo %s: %s", repoKey, err)
 		}
 	}
 
-	return errors
+	return nil
 }
 
 var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
@@ -138,18 +137,17 @@ var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m in
 	return err
 }
 
-var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) []error {
+var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepos: %s", repoKeys))
 
-	errors := []error{}
 	for _, repoKey := range repoKeys {
 		err := deleteRepo(ctx, projectKey, repoKey, m)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to delete repo %s: %s", repoKey, err))
+			return fmt.Errorf("failed to delete repo %s: %s", repoKey, err)
 		}
 	}
 
-	return errors
+	return nil
 }
 
 var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {

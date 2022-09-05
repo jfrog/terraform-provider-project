@@ -431,9 +431,9 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		deleteErrs := deleteRepos(ctx, data.Id(), repos, m)
-		if len(deleteErrs) > 0 {
-			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErrs))
+		deleteErr := deleteRepos(ctx, data.Id(), repos, m)
+		if deleteErr != nil {
+			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErr))
 		}
 
 		resp, err := m.(*resty.Client).R().

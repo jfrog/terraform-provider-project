@@ -140,20 +140,16 @@ var updateMembers = func(ctx context.Context, projectKey string, membershipType 
 	membersToBeDeleted := projectMembersSet.Difference(terraformMembersSet)
 	tflog.Trace(ctx, fmt.Sprintf("membersToBeDeleted: %+v\n", membersToBeDeleted))
 
-	errors := []error{}
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
 		err := updateMember(ctx, projectKey, membershipType, member, m)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to update members %s: %s", member, err))
+			return nil, fmt.Errorf("failed to update members %s: %s", member, err)
 		}
 	}
-	if len(errors) > 0 {
-		return nil, fmt.Errorf("failed to update members for project: %s", errors)
-	}
 
-	deleteErrs := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m)
-	if len(deleteErrs) > 0 {
-		return nil, fmt.Errorf("failed to delete members for project: %s", deleteErrs)
+	deleteErr := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m)
+	if deleteErr != nil {
+		return nil, fmt.Errorf("failed to delete members for project: %s", deleteErr)
 	}
 
 	return readMembers(ctx, projectKey, membershipType, m)
@@ -179,17 +175,17 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 	return err
 }
 
-var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}) []error {
+var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}) error {
 	tflog.Debug(ctx, "deleteMembers")
 
-	errors := []error{}
 	for _, member := range members {
 		err := deleteMember(ctx, projectKey, membershipType, member, m)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to delete %s %s: %s", membershipType, member, err))
+			return fmt.Errorf("failed to delete %s %s: %s", membershipType, member, err)
 		}
 	}
-	return errors
+
+	return nil
 }
 
 var deleteMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {

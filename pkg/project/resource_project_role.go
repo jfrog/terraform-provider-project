@@ -183,31 +183,23 @@ var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []
 	rolesToBeDeleted := projectRolesSet.Difference(terraformRolesSet)
 	tflog.Trace(ctx, fmt.Sprintf("rolesToBeDeleted: %+v\n", rolesToBeDeleted))
 
-	addErrs := []error{}
 	for _, role := range rolesToBeAdded {
 		err := addRole(ctx, projectKey, role, m)
 		if err != nil {
-			addErrs = append(addErrs, fmt.Errorf("failed to add role %s: %s", role, err))
+			return nil, fmt.Errorf("failed to add role %s: %s", role, err)
 		}
 	}
-	if len(addErrs) > 0 {
-		return nil, fmt.Errorf("failed to add roles for project: %s", addErrs)
-	}
 
-	updateErrs := []error{}
 	for _, role := range rolesToBeUpdated {
 		err := updateRole(ctx, projectKey, role, m)
 		if err != nil {
-			updateErrs = append(updateErrs, fmt.Errorf("failed to update role %s: %s", role, err))
+			return nil, fmt.Errorf("failed to update role %s: %s", role, err)
 		}
 	}
-	if len(updateErrs) > 0 {
-		return nil, fmt.Errorf("failed to update roles for project: %s", updateErrs)
-	}
 
-	deleteErrs := deleteRoles(ctx, projectKey, rolesToBeDeleted, m)
-	if len(deleteErrs) > 0 {
-		return nil, fmt.Errorf("failed to delete roles for project: %s", deleteErrs)
+	deleteErr := deleteRoles(ctx, projectKey, rolesToBeDeleted, m)
+	if deleteErr != nil {
+		return nil, fmt.Errorf("failed to delete roles for project: %s", deleteErr)
 	}
 
 	return readRoles(ctx, projectKey, m)
@@ -238,18 +230,17 @@ var updateRole = func(ctx context.Context, projectKey string, role Role, m inter
 	return err
 }
 
-var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m interface{}) []error {
+var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m interface{}) error {
 	tflog.Debug(ctx, "deleteRoles")
 
-	errors := []error{}
 	for _, role := range roles {
 		err := deleteRole(ctx, projectKey, role, m)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("failed to delete role %s: %s", role, err))
+			return fmt.Errorf("failed to delete role %s: %s", role, err)
 		}
 	}
 
-	return errors
+	return nil
 }
 
 var deleteRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
