@@ -6,7 +6,6 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.3.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.14.0
 	github.com/jfrog/terraform-provider-shared v1.7.0
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
 require (

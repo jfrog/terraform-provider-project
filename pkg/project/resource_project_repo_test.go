@@ -1,7 +1,6 @@
 package project
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -130,21 +129,15 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
-	randomRepoNames := func(repoCount int) []string {
+	getRandomRepoNames := func(repoCount int) []string {
 		var repoNames []string
 		for i := 0; i < repoCount; i++ {
 			repoNames = append(repoNames, fmt.Sprintf("%s%s", repoNameInitial, randSeq(10)))
 		}
 		return repoNames
-	}(numRepos)
-
-	repoNamesStr := func(repoNames []string) string {
-		jsonByteArr, err := json.Marshal(repoNames)
-		if err != nil {
-			return "[]"
-		}
-		return string(jsonByteArr)
 	}
+
+	randomRepoNames := getRandomRepoNames(numRepos)
 
 	preCheck := func(t *testing.T, repoNames []string) func() {
 		return func() {
@@ -158,7 +151,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 	params := map[string]interface{}{
 		"name":        name,
 		"project_key": projectKey,
-		"repos":       repoNamesStr(randomRepoNames),
+		"repos":       randomRepoNames,
 	}
 
 	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
@@ -184,7 +177,7 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
-			repos = {{ .repos }}
+			repos = [{{range $idx, $elem := .repos}}{{if $idx}},{{end}}"{{ $elem }}"{{end}}]
 		}
 	`, params)
 
