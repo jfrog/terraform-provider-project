@@ -120,7 +120,7 @@ func TestAccProjectRepo(t *testing.T) {
 /*
 Test to assign large number of repositories to a project
 */
-func TestAccAssignMultipleReposInProject(t *testing.T) {
+func TestAccProjectRepoAssignMultipleRepos(t *testing.T) {
 
 	const numRepos = 5
 	const repoNameInitial = "repo-"
@@ -231,6 +231,70 @@ func TestAccAssignMultipleReposInProject(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "0"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccProjectRepoUnassignNonexistantRepo(t *testing.T) {
+	name := "tftestprojects" + randSeq(10)
+	resourceName := "project." + name
+	projectKey := strings.ToLower(randSeq(6))
+
+	repo := fmt.Sprintf("repo%d", test.RandomInt())
+
+	params := map[string]interface{}{
+		"name":        name,
+		"project_key": projectKey,
+		"repo":        repo,
+	}
+
+	initialConfig := test.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+
+			repos = ["{{ .repo }}"]
+		}
+	`, params)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			createTestRepo(t, repo)
+		},
+		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
+		ProviderFactories: testAccProviders(),
+		Steps: []resource.TestStep{
+			{
+				Config: initialConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
+					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
+					resource.TestCheckResourceAttr(resourceName, "repos.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "repos.0", repo),
+				),
+			},
+			{
+				// PreConfig is used to delete the repo out-of-band from TF.
+				PreConfig: func() {
+					deleteTestRepo(t, repo)
+				},
+				// SkipFunc is called after PreConfig but before applying the Config.
+				// https://github.com/hashicorp/terraform-plugin-sdk/blob/main/helper/resource/testing_new.go#L133
+				//
+				// We are skipping this checks because there's nothing to check on the resource.
+				// We want to verify the resource is deleted without error which resource.TestCase
+				// will do that for us.
+				SkipFunc: func() (bool, error) {
+					return true, nil
+				},
 			},
 		},
 	})

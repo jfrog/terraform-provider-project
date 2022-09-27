@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -153,13 +154,36 @@ var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKe
 var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepo: %s", repoKey))
 
-	_, err := m.(*resty.Client).
+	type Error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}
+
+	type ErrorResponse struct {
+		Errors []Error `json:"errors"`
+	}
+
+	var errorResp ErrorResponse
+
+	resp, err := m.(*resty.Client).
 		R().
 		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
 		SetPathParam("repoKey", string(repoKey)).
+		SetError(&errorResp).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
+
+	// Ignore 404 NOT_FOUND error when unassigning repo from project
+	// Possible that repo was deleted out-of-band from TF
+	if resp.StatusCode() == http.StatusNotFound && len(errorResp.Errors) > 0 {
+		for _, error := range errorResp.Errors {
+			if error.Code == "NOT_FOUND" {
+				tflog.Warn(ctx, fmt.Sprintf("failed to unassign repo: %s", error.Message))
+				return nil
+			}
+		}
+	}
 
 	return err
 }
