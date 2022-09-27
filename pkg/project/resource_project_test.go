@@ -12,6 +12,10 @@ import (
 	"github.com/jfrog/terraform-provider-shared/test"
 )
 
+func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
+	return request.Head(projectsUrl + id)
+}
+
 func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
