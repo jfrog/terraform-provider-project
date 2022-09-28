@@ -42,10 +42,6 @@ func (p Project) Id() string {
 const projectsUrl = "/access/api/v1/projects"
 const projectUrl = projectsUrl + "/{projectKey}"
 
-func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
-	return request.Head(projectsUrl + id)
-}
-
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
 func projectResource() *schema.Resource {

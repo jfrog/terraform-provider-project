@@ -1,3 +1,9 @@
+## 1.1.8 (Sep 28, 2022). Tested on Artifactory 7.41.13 and Xray 3.57.6
+
+BUG FIXES:
+
+* resource/project: Ignore unassigning (non-existent) repository error when destroying project resource. PR: [#57](https://github.com/jfrog/terraform-provider-project/pull/57)
+
 ## 1.1.7 (Sep 8, 2022). Tested on Artifactory 7.41.12 and Xray 3.55.2
 
 BUG FIXES:
