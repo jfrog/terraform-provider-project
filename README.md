@@ -191,6 +191,10 @@ In general, this project follows [semver](https://semver.org/) as closely as we 
 * We increment the **minor version** with any backwards-compatible changes to functionality.
 * We increment the **patch version** with any backwards-compatible bug fixes.
 
+## Contributors
+
+See the [contribution guide](https://github.com/jfrog/terraform-provider-project/blob/master/CONTRIBUTIONS.md).
+
 ## License
 
 Copyright (c) 2022 JFrog.
