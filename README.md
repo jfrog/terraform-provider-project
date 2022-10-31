@@ -193,7 +193,7 @@ In general, this project follows [semver](https://semver.org/) as closely as we 
 
 ## Contributors
 
-See the [contribution guide](https://github.com/jfrog/terraform-provider-project/blob/master/CONTRIBUTIONS.md).
+See the [contribution guide](CONTRIBUTIONS.md).
 
 ## License
 

@@ -21,7 +21,7 @@ Simply run `make install` - this will compile the provider and install it to `~/
 
 Requirements:
 - [Terraform](https://www.terraform.io/downloads.html) 0.13
-- [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.18+ (to build the provider plugin)
 
 ### Building on macOS
 
@@ -121,7 +121,7 @@ You can [turn on logging](https://www.terraform.io/docs/extend/debugging.html#tu
 export TF_LOG=DEBUG
 ```
 
-Then use `log.Printf()` to print the data you want to the console.
+Then use `tflog.Debug()` to print the data you want to the console.
 
 **Note** that you must include the log level as the prefix to the log message, e.g.
 
