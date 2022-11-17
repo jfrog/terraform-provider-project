@@ -52,7 +52,7 @@ func projectResource() *schema.Resource {
 			Required:         true,
 			ForceNew:         true,
 			ValidateDiagFunc: validator.ProjectKey,
-			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: us1a.",
+			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.",
 		},
 		"display_name": {
 			Required: true,
@@ -114,19 +114,19 @@ func projectResource() *schema.Resource {
 				newVal = newVal * 1024 * 1024 * 1024
 				return newVal == oldVal
 			},
-			Description: "Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.",
+			Description: "Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.",
 		},
 		"block_deployments_on_limit": {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			Description: "Block artifacts deployment if storage quota is exceeded.",
+			Description: "Block deployment of artifacts if storage quota is exceeded.",
 		},
 		"email_notification": {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker",
+			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker",
 		},
 
 		"member": {

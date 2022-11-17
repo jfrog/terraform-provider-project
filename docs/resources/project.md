@@ -76,16 +76,16 @@ resource "project" "myproject" {
 
 - `admin_privileges` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
 - `display_name` (String) Also known as project name on the UI
-- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: us1a.
+- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
 
-- `block_deployments_on_limit` (Boolean) Block artifacts deployment if storage quota is exceeded.
+- `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
 - `description` (String)
-- `email_notification` (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker
+- `email_notification` (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker
 - `group` (Block Set) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
 - `id` (String) The ID of this resource.
-- `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
+- `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - `member` (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
 - `repos` (Set of String) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
 
