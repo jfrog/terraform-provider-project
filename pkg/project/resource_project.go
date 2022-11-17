@@ -455,7 +455,7 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema:      projectSchema,
+		Schema: projectSchema,
 		Description: `Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
 
 ~>We strongly recommend using the "repos" attribute to manage the list of repositories. See below for more details.`,
