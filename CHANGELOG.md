@@ -1,3 +1,10 @@
+## 1.1.9 (Nov 18, 2022)
+
+IMPROVEMENTS:
+
+* resource/project: Add recommendation note for attribute `repos`. Issue: [#58](https://github.com/jfrog/terraform-provider-project/issues/58) PR: [#60](https://github.com/jfrog/terraform-provider-project/pull/60)
+
+
 ## 1.1.8 (Sep 28, 2022). Tested on Artifactory 7.46.10 and Xray 3.59.4
 
 BUG FIXES:
