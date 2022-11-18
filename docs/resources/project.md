@@ -16,10 +16,10 @@ description: |-
           project_key
       ]
   }
-  
+
   }
   ``
-  ~>We strongly recommend using therepos` attribute to manage the list of repositories. See below for additional details.
+  ~>We strongly recommend using the repos attribute to manage the list of repositories. See below for additional details.
 ---
 
 # project (Resource)
@@ -170,5 +170,3 @@ Required:
 Optional:
 
 - `description` (String)
-
-
