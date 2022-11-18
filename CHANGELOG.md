@@ -1,3 +1,9 @@
+## 1.1.10 (Nov 18, 2022)
+
+IMPROVEMENTS:
+
+* resource/project: Additional note for repository configuration. Issue: [#58](https://github.com/jfrog/terraform-provider-project/issues/58) PR: [#61](https://github.com/jfrog/terraform-provider-project/pull/61)
+
 ## 1.1.9 (Nov 18, 2022). Tested on Artifactory 7.46.11 and Xray 3.60.2
 
 IMPROVEMENTS:
