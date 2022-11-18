@@ -4,14 +4,45 @@ page_title: "project Resource - terraform-provider-project"
 subcategory: ""
 description: |-
   Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
-  ~>We strongly recommend using the "repos" attribute to manage the list of repositories. See below for more details.
+  Repository Configuration
+  After the project configuration is applied, the repository's attributes project_key and project_environments would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply lifecycle.ignore_changes:
+  ```hcl
+  resource "artifactorylocalmavenrepository" "mymaven_releases" {
+      key = "my-maven-releases"
+      ...
+  lifecycle {
+      ignore_changes = [
+          project_environments,
+          project_key
+      ]
+  }
+
+  }
+  ``
+  ~>We strongly recommend using the repos attribute to manage the list of repositories. See below for additional details.
 ---
 
 # project (Resource)
 
 Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
 
-~>We strongly recommend using the "repos" attribute to manage the list of repositories. See below for more details.
+## Repository Configuration
+
+After the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:
+```hcl
+resource "artifactory_local_maven_repository" "my_maven_releases" {
+	key = "my-maven-releases"
+	...
+
+	lifecycle {
+		ignore_changes = [
+			project_environments,
+			project_key
+		]
+	}
+}
+```
+~>We strongly recommend using the `repos` attribute to manage the list of repositories. See below for additional details.
 
 ## Example Usage
 
@@ -139,5 +170,3 @@ Required:
 Optional:
 
 - `description` (String)
-
-
