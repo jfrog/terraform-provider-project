@@ -4,11 +4,14 @@ page_title: "project Resource - terraform-provider-project"
 subcategory: ""
 description: |-
   Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
+  ~>We strongly recommend using the "repos" attribute to manage the list of repositories. See below for more details.
 ---
 
 # project (Resource)
 
 Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
+
+~>We strongly recommend using the "repos" attribute to manage the list of repositories. See below for more details.
 
 ## Example Usage
 
@@ -71,30 +74,38 @@ resource "project" "myproject" {
 
 ### Required
 
-- **admin_privileges** (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
-- **display_name** (String) Also known as project name on the UI
-- **key** (String, ForceNew) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 6 lowercase alphanumeric characters. Must begin with a letter. For example: us1a.
+- `admin_privileges` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
+- `display_name` (String) Also known as project name on the UI
+- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
 
-- **block_deployments_on_limit** (Boolean) Block artifacts deployment if storage quota is exceeded.
-- **description** (String)
-- **email_notification** (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. Serves as a notification only and is not a blocker
-- **group** (Block Set) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
-- **id** (String) The ID of this resource.
-- **max_storage_in_gibibytes** (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
-- **member** (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- **repos** (Set of String) List of existing repo keys to be assigned to the project. By default, `repos` is capped at 100 keys. (see [below for limitations on the maximum number of repos](#repoNumLimitations)). You can remove the system's cap by setting an environment value `REPO_LIMIT_OVERRIDE` to `true`. This setting will remove the restriction of maximum allowable elements in the `repos` attribute. The default value of `REPO_LIMIT_OVERRIDE` is `false`, e.g. To override use export REPO_LIMIT_OVERRIDE=true` in the shell.
-- **role** (Block Set) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
+- `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
+- `description` (String)
+- `email_notification` (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker
+- `group` (Block Set) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
+- `id` (String) The ID of this resource.
+- `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
+- `member` (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
+- `repos` (Set of String) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
+
+```hcl
+lifecycle {
+	ignore_changes = [
+		repos
+	]
+}
+```
+- `role` (Block Set) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 
 <a id="nestedblock--admin_privileges"></a>
 ### Nested Schema for `admin_privileges`
 
 Required:
 
-- **index_resources** (Boolean) Enables a project admin to define the resources to be indexed by Xray
-- **manage_members** (Boolean) Allows the Project Admin to manage Platform users/groups as project members with different roles.
-- **manage_resources** (Boolean) Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.
+- `index_resources` (Boolean) Enables a project admin to define the resources to be indexed by Xray
+- `manage_members` (Boolean) Allows the Project Admin to manage Platform users/groups as project members with different roles.
+- `manage_resources` (Boolean) Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.
 
 
 <a id="nestedblock--group"></a>
@@ -102,8 +113,8 @@ Required:
 
 Required:
 
-- **name** (String) Must be existing Artifactory group
-- **roles** (Set of String) List of pre-defined Project or custom roles
+- `name` (String) Must be existing Artifactory group
+- `roles` (Set of String) List of pre-defined Project or custom roles
 
 
 <a id="nestedblock--member"></a>
@@ -111,8 +122,8 @@ Required:
 
 Required:
 
-- **name** (String) Must be existing Artifactory user
-- **roles** (Set of String) List of pre-defined Project or custom roles
+- `name` (String) Must be existing Artifactory user
+- `roles` (Set of String) List of pre-defined Project or custom roles
 
 
 <a id="nestedblock--role"></a>
@@ -120,16 +131,13 @@ Required:
 
 Required:
 
-- **actions** (Set of String) List of pre-defined actions (READ_REPOSITORY, ANNOTATE_REPOSITORY, DEPLOY_CACHE_REPOSITORY, DELETE_OVERWRITE_REPOSITORY, MANAGE_XRAY_MD_REPOSITORY, READ_RELEASE_BUNDLE, ANNOTATE_RELEASE_BUNDLE, CREATE_RELEASE_BUNDLE, DISTRIBUTE_RELEASE_BUNDLE, DELETE_RELEASE_BUNDLE, MANAGE_XRAY_MD_RELEASE_BUNDLE, READ_BUILD, ANNOTATE_BUILD, DEPLOY_BUILD, DELETE_BUILD, MANAGE_XRAY_MD_BUILD, READ_SOURCES_PIPELINE, TRIGGER_PIPELINE, READ_INTEGRATIONS_PIPELINE, READ_POOLS_PIPELINE, MANAGE_INTEGRATIONS_PIPELINE, MANAGE_SOURCES_PIPELINE, MANAGE_POOLS_PIPELINE, TRIGGER_SECURITY, ISSUES_SECURITY, LICENCES_SECURITY, REPORTS_SECURITY, WATCHES_SECURITY, POLICIES_SECURITY, RULES_SECURITY, MANAGE_MEMBERS, MANAGE_RESOURCES)
-- **environments** (Set of String) A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (DEV, PROD)
-- **name** (String)
-- **type** (String) Type of role. Only "CUSTOM" is supported
+- `actions` (Set of String) List of pre-defined actions (READ_REPOSITORY, ANNOTATE_REPOSITORY, DEPLOY_CACHE_REPOSITORY, DELETE_OVERWRITE_REPOSITORY, MANAGE_XRAY_MD_REPOSITORY, READ_RELEASE_BUNDLE, ANNOTATE_RELEASE_BUNDLE, CREATE_RELEASE_BUNDLE, DISTRIBUTE_RELEASE_BUNDLE, DELETE_RELEASE_BUNDLE, MANAGE_XRAY_MD_RELEASE_BUNDLE, READ_BUILD, ANNOTATE_BUILD, DEPLOY_BUILD, DELETE_BUILD, MANAGE_XRAY_MD_BUILD, READ_SOURCES_PIPELINE, TRIGGER_PIPELINE, READ_INTEGRATIONS_PIPELINE, READ_POOLS_PIPELINE, MANAGE_INTEGRATIONS_PIPELINE, MANAGE_SOURCES_PIPELINE, MANAGE_POOLS_PIPELINE, TRIGGER_SECURITY, ISSUES_SECURITY, LICENCES_SECURITY, REPORTS_SECURITY, WATCHES_SECURITY, POLICIES_SECURITY, RULES_SECURITY, MANAGE_MEMBERS, MANAGE_RESOURCES)
+- `environments` (Set of String) A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (DEV, PROD)
+- `name` (String)
+- `type` (String) Type of role. Only "CUSTOM" is supported
 
 Optional:
 
-- **description** (String)
+- `description` (String)
 
-## Note
-<a name="repoNumLimitations"></a>
-### Limitations of Repository assign/unassign to/from Project
-Artifactory's [Move Repository in a Project](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-MoveRepositoryinaProject) & [Unassign a Project from a Repository](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UnassignaProjectfromaRepository) APIs have limitations to assign or unassign a large number of repositories to or from project. With more than a certain number of repos you might observe system disruptions and all the repositories might not be assigned/unassigned to/from the desired project. As per our analysis, it is **recommended to limit the number of repo keys to 100** to avoid internal platform limitations. The JFrog Engineering team is working on further improvement to ensure a better user experience.
+

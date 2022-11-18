@@ -16,12 +16,21 @@ func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.Head(projectsUrl + id)
 }
 
+func getRandomMaxStorageSize() int {
+	randomMaxStorage := rand.Intn(1000)
+	if randomMaxStorage == 0 {
+		randomMaxStorage = 1
+	}
+
+	return randomMaxStorage
+}
+
 func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
-		"max_storage_in_gibibytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
 		"block_deployments_on_limit": test.RandBool(),
 		"email_notification":         test.RandBool(),
 		"manage_members":             test.RandBool(),
@@ -89,7 +98,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 
 func testProjectConfig(name, key string) string {
 	params := map[string]interface{}{
-		"max_storage_in_gibibytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
 		"block_deployments_on_limit": test.RandBool(),
 		"email_notification":         test.RandBool(),
 		"manage_members":             test.RandBool(),
@@ -179,7 +188,7 @@ func TestAccProject(t *testing.T) {
 	repo2 := fmt.Sprintf("repo%d", test.RandomInt())
 
 	params := map[string]interface{}{
-		"max_storage_in_gibibytes":   rand.Intn(100),
+		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
 		"block_deployments_on_limit": test.RandBool(),
 		"email_notification":         test.RandBool(),
 		"manage_members":             test.RandBool(),
