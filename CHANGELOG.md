@@ -2,7 +2,7 @@
 
 IMPROVEMENTS:
 
-* resource/project: added a guide on adding repositories to the project. PR: [#]()
+* resource/project: added a guide on adding repositories to the project. PR: [#63](https://github.com/jfrog/terraform-provider-project/pull/63)
 
 ## 1.1.10 (Nov 18, 2022). Tested on Artifactory 7.46.11 and Xray 3.60.2
 
