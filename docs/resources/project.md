@@ -107,7 +107,7 @@ resource "project" "myproject" {
 
 - `admin_privileges` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
 - `display_name` (String) Also known as project name on the UI
-- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
+- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
 
@@ -170,3 +170,5 @@ Required:
 Optional:
 
 - `description` (String)
+
+
