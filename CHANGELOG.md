@@ -1,4 +1,4 @@
-## 1.1.12 (Dec 22, 2022).
+## 1.1.12 (Dec 22, 2022). Tested on Artifactory 7.47.14 and Xray 3.62.4
 
 BUG FIXES:
 
