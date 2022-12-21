@@ -52,7 +52,7 @@ func projectResource() *schema.Resource {
 			Required:         true,
 			ForceNew:         true,
 			ValidateDiagFunc: validator.ProjectKey,
-			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 3 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.",
+			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 10 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.",
 		},
 		"display_name": {
 			Required: true,
