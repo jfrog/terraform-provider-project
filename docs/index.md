@@ -202,3 +202,10 @@ provider "project" {
 ### Optional
 
 - **check_license** (Boolean) Toggle for pre-flight checking of Artifactory Enterprise license. Default to `true`.
+
+## Import
+
+Existing projects can be imported like this:
+```shell
+terraform import project.<name> <project_key>
+```
