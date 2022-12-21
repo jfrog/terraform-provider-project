@@ -1,3 +1,9 @@
+## 1.1.12 (Dec 22, 2022). Tested on Artifactory 7.47.14 and Xray 3.62.4
+
+BUG FIXES:
+
+* resource/project: Update `key` attribute validation to match Artifactory Project. PR: [#66](https://github.com/jfrog/terraform-provider-project/pull/66)
+
 ## 1.1.11 (Dec 13, 2022).
 
 IMPROVEMENTS:
