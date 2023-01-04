@@ -1,3 +1,9 @@
+## 1.1.13 (Jan 5, 2023). Tested on Artifactory 7.49.3 and Xray 3.63.2
+
+BUG FIXES:
+
+* resource/project: Fix `block_deployments_on_limit` attribute value opposite to Artifactory Project web UI. Issue: [#62](https://github.com/jfrog/terraform-provider-project/issues/62) PR: [#67](https://github.com/jfrog/terraform-provider-project/pull/67)
+
 ## 1.1.12 (Dec 22, 2022). Tested on Artifactory 7.47.14 and Xray 3.62.4
 
 BUG FIXES:
