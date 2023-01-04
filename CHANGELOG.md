@@ -1,4 +1,4 @@
-## 1.1.13 (Jan 5, 2023)
+## 1.1.13 (Jan 5, 2023). Tested on Artifactory 7.49.3 and Xray 3.63.2
 
 BUG FIXES:
 
