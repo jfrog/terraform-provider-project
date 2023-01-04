@@ -174,7 +174,7 @@ func TestAccProjectUpdateKey(t *testing.T) {
 	})
 }
 
-func TestAccProject(t *testing.T) {
+func TestAccProject_full(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
@@ -204,7 +204,7 @@ func TestAccProject(t *testing.T) {
 		"repo2":                      repo2,
 	}
 
-	project := test.ExecuteTemplate("TestAccProjects", `
+	template := `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -256,7 +256,27 @@ func TestAccProject(t *testing.T) {
 
 			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
 		}
-	`, params)
+	`
+
+	project := test.ExecuteTemplate("TestAccProjects", template, params)
+
+	updateParams := map[string]interface{}{
+		"max_storage_in_gibibytes":   params["max_storage_in_gibibytes"],
+		"block_deployments_on_limit": !params["block_deployments_on_limit"].(bool),
+		"email_notification":         !params["email_notification"].(bool),
+		"manage_members":             !params["manage_members"].(bool),
+		"manage_resources":           !params["manage_resources"].(bool),
+		"index_resources":            !params["index_resources"].(bool),
+		"name":                       params["name"],
+		"project_key":                params["project_key"],
+		"username1":                  params["username1"],
+		"username2":                  params["username2"],
+		"group1":                     params["group1"],
+		"group2":                     params["group2"],
+		"repo1":                      params["repo1"],
+		"repo2":                      params["repo2"],
+	}
+	projectUpdated := test.ExecuteTemplate("TestAccProjects", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -312,6 +332,24 @@ func TestAccProject(t *testing.T) {
 					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo1),
 					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo2),
 				),
+			},
+			{
+				Config: projectUpdated,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", updateParams["project_key"])),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibibytes", fmt.Sprintf("%d", updateParams["max_storage_in_gibibytes"])),
+					resource.TestCheckResourceAttr(resourceName, "block_deployments_on_limit", fmt.Sprintf("%t", updateParams["block_deployments_on_limit"])),
+					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", updateParams["email_notification"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", updateParams["manage_members"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", updateParams["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", updateParams["index_resources"])),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})

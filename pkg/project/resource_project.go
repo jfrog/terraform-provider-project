@@ -128,7 +128,6 @@ func projectResource() *schema.Resource {
 			Default:     false,
 			Description: "Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker",
 		},
-
 		"member": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -150,7 +149,6 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject).",
 		},
-
 		"group": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -172,7 +170,6 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
 		},
-
 		"role": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -212,7 +209,6 @@ func projectResource() *schema.Resource {
 			},
 			Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
 		},
-
 		"repos": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -232,7 +228,7 @@ func projectResource() *schema.Resource {
 			DisplayName:            d.GetString("display_name", false),
 			Description:            d.GetString("description", false),
 			StorageQuota:           GibibytesToBytes(d.GetInt("max_storage_in_gibibytes", false)),
-			SoftLimit:              d.GetBool("block_deployments_on_limit", false),
+			SoftLimit:              !d.GetBool("block_deployments_on_limit", false),
 			QuotaEmailNotification: d.GetBool("email_notification", false),
 		}
 
@@ -268,7 +264,7 @@ func projectResource() *schema.Resource {
 		setValue("display_name", project.DisplayName)
 		setValue("description", project.Description)
 		setValue("max_storage_in_gibibytes", BytesToGibibytes(project.StorageQuota))
-		setValue("block_deployments_on_limit", project.SoftLimit)
+		setValue("block_deployments_on_limit", !project.SoftLimit)
 		errors = setValue("email_notification", project.QuotaEmailNotification)
 		errors = setValue("admin_privileges", []interface{}{
 			map[string]bool{
