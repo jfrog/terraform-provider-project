@@ -1,3 +1,12 @@
+## 1.1.14 (February 23, 2023)
+
+SECURITY:
+
+* provider:
+  * Bump golang.org/x/text from 0.3.7 to 0.3.8 PR: [#68](https://github.com/jfrog/terraform-provider-project/pull/68)
+  * Bump golang.org/x/net from 0.0.0-20211029224645-99673261e6eb to 0.7.0 PR: [#69](https://github.com/jfrog/terraform-provider-project/pull/69)
+  * Bump golang.org/x/crypto from 0.0.0-20210921155107-089bfa567519 to 0.1.0 PR: [#70](https://github.com/jfrog/terraform-provider-project/pull/70)
+
 ## 1.1.13 (Jan 5, 2023). Tested on Artifactory 7.49.8 and Xray 3.67.9
 
 BUG FIXES:
