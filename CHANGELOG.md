@@ -1,3 +1,9 @@
+## 1.1.15 (February 24, 2023)
+
+BUG FIXES:
+
+* resource/project: Update `key` attribute validation to match Artifactory Project. PR: [#71](https://github.com/jfrog/terraform-provider-project/pull/71)
+
 ## 1.1.14 (February 23, 2023)
 
 SECURITY:
