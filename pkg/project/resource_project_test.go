@@ -62,7 +62,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
-				ExpectError: regexp.MustCompile(".*project_key must be 2 - 10 lowercase alphanumeric and hyphen characters.*"),
+				ExpectError: regexp.MustCompile(".*project_key must be 2 - 20 lowercase alphanumeric and hyphen characters.*"),
 			},
 		},
 	}
@@ -81,7 +81,7 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 		},
 		{
 			Name:  "TooLong",
-			Value: strings.ToLower(randSeq(11)),
+			Value: strings.ToLower(randSeq(21)),
 		},
 		{
 			Name:  "HasUppercase",
