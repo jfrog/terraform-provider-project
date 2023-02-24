@@ -1,4 +1,4 @@
-## 1.1.15 (February 24, 2023)
+## 1.1.15 (February 24, 2023). Tested on Artifactory 7.49.8 and Xray 3.67.9
 
 BUG FIXES:
 
