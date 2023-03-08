@@ -49,7 +49,7 @@ func TestAccProjectMember(t *testing.T) {
 		}
 	`, params)
 
-	addUserConfig := test.ExecuteTemplate("TestAccProjectMember", `
+	addMembersConfig := test.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -72,7 +72,7 @@ func TestAccProjectMember(t *testing.T) {
 		}
 	`, params)
 
-	noUserConfig := test.ExecuteTemplate("TestAccProjectMember", `
+	noMemberConfig := test.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -113,7 +113,7 @@ func TestAccProjectMember(t *testing.T) {
 				),
 			},
 			{
-				Config: addUserConfig,
+				Config: addMembersConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
@@ -129,7 +129,12 @@ func TestAccProjectMember(t *testing.T) {
 				),
 			},
 			{
-				Config: noUserConfig,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				Config: noMemberConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
@@ -256,6 +261,11 @@ func TestAccProjectGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "group.1.roles.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "group.1.roles.0", contributorRole),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: noGroupConfig,
