@@ -11,6 +11,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func testAccProviders() map[string]func() (*schema.Provider, error) {
@@ -33,7 +34,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		}
 		provider, _ := testAccProviders()["project"]()
 		provider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
-		client := provider.Meta().(*resty.Client)
+		client := provider.Meta().(util.ProvderMetadata).Client
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
 			if resp != nil {

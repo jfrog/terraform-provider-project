@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
@@ -55,7 +54,7 @@ var readRepos = func(ctx context.Context, projectKey string, m interface{}) ([]R
 
 	artifactoryRepos := []ArtifactoryRepo{}
 
-	_, err := m.(*resty.Client).R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&artifactoryRepos).
 		Get("/artifactory/api/repositories?project={projectKey}")
@@ -123,8 +122,7 @@ var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, 
 var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepo: %s", repoKey))
 
-	_, err := m.(*resty.Client).
-		R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
@@ -165,8 +163,7 @@ var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m
 
 	var errorResp ErrorResponse
 
-	resp, err := m.(*resty.Client).
-		R().
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).

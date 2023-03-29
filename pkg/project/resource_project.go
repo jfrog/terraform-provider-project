@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -300,7 +299,7 @@ func projectResource() *schema.Resource {
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		project := Project{}
 
-		_, err := m.(*resty.Client).R().
+		_, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetResult(&project).
 			Get(projectUrl)
@@ -340,7 +339,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(*resty.Client).R().SetBody(project).Post(projectsUrl)
+		_, err = m.(util.ProvderMetadata).Client.R().SetBody(project).Post(projectsUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -380,7 +379,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(*resty.Client).R().
+		_, err = m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetBody(project).
 			Put(projectUrl)
@@ -428,7 +427,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErr))
 		}
 
-		resp, err := m.(*resty.Client).R().
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			Delete(projectUrl)
 
