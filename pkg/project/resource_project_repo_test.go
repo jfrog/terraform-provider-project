@@ -296,6 +296,7 @@ func TestAccProjectRepoUnassignNonexistantRepo(t *testing.T) {
 				PreConfig: func() {
 					deleteTestRepo(t, repo)
 				},
+				Config: initialConfig,
 				// SkipFunc is called after PreConfig but before applying the Config.
 				// https://github.com/hashicorp/terraform-plugin-sdk/blob/main/helper/resource/testing_new.go#L133
 				//

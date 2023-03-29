@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
@@ -142,7 +141,7 @@ var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]R
 
 	roles := []Role{}
 
-	_, err := m.(*resty.Client).R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&roles).
 		Get(projectRolesUrl)
@@ -208,7 +207,7 @@ var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []
 var addRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
 	tflog.Debug(ctx, "addRole")
 
-	_, err := m.(*resty.Client).R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetBody(role).
 		Post(projectRolesUrl)
@@ -219,7 +218,7 @@ var addRole = func(ctx context.Context, projectKey string, role Role, m interfac
 var updateRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
 	tflog.Debug(ctx, "updateRole")
 
-	_, err := m.(*resty.Client).R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
@@ -247,7 +246,7 @@ var deleteRole = func(ctx context.Context, projectKey string, role Role, m inter
 	tflog.Debug(ctx, "deleteRole")
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", role))
 
-	_, err := m.(*resty.Client).R().
+	_, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
