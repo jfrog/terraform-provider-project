@@ -11,13 +11,6 @@ resources:
         pullRequestCreate: true
       cancelPendingRunsOn:
         pullRequestUpdate: false
-  - name: terraform_provider_shared
-    type: GitRepo
-    configuration:
-      gitProvider: partnership_github
-      path: jfrog/terraform-provider-shared # if path is modified, change the name as well, per Pipelines doc
-      branches:
-        include: master
 pipelines:
   - name: tf_provider_project_gke
     configuration:
