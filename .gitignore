@@ -11,5 +11,7 @@ terraform.tfstate.backup
 lib/
 *.lic
 /resources/
+coverage.txt
+.scannerwork
 
 .DS_Store
