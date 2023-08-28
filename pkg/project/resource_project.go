@@ -23,7 +23,7 @@ type AdminPrivileges struct {
 }
 
 // Project GET {{ host }}/access/api/v1/projects/{{prjKey}}/
-//GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
+// GET {{ host }}/artifactory/api/repositories/?prjKey={{prjKey}}
 type Project struct {
 	Key                    string          `json:"project_key"`
 	DisplayName            string          `json:"display_name"`
@@ -451,6 +451,6 @@ func projectResource() *schema.Resource {
 		},
 
 		Schema:      projectSchema,
-		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n~>We strongly recommend using the `repos` attribute to manage the list of repositories. See below for additional details.",
+		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.",
 	}
 }

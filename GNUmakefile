@@ -39,7 +39,7 @@ update_pkg_cache:
 	GOPROXY=https://proxy.golang.org GO111MODULE=on go get github.com/jfrog/terraform-provider-${PRODUCT}@v${VERSION}
 
 build: fmt
-	GORELEASER_CURRENT_TAG=${NEXT_VERSION} goreleaser build --single-target --rm-dist --snapshot
+	GORELEASER_CURRENT_TAG=${NEXT_VERSION} goreleaser build --single-target --clean --snapshot
 
 test:
 	@echo "==> Starting unit tests"
@@ -65,6 +65,7 @@ fmt:
 	@go fmt ./...
 
 doc:
+	rm -r -v docs/*
 	go generate
 
 .PHONY: build fmt
