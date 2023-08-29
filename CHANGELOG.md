@@ -1,8 +1,14 @@
-## 1.2.0 (August 29 29, 2023). Tested on Artifactory 7.63.14 and Xray 3.80.9
+## 1.2.1 (August 30, 2023)
+
+IMPROVEMENTS:
+
+* resource/project: Update `max_storage_in_gibibytes` attribute to work with int64 type explicitly. Update validation to include max range. Issue: [#79](https://github.com/jfrog/terraform-provider-project/issues/79) PR: [#82](https://github.com/jfrog/terraform-provider-project/pull/82)
+
+## 1.2.0 (August 29, 2023). Tested on Artifactory 7.63.14 and Xray 3.80.9
 
 FEATURES:
 
-* **New Resource:** `project_environment` Issue: [#78](https://github.com/jfrog/terraform-provider-project/issues/78)  PR: [#81](https://github.com/jfrog/terraform-provider-project/pull/81)
+* **New Resource:** `project_environment` Issue: [#78](https://github.com/jfrog/terraform-provider-project/issues/78) PR: [#81](https://github.com/jfrog/terraform-provider-project/pull/81)
 
 ## 1.1.16 (March 29, 2023). Tested on Artifactory 7.55.9 and Xray 3.69.3
 
