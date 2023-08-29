@@ -1,3 +1,9 @@
+## 1.2.0 (August 29 29, 2023). Tested on Artifactory 7.63.14 and Xray 3.80.9
+
+FEATURES:
+
+* **New Resource:** `project_environment` Issue: [#78](https://github.com/jfrog/terraform-provider-project/issues/78)  PR: [#81](https://github.com/jfrog/terraform-provider-project/pull/81)
+
 ## 1.1.16 (March 29, 2023). Tested on Artifactory 7.55.9 and Xray 3.69.3
 
 IMPROVEMENTS:

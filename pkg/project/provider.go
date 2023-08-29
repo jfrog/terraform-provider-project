@@ -48,7 +48,8 @@ func Provider() *schema.Provider {
 		ResourcesMap: util.AddTelemetry(
 			productId,
 			map[string]*schema.Resource{
-				"project": projectResource(),
+				"project":             projectResource(),
+				"project_environment": projectEnvironmentResource(),
 			},
 		),
 	}

@@ -3,7 +3,7 @@ terraform {
   required_providers {
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "1.1.1"
+      version = "1.1.17"
     }
   }
 }
@@ -68,4 +68,9 @@ resource "project" "myproject" {
   }
 
   repos = ["docker-local", "npm-remote"] // Must exist already in Artifactory
+}
+
+resource "project_environment" "myenv" {
+  name        = "myenv"
+  project_key = project.myproj.key
 }
