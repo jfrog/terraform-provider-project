@@ -144,6 +144,19 @@ func projectEnvironmentResource() *schema.Resource {
 		return nil
 	}
 
+	var importForProjectKeyEnvironmentName = func(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+		parts := strings.SplitN(d.Id(), ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("unexpected format of ID (%s), expected project_key:environment_name", d.Id())
+		}
+
+		d.Set("project_key", parts[0])
+		d.Set("name", parts[1])
+		d.SetId(fmt.Sprintf("%s-%s", parts[0], parts[1]))
+
+		return []*schema.ResourceData{d}, nil
+	}
+
 	var projectEnvironmentLengthDiff = func(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
 		projectEnvironmentName := fmt.Sprintf("%s-%s", diff.Get("project_key"), diff.Get("name"))
 		tflog.Debug(ctx, fmt.Sprintf("projectEnvironmentName: %s", projectEnvironmentName))
@@ -163,18 +176,7 @@ func projectEnvironmentResource() *schema.Resource {
 		DeleteContext: deleteProjectEnvironment,
 
 		Importer: &schema.ResourceImporter{
-			State: func(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
-				parts := strings.SplitN(d.Id(), ":", 2)
-				if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-					return nil, fmt.Errorf("unexpected format of ID (%s), expected project_key:environment_name", d.Id())
-				}
-
-				d.Set("project_key", parts[0])
-				d.Set("name", parts[1])
-				d.SetId(fmt.Sprintf("%s-%s", parts[0], parts[1]))
-
-				return []*schema.ResourceData{d}, nil
-			},
+			State: importForProjectKeyEnvironmentName,
 		},
 
 		CustomizeDiff: projectEnvironmentLengthDiff,
