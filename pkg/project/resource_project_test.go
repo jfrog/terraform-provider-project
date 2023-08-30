@@ -17,7 +17,7 @@ func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 }
 
 func getRandomMaxStorageSize() int {
-	randomMaxStorage := rand.Intn(1000)
+	randomMaxStorage := rand.Intn(maxStorageInGibibytes)
 	if randomMaxStorage == 0 {
 		randomMaxStorage = 1
 	}
@@ -122,6 +122,79 @@ func testProjectConfig(name, key string) string {
 			email_notification = {{ .email_notification }}
 		}
 	`, params)
+}
+
+func TestAccProjectInvalidMaxStorage(t *testing.T) {
+	invalidMaxStorages := []struct {
+		Name       string
+		Value      int64
+		ErrorRegex string
+	}{
+		{
+			Name:       "Invalid",
+			Value:      -2,
+			ErrorRegex: `.*expected max_storage_in_gibibytes to be one of \[-1\], got -2.*`,
+		},
+		{
+			Name:       "TooSmall",
+			Value:      0,
+			ErrorRegex: `.*expected max_storage_in_gibibytes to be in the range \(1 - 8589934591\), got 0.*`,
+		},
+		{
+			Name:       "TooLarge",
+			Value:      8589934592,
+			ErrorRegex: `.*expected max_storage_in_gibibytes to be in the range \(1 - 8589934591\), got 8589934592.*`,
+		},
+	}
+
+	for _, invalidMaxStorage := range invalidMaxStorages {
+		t.Run(invalidMaxStorage.Name, func(t *testing.T) {
+			resource.Test(makeInvalidMaxStorageTestCase(invalidMaxStorage.Value, invalidMaxStorage.ErrorRegex, t))
+		})
+	}
+}
+
+func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t *testing.T) (*testing.T, resource.TestCase) {
+	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	resourceName := fmt.Sprintf("project.%s", name)
+
+	params := map[string]interface{}{
+		"max_storage_in_gibibytes":   invalidMaxStorage,
+		"block_deployments_on_limit": test.RandBool(),
+		"email_notification":         test.RandBool(),
+		"manage_members":             test.RandBool(),
+		"manage_resources":           test.RandBool(),
+		"index_resources":            test.RandBool(),
+		"name":                       name,
+		"project_key":                strings.ToLower(randSeq(20)),
+	}
+	project := test.ExecuteTemplate("TestAccProjects", `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+		}
+	`, params)
+
+	return t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
+		ProviderFactories: testAccProviders(),
+		Steps: []resource.TestStep{
+			{
+				Config:      project,
+				ExpectError: regexp.MustCompile(errorRegex),
+			},
+		},
+	}
 }
 
 func TestAccProjectInvalidDisplayName(t *testing.T) {

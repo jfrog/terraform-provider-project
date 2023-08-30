@@ -29,7 +29,7 @@ type Project struct {
 	DisplayName            string          `json:"display_name"`
 	Description            string          `json:"description"`
 	AdminPrivileges        AdminPrivileges `json:"admin_privileges"`
-	StorageQuota           int             `json:"storage_quota_bytes"`
+	StorageQuota           int64           `json:"storage_quota_bytes"`
 	SoftLimit              bool            `json:"soft_limit"`
 	QuotaEmailNotification bool            `json:"storage_quota_email_notification"`
 }
@@ -40,6 +40,7 @@ func (p Project) Id() string {
 
 const projectsUrl = "/access/api/v1/projects"
 const projectUrl = projectsUrl + "/{projectKey}"
+const maxStorageInGibibytes = 8589934591
 
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
@@ -95,7 +96,7 @@ func projectResource() *schema.Resource {
 			Default:  -1,
 			ValidateDiagFunc: validation.ToDiagFunc(
 				validation.Any(
-					validation.IntAtLeast(1),
+					int64Between(1, maxStorageInGibibytes),
 					validation.IntInSlice([]int{-1}),
 				),
 			),
