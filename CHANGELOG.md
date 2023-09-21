@@ -1,4 +1,4 @@
-## 1.3.0 (September 25, 2023)
+## 1.3.0 (September 25, 2023). Tested on Artifactory 7.68.11 and Xray 3.82.11
 
 FEATURES:
 * **New Resource:** `project_role` - Separate resource to manage project role.
