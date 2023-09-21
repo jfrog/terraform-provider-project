@@ -37,7 +37,7 @@ type Membership struct {
 func getMembers(d *util.ResourceData, membershipKey string) []Member {
 	var members []Member
 
-	if v, ok := d.GetOkExists(membershipKey); ok {
+	if v, ok := d.GetOk(membershipKey); ok {
 		projectMemberships := v.(*schema.Set).List()
 		if len(projectMemberships) == 0 {
 			return members
@@ -58,7 +58,7 @@ func getMembers(d *util.ResourceData, membershipKey string) []Member {
 }
 
 var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
-	d := &util.ResourceData{data}
+	d := &util.ResourceData{ResourceData: data}
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
 	}
@@ -95,7 +95,7 @@ var readMembers = func(ctx context.Context, projectKey string, membershipType st
 	tflog.Debug(ctx, "readMembers")
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
-		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
+		return nil, fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	membership := Membership{}
@@ -121,7 +121,7 @@ var updateMembers = func(ctx context.Context, projectKey string, membershipType 
 	tflog.Trace(ctx, fmt.Sprintf("terraformMembership.Members: %+v\n", terraformMembership.Members))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
-		return nil, fmt.Errorf("Invalid membershipType: %s", membershipType)
+		return nil, fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	projectMembers, err := readMembers(ctx, projectKey, membershipType, m)
@@ -159,7 +159,7 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 	tflog.Trace(ctx, fmt.Sprintf("member: %v", member))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
-		return fmt.Errorf("Invalid membershipType: %s", membershipType)
+		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	_, err := m.(util.ProvderMetadata).Client.R().
@@ -192,7 +192,7 @@ var deleteMember = func(ctx context.Context, projectKey string, membershipType s
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", member))
 
 	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
-		return fmt.Errorf("Invalid membershipType: %s", membershipType)
+		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	_, err := m.(util.ProvderMetadata).Client.R().

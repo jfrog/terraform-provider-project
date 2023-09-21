@@ -45,7 +45,6 @@ const maxStorageInGibibytes = 8589934591
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
 func projectResource() *schema.Resource {
-
 	var projectSchema = map[string]*schema.Schema{
 		"key": {
 			Type:             schema.TypeString,
@@ -220,8 +219,60 @@ func projectResource() *schema.Resource {
 		},
 	}
 
+	var projectSchemaV2 = util.MergeMaps(
+		projectSchema,
+		map[string]*schema.Schema{
+			"role": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.All(
+								validation.StringIsNotEmpty,
+								maxLength(64),
+							)),
+						},
+						"description": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"type": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(customRoleTypeRegex, fmt.Sprintf(`Only "%s" is supported`, customRoleType))),
+							Description:      fmt.Sprintf(`Type of role. Only "%s" is supported`, customRoleType),
+						},
+						"environments": {
+							Type:        schema.TypeSet,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: fmt.Sprintf("A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (%s)", strings.Join(validRoleEnvironments, ", ")),
+						},
+						"actions": {
+							Type:        schema.TypeSet,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: fmt.Sprintf("List of pre-defined actions (%s)", strings.Join(validRoleActions, ", ")),
+						},
+					},
+				},
+				Description: "Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole)",
+				Deprecated:  "Replaced by `project_role` resource. This should not be used in combination with `project_role` resource. Use `use_project_role_resource` attribute to control which resource manages project roles.",
+			},
+			"use_project_role_resource": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to false.",
+			},
+		},
+	)
+
 	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
-		d := &util.ResourceData{data}
+		d := &util.ResourceData{ResourceData: data}
 
 		project := Project{
 			Key:                    d.GetString("key", false),
@@ -232,7 +283,7 @@ func projectResource() *schema.Resource {
 			QuotaEmailNotification: d.GetBool("email_notification", false),
 		}
 
-		if v, ok := d.GetOkExists("admin_privileges"); ok {
+		if v, ok := d.GetOk("admin_privileges"); ok {
 			privileges := v.(*schema.Set).List()
 			if len(privileges) == 1 {
 				adminPrivileges := AdminPrivileges{}
@@ -265,7 +316,7 @@ func projectResource() *schema.Resource {
 		setValue("description", project.Description)
 		setValue("max_storage_in_gibibytes", BytesToGibibytes(project.StorageQuota))
 		setValue("block_deployments_on_limit", !project.SoftLimit)
-		errors = setValue("email_notification", project.QuotaEmailNotification)
+		setValue("email_notification", project.QuotaEmailNotification)
 		errors = setValue("admin_privileges", []interface{}{
 			map[string]bool{
 				"manage_members":   project.AdminPrivileges.ManageMembers,
@@ -318,9 +369,13 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		roles, err := readRoles(ctx, data.Id(), m)
-		if err != nil {
-			return diag.FromErr(err)
+		roles := []Role{}
+		useProjectRoleResource := data.Get("use_project_role_resource").(bool)
+		if !useProjectRoleResource {
+			roles, err = readRoles(ctx, data.Id(), m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		repos, err := readRepos(ctx, data.Id(), m)
@@ -348,9 +403,12 @@ func projectResource() *schema.Resource {
 		data.SetId(project.Id())
 
 		// Role should be updated first before members or groups as they may depend on roles defined by the users
-		_, err = updateRoles(ctx, data.Id(), roles, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectRoleResource := data.Get("use_project_role_resource").(bool)
+		if !useProjectRoleResource {
+			_, err = updateRoles(ctx, data.Id(), roles, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
@@ -391,9 +449,12 @@ func projectResource() *schema.Resource {
 		data.SetId(project.Id())
 
 		// Role should be updated first before members or groups as they may depend on roles defined by the users
-		_, err = updateRoles(ctx, data.Id(), roles, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectRoleResource := data.Get("use_project_role_resource").(bool)
+		if !useProjectRoleResource {
+			_, err = updateRoles(ctx, data.Id(), roles, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
@@ -432,16 +493,30 @@ func projectResource() *schema.Resource {
 			SetPathParam("projectKey", data.Id()).
 			Delete(projectUrl)
 
-		if err != nil && resp.StatusCode() == http.StatusNotFound {
-			data.SetId("")
+		if err != nil {
+			if resp.StatusCode() == http.StatusNotFound {
+				data.SetId("")
+			}
 			return diag.FromErr(err)
 		}
 
 		return nil
 	}
 
+	var resourceV1 = func() *schema.Resource {
+		return &schema.Resource{
+			Schema: projectSchema,
+		}
+	}
+
+	var resourceStateUpgradeV1 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
+		// set use_project_role_resource to true for existing state so the resource will continue
+		// using `roles` attribute until explicitly set to false
+		rawState["use_project_role_resource"] = true
+		return rawState, nil
+	}
+
 	return &schema.Resource{
-		SchemaVersion: 1,
 		CreateContext: createProject,
 		ReadContext:   readProject,
 		UpdateContext: updateProject,
@@ -451,7 +526,15 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema:      projectSchema,
+		Schema:        projectSchemaV2,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceStateUpgradeV1,
+				Version: 1,
+			},
+		},
 		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.",
 	}
 }

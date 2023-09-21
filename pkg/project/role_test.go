@@ -9,7 +9,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/test"
 )
 
-func TestAccProjectRole(t *testing.T) {
+func TestAccProject_role(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
@@ -159,9 +159,10 @@ func TestAccProjectRole(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
 			},
 			{
 				Config: noUserConfig,

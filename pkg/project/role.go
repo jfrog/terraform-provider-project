@@ -9,69 +9,8 @@ import (
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
-const projectRolesUrl = projectUrl + "/roles"
-const projectRoleUrl = projectRolesUrl + "/{roleName}"
-
-const customRoleType = "CUSTOM"
-
-var validRoleEnvironments = []string{
-	"DEV",
-	"PROD",
-}
-
-var validRoleActions = []string{
-	"READ_REPOSITORY",
-	"ANNOTATE_REPOSITORY",
-	"DEPLOY_CACHE_REPOSITORY",
-	"DELETE_OVERWRITE_REPOSITORY",
-	"MANAGE_XRAY_MD_REPOSITORY",
-	"READ_RELEASE_BUNDLE",
-	"ANNOTATE_RELEASE_BUNDLE",
-	"CREATE_RELEASE_BUNDLE",
-	"DISTRIBUTE_RELEASE_BUNDLE",
-	"DELETE_RELEASE_BUNDLE",
-	"MANAGE_XRAY_MD_RELEASE_BUNDLE",
-	"READ_BUILD",
-	"ANNOTATE_BUILD",
-	"DEPLOY_BUILD",
-	"DELETE_BUILD",
-	"MANAGE_XRAY_MD_BUILD",
-	"READ_SOURCES_PIPELINE",
-	"TRIGGER_PIPELINE",
-	"READ_INTEGRATIONS_PIPELINE",
-	"READ_POOLS_PIPELINE",
-	"MANAGE_INTEGRATIONS_PIPELINE",
-	"MANAGE_SOURCES_PIPELINE",
-	"MANAGE_POOLS_PIPELINE",
-	"TRIGGER_SECURITY",
-	"ISSUES_SECURITY",
-	"LICENCES_SECURITY",
-	"REPORTS_SECURITY",
-	"WATCHES_SECURITY",
-	"POLICIES_SECURITY",
-	"RULES_SECURITY",
-	"MANAGE_MEMBERS",
-	"MANAGE_RESOURCES",
-}
-
-type Role struct {
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Type         string   `json:"type"`
-	Environments []string `json:"environments"`
-	Actions      []string `json:"actions"`
-}
-
-func (r Role) Id() string {
-	return r.Name
-}
-
-func (a Role) Equals(b Equatable) bool {
-	return a.Id() == b.Id()
-}
-
 var unpackRoles = func(data *schema.ResourceData) []Role {
-	d := &util.ResourceData{data}
+	d := &util.ResourceData{ResourceData: data}
 
 	var roles []Role
 

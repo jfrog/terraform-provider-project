@@ -182,6 +182,6 @@ func projectEnvironmentResource() *schema.Resource {
 		CustomizeDiff: projectEnvironmentLengthDiff,
 
 		Schema:      projectEnvironmentSchema,
-		Description: "Creates a new environment for the specified project.\n~>**Note** The combined length of `project_key` and `name` (separated by '-') cannot not exceeds 32 characters.",
+		Description: "Creates a new environment for the specified project.\n\n~>The combined length of `project_key` and `name` (separated by '-') cannot not exceeds 32 characters.",
 	}
 }
