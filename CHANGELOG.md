@@ -1,3 +1,12 @@
+## 1.3.0 (September 25, 2023)
+
+FEATURES:
+* **New Resource:** `project_role` - Separate resource to manage project role.
+* resource/project: Add `use_project_role_resource` attribute to toggle if `project` resource should use its `roles` or not to manage project roles. Should be set to `true` when using in conjunction with `project_role` resource.
+
+Issue: [#85](https://github.com/jfrog/terraform-provider-project/issues/85)
+PR: [#86](https://github.com/jfrog/terraform-provider-project/pull/86)
+
 ## 1.2.1 (August 30, 2023). Tested on Artifactory 7.63.14 and Xray 3.80.9
 
 IMPROVEMENTS:
