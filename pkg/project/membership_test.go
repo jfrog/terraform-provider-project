@@ -10,7 +10,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/test"
 )
 
-func TestAccProjectMember(t *testing.T) {
+func TestAccProject_membership(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
@@ -19,8 +19,8 @@ func TestAccProjectMember(t *testing.T) {
 	email1 := username1 + "@tempurl.org"
 	username2 := "user2"
 	email2 := username2 + "@tempurl.org"
-	developeRole := "developer"
-	contributorRole := "contributor"
+	developeRole := "Developer"
+	contributorRole := "Contributor"
 
 	params := map[string]interface{}{
 		"name":            name,
@@ -129,9 +129,10 @@ func TestAccProjectMember(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
 			},
 			{
 				Config: noMemberConfig,
@@ -146,15 +147,15 @@ func TestAccProjectMember(t *testing.T) {
 	})
 }
 
-func TestAccProjectGroup(t *testing.T) {
+func TestAccProject_group(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
 
 	group1 := "group1"
 	group2 := "group2"
-	developeRole := "developer"
-	contributorRole := "contributor"
+	developeRole := "Developer"
+	contributorRole := "Contributor"
 
 	params := map[string]interface{}{
 		"name":            name,
@@ -263,9 +264,10 @@ func TestAccProjectGroup(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
 			},
 			{
 				Config: noGroupConfig,

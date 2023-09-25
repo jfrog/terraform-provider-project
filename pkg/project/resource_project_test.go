@@ -293,12 +293,12 @@ func TestAccProject_full(t *testing.T) {
 
 			member {
 				name  = "{{ .username1 }}"
-				roles = ["developer","project admin"]
+				roles = ["Developer","Project Admin"]
 			}
 
 			member {
 				name  = "{{ .username2 }}"
-				roles = ["developer"]
+				roles = ["Developer"]
 			}
 
 			group {
@@ -308,7 +308,7 @@ func TestAccProject_full(t *testing.T) {
 
 			group {
 				name  = "{{ .group2 }}"
-				roles = ["release manager"]
+				roles = ["Release Manager"]
 			}
 
 			role {
@@ -386,21 +386,22 @@ func TestAccProject_full(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "use_project_role_resource", "false"),
 					resource.TestCheckResourceAttr(resourceName, "member.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "member.0.name", username1),
 					resource.TestCheckResourceAttr(resourceName, "member.0.roles.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "member.0.roles.0", "developer"),
-					resource.TestCheckResourceAttr(resourceName, "member.0.roles.1", "project admin"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.0", "Developer"),
+					resource.TestCheckResourceAttr(resourceName, "member.0.roles.1", "Project Admin"),
 					resource.TestCheckResourceAttr(resourceName, "member.1.name", username2),
 					resource.TestCheckResourceAttr(resourceName, "member.1.roles.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "member.1.roles.0", "developer"),
+					resource.TestCheckResourceAttr(resourceName, "member.1.roles.0", "Developer"),
 					resource.TestCheckResourceAttr(resourceName, "group.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "group.0.name", group1),
 					resource.TestCheckResourceAttr(resourceName, "group.0.roles.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "group.0.roles.0", "qa"),
 					resource.TestCheckResourceAttr(resourceName, "group.1.name", group2),
 					resource.TestCheckResourceAttr(resourceName, "group.1.roles.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "group.1.roles.0", "release manager"),
+					resource.TestCheckResourceAttr(resourceName, "group.1.roles.0", "Release Manager"),
 					resource.TestCheckResourceAttr(resourceName, "repos.#", "2"),
 					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo1),
 					resource.TestCheckTypeSetElemAttr(resourceName, "repos.*", repo2),
@@ -420,9 +421,150 @@ func TestAccProject_full(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+			},
+		},
+	})
+}
+
+func TestAccProject_migrate_schema(t *testing.T) {
+	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	resourceName := fmt.Sprintf("project.%s", name)
+
+	params := map[string]interface{}{
+		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
+		"block_deployments_on_limit": test.RandBool(),
+		"email_notification":         test.RandBool(),
+		"manage_members":             test.RandBool(),
+		"manage_resources":           test.RandBool(),
+		"index_resources":            test.RandBool(),
+		"name":                       name,
+		"project_key":                strings.ToLower(randSeq(6)),
+	}
+
+	template := `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+
+			role {
+				name         = "qa"
+				description  = "QA role"
+				type         = "CUSTOM"
+				environments = ["DEV"]
+				actions      = ["READ_REPOSITORY","READ_RELEASE_BUNDLE", "READ_BUILD", "READ_SOURCES_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "TRIGGER_PIPELINE"]
+			}
+
+			role {
+				name         = "devop"
+				description  = "DevOp role"
+				type         = "CUSTOM"
+				environments = ["DEV", "PROD"]
+				actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+			}
+		}
+	`
+
+	config := test.ExecuteTemplate("TestAccProject", template, params)
+
+	updatedTemplate := `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+			use_project_role_resource = true
+		}
+	`
+
+	updateParams := map[string]interface{}{
+		"max_storage_in_gibibytes":   params["max_storage_in_gibibytes"],
+		"block_deployments_on_limit": !params["block_deployments_on_limit"].(bool),
+		"email_notification":         !params["email_notification"].(bool),
+		"manage_members":             !params["manage_members"].(bool),
+		"manage_resources":           !params["manage_resources"].(bool),
+		"index_resources":            !params["index_resources"].(bool),
+		"name":                       params["name"],
+		"project_key":                params["project_key"],
+	}
+	updatedConfig := test.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: verifyDeleted(resourceName, verifyProject),
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"project": {
+						VersionConstraint: "1.2.1",
+						Source:            "registry.terraform.io/jfrog/project",
+					},
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
+					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibibytes", fmt.Sprintf("%d", params["max_storage_in_gibibytes"])),
+					resource.TestCheckResourceAttr(resourceName, "block_deployments_on_limit", fmt.Sprintf("%t", params["block_deployments_on_limit"])),
+					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
+					resource.TestCheckNoResourceAttr(resourceName, "use_project_role_resource"),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
+				),
+			},
+			{
+				ProviderFactories: testAccProviders(),
+				Config:            config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+					resource.TestCheckResourceAttr(resourceName, "description", "test description"),
+					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibibytes", fmt.Sprintf("%d", params["max_storage_in_gibibytes"])),
+					resource.TestCheckResourceAttr(resourceName, "block_deployments_on_limit", fmt.Sprintf("%t", params["block_deployments_on_limit"])),
+					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
+				),
+			},
+			{
+				ProviderFactories: testAccProviders(),
+				Config:            updatedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+					resource.TestCheckResourceAttr(resourceName, "max_storage_in_gibibytes", fmt.Sprintf("%d", updateParams["max_storage_in_gibibytes"])),
+					resource.TestCheckResourceAttr(resourceName, "block_deployments_on_limit", fmt.Sprintf("%t", updateParams["block_deployments_on_limit"])),
+					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", updateParams["email_notification"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", updateParams["manage_members"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", updateParams["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", updateParams["index_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "use_project_role_resource", "true"),
+					resource.TestCheckResourceAttr(resourceName, "role.#", "0"),
+				),
 			},
 		},
 	})

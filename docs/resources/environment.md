@@ -4,13 +4,14 @@ page_title: "project_environment Resource - terraform-provider-project"
 subcategory: ""
 description: |-
   Creates a new environment for the specified project.
-  ~>Note The combined length of project_key and name (separated by '-') cannot not exceeds 32 characters.
+  ~>The combined length of project_key and name (separated by '-') cannot not exceeds 32 characters.
 ---
 
 # project_environment (Resource)
 
 Creates a new environment for the specified project.
-~>**Note** The combined length of `project_key` and `name` (separated by '-') cannot not exceeds 32 characters.
+
+~>The combined length of `project_key` and `name` (separated by '-') cannot not exceeds 32 characters.
 
 ## Example Usage
 

@@ -12,20 +12,20 @@ import (
 
 type RepoKey string
 
-func (this RepoKey) Id() string {
-	return string(this)
+func (r RepoKey) Id() string {
+	return string(r)
 }
 
-func (this RepoKey) Equals(other Equatable) bool {
-	return this == other
+func (r RepoKey) Equals(other Equatable) bool {
+	return r == other
 }
 
 var unpackRepos = func(data *schema.ResourceData) []RepoKey {
-	d := &util.ResourceData{data}
+	d := &util.ResourceData{ResourceData: data}
 
 	var repoKeys []RepoKey
 
-	if v, ok := d.GetOkExists("repos"); ok {
+	if v, ok := d.GetOk("repos"); ok {
 		for _, key := range util.CastToStringArr(v.(*schema.Set).List()) {
 			repoKeys = append(repoKeys, RepoKey(key))
 		}

@@ -11,7 +11,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/test"
 )
 
-func TestAccProjectRepo(t *testing.T) {
+func TestAccProject_repo(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))
@@ -105,9 +105,10 @@ func TestAccProjectRepo(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
 			},
 			{
 				Config: noReposConfig,
@@ -125,7 +126,7 @@ func TestAccProjectRepo(t *testing.T) {
 /*
 Test to assign large number of repositories to a project
 */
-func TestAccProjectRepoAssignMultipleRepos(t *testing.T) {
+func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 
 	const numRepos = 5
 	const repoNameInitial = "repo-"
@@ -229,9 +230,10 @@ func TestAccProjectRepoAssignMultipleRepos(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
 			},
 			{
 				Config: noReposConfig,
@@ -246,7 +248,7 @@ func TestAccProjectRepoAssignMultipleRepos(t *testing.T) {
 	})
 }
 
-func TestAccProjectRepoUnassignNonexistantRepo(t *testing.T) {
+func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
 	projectKey := strings.ToLower(randSeq(6))

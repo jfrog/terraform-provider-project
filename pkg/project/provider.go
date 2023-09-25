@@ -50,6 +50,7 @@ func Provider() *schema.Provider {
 			map[string]*schema.Resource{
 				"project":             projectResource(),
 				"project_environment": projectEnvironmentResource(),
+				"project_role":        projectRoleResource(),
 			},
 		),
 	}
