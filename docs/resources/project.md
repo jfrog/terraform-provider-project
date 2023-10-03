@@ -59,6 +59,7 @@ resource "project" "myproject" {
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
+  use_project_role_resource  = true
 
   member {
     name  = "user1"
@@ -80,22 +81,6 @@ resource "project" "myproject" {
     roles = ["release manager"]
   }
 
-  role {
-    name         = "developer"
-    description  = "Developer role"
-    type         = "CUSTOM"
-    environments = ["DEV"]
-    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE"]
-  }
-
-  role {
-    name         = "devop"
-    description  = "DevOp role"
-    type         = "CUSTOM"
-    environments = ["DEV", "PROD"]
-    actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
-  }
-
   repos = ["docker-local", "rpm-local"]
 }
 ```
@@ -112,6 +97,8 @@ resource "project" "myproject" {
 ### Optional
 
 - `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
+
+~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).
 - `description` (String)
 - `email_notification` (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker
 - `group` (Block Set) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))

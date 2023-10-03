@@ -30,6 +30,7 @@ resource "project" "myproject" {
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
+  use_project_role_resource  = true
 
   member {
     name  = "user1" // Must exist already in Artifactory
@@ -51,26 +52,28 @@ resource "project" "myproject" {
     roles = ["Release Manager"]
   }
 
-  role {
-    name         = "qa"
-    description  = "QA role"
-    type         = "CUSTOM"
-    environments = ["DEV"]
-    actions      = var.qa_roles
-  }
-
-  role {
-    name         = "devop"
-    description  = "DevOp role"
-    type         = "CUSTOM"
-    environments = ["DEV", "PROD"]
-    actions      = var.devop_roles
-  }
-
   repos = ["docker-local", "npm-remote"] // Must exist already in Artifactory
 }
 
 resource "project_environment" "myenv" {
   name        = "myenv"
   project_key = project.myproj.key
+}
+
+resource "project_role" "qa" {
+    name = "qa"
+    type = "CUSTOM"
+    project_key = project.myproject.key
+    
+    environments = ["DEV"]
+    actions = var.qa_roles
+}
+
+resource "project_role" "devop" {
+    name = "devop"
+    type = "CUSTOM"
+    project_key = project.myproject.key
+    
+    environments = ["DEV", "PROD"]
+    actions = var.devop_roles
 }

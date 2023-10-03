@@ -65,7 +65,7 @@ fmt:
 	@go fmt ./...
 
 doc:
-	rm -r -v docs/*
+	rm -rfv docs/*
 	go generate
 
 .PHONY: build fmt
