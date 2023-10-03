@@ -119,7 +119,7 @@ func projectResource() *schema.Resource {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			Description: "Block deployment of artifacts if storage quota is exceeded.",
+			Description: "Block deployment of artifacts if storage quota is exceeded.\n\n~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).",
 		},
 		"email_notification": {
 			Type:        schema.TypeBool,

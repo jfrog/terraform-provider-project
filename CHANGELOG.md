@@ -1,6 +1,19 @@
+## 1.3.1 (October 4, 2023). Tested on Artifactory 7.68.13 and Xray 3.82.11
+
+IMPROVEMENTS:
+
+* resource/project:
+  * Add clarification to `block_deployments_on_limit` attribute documentation with regards to difference behavior between self-hosted and cloud environments.
+  * Update documentation and remove `role` attributes in HCL example.
+* resource/project_role: Add HCL example to documentation.
+* Update `sample.tf` to use `project_role` resource instead of `project.role` attribute.
+
+PR: [#87](https://github.com/jfrog/terraform-provider-project/pull/87)
+
 ## 1.3.0 (September 25, 2023). Tested on Artifactory 7.68.11 and Xray 3.82.11
 
 FEATURES:
+
 * **New Resource:** `project_role` - Separate resource to manage project role.
 * resource/project: Add `use_project_role_resource` attribute to toggle if `project` resource should use its `roles` or not to manage project roles. Should be set to `true` when using in conjunction with `project_role` resource.
 
