@@ -1,4 +1,4 @@
-## 1.3.1 (October 4, 2023). Tested on Artifactory 7.68.13 and Xray 3.82.11
+## 1.3.1 (October 4, 2023). Tested on Artifactory 7.68.14 and Xray 3.83.8
 
 IMPROVEMENTS:
 
