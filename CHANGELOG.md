@@ -1,3 +1,12 @@
+## 1.3.3 (October 18, 2023)
+
+IMPROVEMENTS:
+
+* resource/project_environment: Improve import documentation example
+* resource/project_role: Add import documentation
+
+PR: [#89](https://github.com/jfrog/terraform-provider-project/pull/89)
+
 ## 1.3.2 (October 12, 2023). Tested on Artifactory 7.68.14 and Xray 3.83.8
 
 SECURITY:
