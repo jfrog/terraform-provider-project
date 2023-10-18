@@ -1,1 +1,1 @@
-terraform import project_environment.myenv myproj:myenv
+terraform import project_environment.myenv project_key:environment_name

@@ -39,5 +39,5 @@ resource "project_environment" "myenv" {
 Import is supported using the following syntax:
 
 ```shell
-terraform import project_environment.myenv myproj:myenv
+terraform import project_environment.myenv project_key:environment_name
 ```
