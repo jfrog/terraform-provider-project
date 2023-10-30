@@ -1,3 +1,9 @@
+## 1.3.4 (October 31, 2023)
+
+BUG FIXES:
+
+* resource/project_environment: Fix incorrect environment from Artifactroy being matched and triggers a state drift. Issue: [#90](https://github.com/jfrog/terraform-provider-project/issues/90) PR: [#92](https://github.com/jfrog/terraform-provider-project/pull/92)
+
 ## 1.3.3 (October 18, 2023)
 
 IMPROVEMENTS:
