@@ -18,6 +18,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 	resourceName := fmt.Sprintf("project_environment.%s", name)
 
 	params := map[string]any{
+		"env_id":      name,
 		"name":        name,
 		"project_key": projectKey,
 	}
@@ -33,7 +34,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 			}
 		}
 
-		resource "project_environment" "{{ .name }}" {
+		resource "project_environment" "{{ .env_id }}" {
 			name        = "{{ .name }}"
 			project_key = project.{{ .project_key }}.key
 		}
@@ -42,11 +43,12 @@ func TestAccProjectEnvironment(t *testing.T) {
 	enviroment := test.ExecuteTemplate("TestAccProjectEnvironment", template, params)
 
 	updateParams := map[string]any{
-		"name":        name,
+		"env_id":      name,
+		"name":        fmt.Sprintf("env-%s", randSeq(10)),
 		"project_key": projectKey,
 	}
 
-	enviromentUpdated := test.ExecuteTemplate("TestAccProjects", template, updateParams)
+	enviromentUpdated := test.ExecuteTemplate("TestAccProjectEnvironment", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
