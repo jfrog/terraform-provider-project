@@ -55,7 +55,7 @@ func projectEnvironmentResource() *schema.Resource {
 
 	var readProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectKey := data.Get("project_key").(string)
-		envs := []ProjectEnvironment{}
+		var envs []ProjectEnvironment
 
 		_, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
@@ -69,6 +69,7 @@ func projectEnvironmentResource() *schema.Resource {
 		for _, env := range envs {
 			if env.Name == fmt.Sprintf("%s-%s", projectKey, data.Get("name")) {
 				matchedEnv = &env
+				break
 			}
 		}
 
@@ -123,6 +124,7 @@ func projectEnvironmentResource() *schema.Resource {
 		}
 
 		data.SetId(projectEnvironmentUpdate.Id())
+		data.Set("name", newName)
 
 		return readProjectEnvironment(ctx, data, m)
 	}
