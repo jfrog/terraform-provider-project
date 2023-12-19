@@ -68,7 +68,7 @@ pipelines:
             - sudo apt update
             - sudo apt install goreleaser
           onExecute:
-            - add_run_variables TFProviderRepo=$(echo ${gitHubRepoUrl} | sed -e 's/git@/@/g' -e 's/:/\//g')
+            - add_run_variables TFProviderRepo=$(echo ${res_terraform_provider_project_gitRepoRepositorySshUrl} | sed -e 's/git@/@/g' -e 's/:/\//g')
             - cd ${res_terraform_provider_project_resourcePath}
             - echo "Verify the code contents merged feature branch with development branch"
             - git branch && ls -al
