@@ -96,7 +96,7 @@ pipelines:
               fi
             - export ARTIFACTORY_CONTAINER_NAME=artifactory
             - >-
-              docker run -i --name ${ARTIFACTORY_CONTAINER_NAME} -t -d --rm -v "${res_terraform_provider_platform_resourcePath}/scripts/artifactory.lic:/artifactory_extra_conf/artifactory.lic:ro" \
+              docker run -i --name ${ARTIFACTORY_CONTAINER_NAME} -t -d --rm -v "${res_terraform_provider_project_resourcePath}/scripts/artifactory.lic:/artifactory_extra_conf/artifactory.lic:ro" \
                 -p 8082:8082 releases-docker.jfrog.io/jfrog/artifactory-pro:${ARTIFACTORY_VERSION}
             - echo "Set localhost to a container IP address, since we run docker inside of docker"
             - export LOCALHOST=$(docker inspect -f '{{`{{range.NetworkSettings.Networks}}{{.Gateway}}{{end}}`}}' ${ARTIFACTORY_CONTAINER_NAME})
