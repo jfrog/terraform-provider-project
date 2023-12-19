@@ -37,8 +37,6 @@ pipelines:
             - name: partnership_slack
             - name: partnership_github
             - name: partnership_rt_cluster_license
-          inputSteps:
-            - name: gke_jfrog_rt_xray_create
           inputResources:
             - name: terraform_provider_project
           environmentVariables:
