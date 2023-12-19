@@ -1,4 +1,4 @@
-## 1.3.4 (October 31, 2023). Tested on Artifactory 7.71.3 and Xray 3.83.10
+## 1.3.4 (October 31, 2023). Tested on Artifactory 7.71.8 and Xray 3.86.9
 
 BUG FIXES:
 
