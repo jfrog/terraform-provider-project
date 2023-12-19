@@ -189,6 +189,7 @@ pipelines:
             - git add CHANGELOG.md
             - export REGEX="Changes to be committed*"
             - export GIT_STATUS=$(git status)
+            - echo "TFProviderRepo: ${TFProviderRepo}"
             - >-
               if [[ ${GIT_STATUS} =~ ${REGEX} ]]; then
                 echo "Adding Artifactory and Xray versions to CHANGELOG.md"
