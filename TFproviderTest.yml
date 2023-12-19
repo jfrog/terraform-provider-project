@@ -68,7 +68,6 @@ pipelines:
             - sudo apt update
             - sudo apt install goreleaser
           onExecute:
-            - add_run_variables TFProviderRepo=$(echo ${res_terraform_provider_project_gitRepoRepositorySshUrl} | sed -e 's/git@/@/g' -e 's/:/\//g')
             - cd ${res_terraform_provider_project_resourcePath}
             - echo "Verify the code contents merged feature branch with development branch"
             - git branch && ls -al
@@ -189,7 +188,7 @@ pipelines:
             - git add CHANGELOG.md
             - export REGEX="Changes to be committed*"
             - export GIT_STATUS=$(git status)
-            - echo ${TFProviderRepo}
+            - add_run_variables GitRepoUrl=$(echo ${res_terraform_provider_project_gitRepoRepositorySshUrl} | sed -e 's/git@/@/g' -e 's/:/\//g')
             - >-
               if [[ ${GIT_STATUS} =~ ${REGEX} ]]; then
                 echo "Adding Artifactory and Xray versions to CHANGELOG.md"
@@ -198,7 +197,7 @@ pipelines:
                 git config --get user.name
                 git config --get user.email
                 git commit --author="JFrog CI <jfrog-solutions-ci+1@jfrog.com>" -m "JFrog Pipelines - Add Artifactory and Xray versions to CHANGELOG.md"
-                git push https://${res_terraform_provider_project_gitProvider_token}${TFProviderRepo}
+                git push https://${res_terraform_provider_project_gitProvider_token}${GitRepoUrl}
               else
                 echo "There is nothing to commit, Artifactory version didn't change since last commit"
               fi
@@ -208,7 +207,7 @@ pipelines:
             - export STATE="success"
             - export DESCRIPTION="Pipeline has failed."
             - cd ${res_terraform_provider_shared_resourcePath}
-            - ./scripts/github-status.sh ${res_terraform_provider_project_gitProvider_token} ${res_terraform_provider_project_gitRepoFullName} ${res_terraform_provider_project_commitSha} && cd ${PWD}
+            - ./scripts/github-status.sh ${res_terraform_provider_project_gitProvider_token} ${res_terraform_provider_project_gitRepoFullName} ${res_terraform_provider_project_commitSha}
             - >-
               if [[ ! -z ${PR_BRANCH} ]]; then
                 echo ${res_terraform_provider_project_gitRepoRepositoryHttpsUrl}
@@ -221,7 +220,7 @@ pipelines:
             - export STATE="failure"
             - export DESCRIPTION="Pipeline has failed."
             - cd ${res_terraform_provider_shared_resourcePath}
-            - ./scripts/github-status.sh ${res_terraform_provider_project_gitProvider_token} ${res_terraform_provider_project_gitRepoFullName} ${res_terraform_provider_project_commitSha} && cd ${PWD
+            - ./scripts/github-status.sh ${res_terraform_provider_project_gitProvider_token} ${res_terraform_provider_project_gitRepoFullName} ${res_terraform_provider_project_commitSha}
             - >-
               if [[ -z "${PR_URL}" ]]; then
                 send_notification partnersSlack --text "<${res_terraform_provider_project_gitRepoRepositoryHttpsUrl}|Terraform Provider Project>. Pipeline failed on <${step_url}|${step_name}> step. PR was not created (already exists from this head branch?)"
