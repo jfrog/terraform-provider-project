@@ -271,6 +271,8 @@ func TestAccProject_full(t *testing.T) {
 		"project_key":                strings.ToLower(randSeq(6)),
 		"username1":                  username1,
 		"username2":                  username2,
+		"email1":                     email1,
+		"email2":                     email2,
 		"group1":                     group1,
 		"group2":                     group2,
 		"repo1":                      repo1,
@@ -278,6 +280,44 @@ func TestAccProject_full(t *testing.T) {
 	}
 
 	template := `
+		resource "artifactory_managed_user" "{{ .username1 }}" {
+			name     = "{{ .username1 }}"
+			email    = "{{ .email1 }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "artifactory_managed_user" "{{ .username2 }}" {
+			name     = "{{ .username2 }}"
+			email    = "{{ .email2 }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "artifactory_group" "{{ .group1 }}" {
+			name = "{{ .group1 }}"
+		}
+
+		resource "artifactory_group" "{{ .group2 }}" {
+			name = "{{ .group2 }}"
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo1 }}" {
+			key = "{{ .repo1 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key"]
+			}
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo2 }}" {
+			key = "{{ .repo2 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key"]
+			}
+		}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -292,22 +332,22 @@ func TestAccProject_full(t *testing.T) {
 			email_notification = {{ .email_notification }}
 
 			member {
-				name  = "{{ .username1 }}"
+				name  = artifactory_managed_user.{{ .username1 }}.name
 				roles = ["Developer","Project Admin"]
 			}
 
 			member {
-				name  = "{{ .username2 }}"
+				name  = artifactory_managed_user.{{ .username2 }}.name
 				roles = ["Developer"]
 			}
 
 			group {
-				name  = "{{ .group1 }}"
+				name  = artifactory_group.{{ .group1 }}.name
 				roles = ["qa"]
 			}
 
 			group {
-				name  = "{{ .group2 }}"
+				name  = artifactory_group.{{ .group2 }}.name
 				roles = ["Release Manager"]
 			}
 
@@ -327,7 +367,10 @@ func TestAccProject_full(t *testing.T) {
 				actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
 			}
 
-			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
+			repos = [
+				artifactory_local_generic_repository.{{ .repo1 }}.key,
+				artifactory_local_generic_repository.{{ .repo2 }}.key,
+			]
 		}
 	`
 
@@ -344,6 +387,8 @@ func TestAccProject_full(t *testing.T) {
 		"project_key":                params["project_key"],
 		"username1":                  params["username1"],
 		"username2":                  params["username2"],
+		"email1":                     params["email1"],
+		"email2":                     params["email2"],
 		"group1":                     params["group1"],
 		"group2":                     params["group2"],
 		"repo1":                      params["repo1"],
@@ -352,27 +397,15 @@ func TestAccProject_full(t *testing.T) {
 	projectUpdated := test.ExecuteTemplate("TestAccProjects", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			createTestUser(t, username1, email1)
-			createTestUser(t, username2, email2)
-			createTestGroup(t, group1)
-			createTestGroup(t, group2)
-			createTestRepo(t, repo1)
-			createTestRepo(t, repo2)
-		},
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestUser(t, username1)
-			deleteTestUser(t, username2)
-			deleteTestGroup(t, group1)
-			deleteTestGroup(t, group2)
-			deleteTestRepo(t, repo1)
-			deleteTestRepo(t, repo2)
-			resp, err := verifyProject(id, request)
-
-			return resp, err
-		}),
+		PreCheck:          func() { testAccPreCheck(t) },
+		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
 		ProviderFactories: testAccProviders(),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source:            "jfrog/artifactory",
+				VersionConstraint: "10.1.3",
+			},
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: project,
