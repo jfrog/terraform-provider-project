@@ -137,7 +137,7 @@ pipelines:
             - make install
           onSuccess:
             - echo "Success"
-            - send_notification partnership_slack --text "$int_partnership_slack_url ${int_partnership_slack_url} ${pipeline_name} step <${step_url}|${step_name}> is completed. Version ${PROVIDER_VERSION:-" wasn't set"}. "
+            - send_notification partnership_slack --text "${pipeline_name} step <${step_url}|${step_name}> is completed. Version ${PROVIDER_VERSION:-" wasn't set"}. "
           onFailure:
             - echo "Failure, sending status to GitHub and Slack."
             - export STATE="failure"
@@ -165,7 +165,6 @@ pipelines:
             - echo "Collect information about the PR and send a Slack notification"
           onExecute:
             - printenv
-            - echo $int_partnersSlack_url
             - export PR_URL=${res_terraform_provider_project_commitUrl}
             - export PR_COMMITTER=${res_terraform_provider_project_committerLogin}
             - export PR_BRANCH=${res_terraform_provider_project_headCommitRef}
