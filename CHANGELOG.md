@@ -1,3 +1,9 @@
+## 1.3.5 (Feburary 9, 2024)
+
+BUG FIXES:
+
+* resource/project: Add retry logic for resource deletion. Issue: [#96](https://github.com/jfrog/terraform-provider-project/issues/96) PR: [#97](https://github.com/jfrog/terraform-provider-project/pull/97)
+
 ## 1.3.4 (October 31, 2023). Tested on Artifactory 7.71.8 and Xray 3.86.9
 
 BUG FIXES:
