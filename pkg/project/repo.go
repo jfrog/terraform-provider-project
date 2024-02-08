@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
@@ -109,8 +110,13 @@ var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys
 var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepos: %s", repoKeys))
 
+	req := m.(util.ProvderMetadata).Client.R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
+
 	for _, repoKey := range repoKeys {
-		err := addRepo(ctx, projectKey, repoKey, m)
+		err := addRepo(ctx, projectKey, repoKey, req)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s: %s", repoKey, err)
 		}
@@ -119,13 +125,10 @@ var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, 
 	return nil
 }
 
-var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
+var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req *resty.Request) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepo: %s", repoKey))
 
-	_, err := m.(util.ProvderMetadata).Client.R().
-		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
+	_, err := req.
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"repoKey":    string(repoKey),
@@ -139,8 +142,13 @@ var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m in
 var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepos: %s", repoKeys))
 
+	req := m.(util.ProvderMetadata).Client.R().
+		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
+
 	for _, repoKey := range repoKeys {
-		err := deleteRepo(ctx, projectKey, repoKey, m)
+		err := deleteRepo(ctx, projectKey, repoKey, req)
 		if err != nil {
 			return fmt.Errorf("failed to delete repo %s: %s", repoKey, err)
 		}
@@ -149,7 +157,7 @@ var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKe
 	return nil
 }
 
-var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m interface{}) error {
+var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req *resty.Request) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepo: %s", repoKey))
 
 	type Error struct {
@@ -163,10 +171,7 @@ var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, m
 
 	var errorResp ErrorResponse
 
-	resp, err := m.(util.ProvderMetadata).Client.R().
-		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error")).
+	resp, err := req.
 		SetPathParam("repoKey", string(repoKey)).
 		SetError(&errorResp).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")

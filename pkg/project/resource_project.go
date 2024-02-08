@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -489,7 +490,15 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErr))
 		}
 
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		req := m.(util.ProvderMetadata).Client.R()
+		req.AddRetryCondition(
+			func(r *resty.Response, _ error) bool {
+				return r.StatusCode() == http.StatusBadRequest &&
+					strings.Contains(r.String(), "project containing resources can't be removed")
+			},
+		)
+
+		resp, err := req.
 			SetPathParam("projectKey", data.Id()).
 			Delete(projectUrl)
 
