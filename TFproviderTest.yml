@@ -45,6 +45,7 @@ pipelines:
             ARTIFACTORY_TEST_VERSION: 7.71.5
         execution:
           onStart:
+            - echo "Slack webhook URL: ${int_partnership_slack_url}"
             - echo "Sending status to GitHub."
             - export STATE="pending"
             - export DESCRIPTION="Pipeline run is in progress."
@@ -165,6 +166,7 @@ pipelines:
             - echo "Collect information about the PR and send a Slack notification"
           onExecute:
             - printenv
+            - echo "Slack webhook URL: ${int_partnersSlack_url}"
             - export PR_URL=${res_terraform_provider_project_commitUrl}
             - export PR_COMMITTER=${res_terraform_provider_project_committerLogin}
             - export PR_BRANCH=${res_terraform_provider_project_headCommitRef}
