@@ -2,7 +2,8 @@
 
 FEATURES:
 
-* **New Resource:** `project_member` - Separate resource to project memberships.
+* **New Resource:** `project_user` - Separate resource to manage project memberships for users.
+* **New Resource:** `project_group` - Separate resource to project project memberships for groups.
 
 ## 1.3.5 (Feburary 9, 2024)
 

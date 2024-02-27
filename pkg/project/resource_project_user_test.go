@@ -11,14 +11,14 @@ import (
 	"github.com/jfrog/terraform-provider-shared/test"
 )
 
-func TestAccProjectMember(t *testing.T) {
+func TestAccProjectUser(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
 	username := "user1"
 	email := username + "@tempurl.org"
 
-	resourceName := "project_member." + username
+	resourceName := "project_user." + username
 
 	params := map[string]interface{}{
 		"project_name": projectName,
@@ -34,12 +34,6 @@ func TestAccProjectMember(t *testing.T) {
 			email    = "{{ .email }}"
 			password = "Password1!"
 			admin    = false
-		}
-
-		resource "project_member" "{{ .username }}" {
-			project_key = "{{ .project_key }}"
-			name = "{{ .username }}"
-			roles = ["Developer","Project Admin"]
 		}
 
 		resource "project" "{{ .project_name }}" {
@@ -58,10 +52,24 @@ func TestAccProjectMember(t *testing.T) {
 			lifecycle {
 				ignore_changes = ["member"]
 			}
+
+			depends_on = [
+				artifactory_managed_user.{{ .username }}
+			]
+		}
+		
+		resource "project_user" "{{ .username }}" {
+			project_key = "{{ .project_key }}"
+			name = "{{ .username }}"
+			roles = {{ .roles }}
+
+			depends_on = [
+				project.{{ .project_name }}
+			]
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectMember", template, params)
+	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
 
 	updateParams := map[string]interface{}{
 		"project_name": params["project_name"],
@@ -71,12 +79,12 @@ func TestAccProjectMember(t *testing.T) {
 		"roles":        `["Developer"]`,
 	}
 
-	configUpdated := test.ExecuteTemplate("TestAccProjectMember", template, updateParams)
+	configUpdated := test.ExecuteTemplate("TestAccProjectUser", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			return verifyProjectMember(username, projectKey, request)
+			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -116,14 +124,14 @@ func TestAccProjectMember(t *testing.T) {
 	})
 }
 
-func TestAccProjectMember_missing_user_fails(t *testing.T) {
+func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
 	username := "not_existing"
 	email := username + "@tempurl.org"
 
-	resourceName := "project_member." + username
+	resourceName := "project_user." + username
 
 	params := map[string]interface{}{
 		"project_name": projectName,
@@ -134,10 +142,10 @@ func TestAccProjectMember_missing_user_fails(t *testing.T) {
 	}
 
 	template := `
-		resource "project_member" "{{ .username }}" {
+		resource "project_user" "{{ .username }}" {
 			project_key = "{{ .project_key }}"
 			name = "{{ .username }}"
-			roles = ["Developer","Project Admin"]
+			roles = {{ .roles }}
 			ignore_missing_user = false
 		}
 
@@ -160,11 +168,11 @@ func TestAccProjectMember_missing_user_fails(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectMember", template, params)
+	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			return verifyProjectMember(username, projectKey, request)
+			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -176,7 +184,7 @@ func TestAccProjectMember_missing_user_fails(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      config,
-				ExpectError: regexp.MustCompile(`user .* not found, project membership not created.*`),
+				ExpectError: regexp.MustCompile(`user '.*' not found, project membership not created.*`),
 			},
 		},
 	})
@@ -189,7 +197,7 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	username := "not_existing"
 	email := username + "@tempurl.org"
 
-	resourceName := "project_member." + username
+	resourceName := "project_user." + username
 
 	params := map[string]interface{}{
 		"project_name": projectName,
@@ -200,10 +208,10 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	}
 
 	template := `
-		resource "project_member" "{{ .username }}" {
+		resource "project_user" "{{ .username }}" {
 			project_key = "{{ .project_key }}"
 			name = "{{ .username }}"
-			roles = ["Developer","Project Admin"]
+			roles = {{ .roles }}
 			ignore_missing_user = true
 		}
 
@@ -226,11 +234,11 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectMember", template, params)
+	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			return verifyProjectMember(username, projectKey, request)
+			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -254,11 +262,11 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	})
 }
 
-func verifyProjectMember(name string, projectKey string, request *resty.Request) (*resty.Response, error) {
+func verifyProjectUser(name string, projectKey string, request *resty.Request) (*resty.Response, error) {
 	return request.
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"name":       name,
 		}).
-		Get(projectMembersUrl)
+		Get(projectUsersUrl)
 }

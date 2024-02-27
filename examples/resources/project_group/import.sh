@@ -1,0 +1,1 @@
+terraform import project_group.mygroup project_key:groupname

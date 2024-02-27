@@ -9,15 +9,15 @@ import (
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
-type ProjectMember struct {
+type ProjectUser struct {
 	ProjectKey        string   `json:"-"`
 	Name              string   `json:"name"`
 	Roles             []string `json:"roles"`
 	IgnoreMissingUser bool     `json:"-"`
 }
 
-func unpackProjectMember(d *schema.ResourceData) ProjectMember {
-	return ProjectMember{
+func unpackProjectUser(d *schema.ResourceData) ProjectUser {
+	return ProjectUser{
 		ProjectKey:        d.Get("project_key").(string),
 		Name:              d.Get("name").(string),
 		Roles:             util.CastToStringArr(d.Get("roles").(*schema.Set).List()),
@@ -25,7 +25,7 @@ func unpackProjectMember(d *schema.ResourceData) ProjectMember {
 	}
 }
 
-func packProjectMember(ctx context.Context, data *schema.ResourceData, m ProjectMember) diag.Diagnostics {
+func packProjectUser(ctx context.Context, data *schema.ResourceData, m ProjectUser) diag.Diagnostics {
 	setValue := util.MkLens(data)
 
 	errors := []error{}
@@ -41,6 +41,6 @@ func packProjectMember(ctx context.Context, data *schema.ResourceData, m Project
 	return nil
 }
 
-func (m ProjectMember) Id() string {
+func (m ProjectUser) Id() string {
 	return fmt.Sprintf(`%s:%s`, m.ProjectKey, m.Name)
 }
