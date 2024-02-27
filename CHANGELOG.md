@@ -1,3 +1,9 @@
+## 1.3.6 (to be defined)
+
+FEATURES:
+
+* **New Resource:** `project_member` - Separate resource to project memberships.
+
 ## 1.3.5 (Feburary 9, 2024)
 
 BUG FIXES:
