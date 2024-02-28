@@ -14,7 +14,7 @@ func TestAccProjectGroup(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
-	group := "group1"
+	group := fmt.Sprintf("group%s", randSeq(5))
 
 	resourceName := "project_group." + group
 
@@ -46,20 +46,12 @@ func TestAccProjectGroup(t *testing.T) {
 			lifecycle {
 				ignore_changes = ["member"]
 			}
-
-			depends_on = [
-				artifactory_group.{{ .group }}
-			]
 		}
 
 		resource "project_group" "{{ .group }}" {
-			project_key = "{{ .project_key }}"
-			name = "{{ .group }}"
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_group.{{ .group }}.name
 			roles = {{ .roles }}
-
-			depends_on = [
-				project.{{ .project_name }}
-			]
 		}
 	`
 
@@ -92,7 +84,6 @@ func TestAccProjectGroup(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "name", group),
-					resource.TestCheckResourceAttr(resourceName, "ignore_missing_user", "false"),
 					resource.TestCheckResourceAttr(resourceName, "roles.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "roles.0", "Developer"),
 					resource.TestCheckResourceAttr(resourceName, "roles.1", "Project Admin"),
@@ -103,7 +94,6 @@ func TestAccProjectGroup(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "name", group),
-					resource.TestCheckResourceAttr(resourceName, "ignore_missing_user", "false"),
 					resource.TestCheckResourceAttr(resourceName, "roles.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "roles.0", "Developer"),
 				),

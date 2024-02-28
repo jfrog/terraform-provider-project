@@ -1,4 +1,4 @@
-## 1.3.6 (to be defined)
+## 1.4.0 (not yet released)
 
 FEATURES:
 

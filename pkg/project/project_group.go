@@ -26,10 +26,9 @@ func unpackProjectGroup(d *schema.ResourceData) ProjectGroup {
 func packProjectGroup(ctx context.Context, data *schema.ResourceData, m ProjectGroup) diag.Diagnostics {
 	setValue := util.MkLens(data)
 
-	errors := []error{}
-	errors = append(errors, setValue("name", m.Name)...)
-	errors = append(errors, setValue("project_key", m.ProjectKey)...)
-	errors = append(errors, setValue("roles", m.Roles)...)
+	setValue("name", m.Name)
+	setValue("project_key", m.ProjectKey)
+	errors := setValue("roles", m.Roles)
 
 	if len(errors) > 0 {
 		return diag.Errorf("failed to pack project member %q", errors)

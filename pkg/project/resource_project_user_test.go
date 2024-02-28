@@ -15,7 +15,7 @@ func TestAccProjectUser(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
-	username := "user1"
+	username := fmt.Sprintf("user%s", randSeq(5))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -52,20 +52,12 @@ func TestAccProjectUser(t *testing.T) {
 			lifecycle {
 				ignore_changes = ["member"]
 			}
-
-			depends_on = [
-				artifactory_managed_user.{{ .username }}
-			]
 		}
 		
 		resource "project_user" "{{ .username }}" {
-			project_key = "{{ .project_key }}"
-			name = "{{ .username }}"
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_managed_user.{{ .username }}.name
 			roles = {{ .roles }}
-
-			depends_on = [
-				project.{{ .project_name }}
-			]
 		}
 	`
 
@@ -128,7 +120,7 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
-	username := "not_existing"
+	username := fmt.Sprintf("not_existing%s", randSeq(5))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -142,13 +134,6 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	}
 
 	template := `
-		resource "project_user" "{{ .username }}" {
-			project_key = "{{ .project_key }}"
-			name = "{{ .username }}"
-			roles = {{ .roles }}
-			ignore_missing_user = false
-		}
-
 		resource "project" "{{ .project_name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .project_name }}"
@@ -166,6 +151,13 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 				ignore_changes = ["member"]
 			}
 		}
+
+		resource "project_user" "{{ .username }}" {
+			project_key = project.{{ .project_name }}.key
+			name = "{{ .username }}"
+			roles = {{ .roles }}
+			ignore_missing_user = false
+		}		
 	`
 
 	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
@@ -194,7 +186,7 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
 	projectKey := strings.ToLower(randSeq(6))
 
-	username := "not_existing"
+	username := fmt.Sprintf("not_existing%s", randSeq(5))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -208,13 +200,6 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	}
 
 	template := `
-		resource "project_user" "{{ .username }}" {
-			project_key = "{{ .project_key }}"
-			name = "{{ .username }}"
-			roles = {{ .roles }}
-			ignore_missing_user = true
-		}
-
 		resource "project" "{{ .project_name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .project_name }}"
@@ -231,6 +216,13 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 			lifecycle {
 				ignore_changes = ["member"]
 			}
+		}
+
+		resource "project_user" "{{ .username }}" {
+			project_key = project.{{ .project_name }}.key
+			name = "{{ .username }}"
+			roles = {{ .roles }}
+			ignore_missing_user = true
 		}
 	`
 

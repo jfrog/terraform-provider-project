@@ -28,11 +28,10 @@ func unpackProjectUser(d *schema.ResourceData) ProjectUser {
 func packProjectUser(ctx context.Context, data *schema.ResourceData, m ProjectUser) diag.Diagnostics {
 	setValue := util.MkLens(data)
 
-	errors := []error{}
-	errors = append(errors, setValue("name", m.Name)...)
-	errors = append(errors, setValue("project_key", m.ProjectKey)...)
-	errors = append(errors, setValue("roles", m.Roles)...)
-	errors = append(errors, setValue("ignore_missing_user", m.IgnoreMissingUser)...)
+	setValue("name", m.Name)
+	setValue("project_key", m.ProjectKey)
+	setValue("roles", m.Roles)
+	errors := setValue("ignore_missing_user", m.IgnoreMissingUser)
 
 	if len(errors) > 0 {
 		return diag.Errorf("failed to pack project member %q", errors)
