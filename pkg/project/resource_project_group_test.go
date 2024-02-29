@@ -12,9 +12,9 @@ import (
 
 func TestAccProjectGroup(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	group := fmt.Sprintf("group%s", randSeq(5))
+	group := fmt.Sprintf("group%s", strings.ToLower(randSeq(5)))
 
 	resourceName := "project_group." + group
 
@@ -72,12 +72,6 @@ func TestAccProjectGroup(t *testing.T) {
 			return verifyProjectUser(group, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.3",
-			},
-		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,

@@ -14,10 +14,10 @@ import (
 func TestAccProject_repo(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	repo1 := fmt.Sprintf("repo%d", test.RandomInt())
-	repo2 := fmt.Sprintf("repo%d", test.RandomInt())
+	repo1 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
+	repo2 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
 
 	params := map[string]interface{}{
 		"name":        name,
@@ -108,7 +108,7 @@ func TestAccProject_repo(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 			{
 				Config: noReposConfig,
@@ -133,7 +133,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	getRandomRepoNames := func(repoCount int) []string {
 		var repoNames []string
@@ -233,7 +233,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 			{
 				Config: noReposConfig,
@@ -251,9 +251,9 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	repo := fmt.Sprintf("repo%d", test.RandomInt())
+	repo := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
 
 	params := map[string]interface{}{
 		"name":        name,

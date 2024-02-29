@@ -13,8 +13,8 @@ import (
 )
 
 func TestAccProjectEnvironment(t *testing.T) {
-	name := fmt.Sprintf("env-%s", randSeq(10))
-	projectKey := fmt.Sprintf("project-%s", strings.ToLower(randSeq(2)))
+	name := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(randSeq(10))
 	resourceName := fmt.Sprintf("project_environment.%s", name)
 
 	params := map[string]any{
@@ -44,7 +44,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 
 	updateParams := map[string]any{
 		"env_id":      name,
-		"name":        fmt.Sprintf("env-%s", randSeq(10)),
+		"name":        strings.ToLower(randSeq(10)),
 		"project_key": projectKey,
 	}
 
@@ -83,8 +83,8 @@ func TestAccProjectEnvironment(t *testing.T) {
 }
 
 func TestAccProjectEnvironment_invalid_length(t *testing.T) {
-	name := fmt.Sprintf("env-%s", randSeq(14))
-	projectKey := fmt.Sprintf("project-%s", strings.ToLower(randSeq(6)))
+	name := fmt.Sprintf("env%s", strings.ToLower(randSeq(15)))
+	projectKey := fmt.Sprintf("project%s", strings.ToLower(randSeq(7)))
 	resourceName := fmt.Sprintf("project_environment.%s", name)
 
 	params := map[string]any{

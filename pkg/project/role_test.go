@@ -12,7 +12,7 @@ import (
 func TestAccProject_role(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	role1 := "role 1"
 	role2 := "role 2"
@@ -162,7 +162,7 @@ func TestAccProject_role(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 			{
 				Config: noUserConfig,

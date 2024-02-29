@@ -273,7 +273,7 @@ func projectResource() *schema.Resource {
 	)
 
 	var projectSchemaV3 = util.MergeMaps(
-		projectSchema,
+		projectSchemaV2,
 		map[string]*schema.Schema{
 			"member": {
 				Type:     schema.TypeSet,

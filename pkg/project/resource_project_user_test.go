@@ -13,9 +13,9 @@ import (
 
 func TestAccProjectUser(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	username := fmt.Sprintf("user%s", randSeq(5))
+	username := fmt.Sprintf("user%s", strings.ToLower(randSeq(5)))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -79,12 +79,6 @@ func TestAccProjectUser(t *testing.T) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.3",
-			},
-		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -118,9 +112,9 @@ func TestAccProjectUser(t *testing.T) {
 
 func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	username := fmt.Sprintf("not_existing%s", randSeq(5))
+	username := fmt.Sprintf("not_existing%s", strings.ToLower(randSeq(5)))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -167,12 +161,6 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.3",
-			},
-		},
 		Steps: []resource.TestStep{
 			{
 				Config:      config,
@@ -184,9 +172,9 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 
 func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
-	username := fmt.Sprintf("not_existing%s", randSeq(5))
+	username := fmt.Sprintf("not_existing%s", strings.ToLower(randSeq(5)))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -233,12 +221,6 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.3",
-			},
-		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,
