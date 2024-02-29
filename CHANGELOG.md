@@ -4,6 +4,8 @@ FEATURES:
 
 * **New Resource:** `project_user` - Separate resource to manage project memberships for users.
 * **New Resource:** `project_group` - Separate resource to project project memberships for groups.
+* resource/project: Add `use_project_user_resource` attribute to toggle if `project` resource should use its `member` or not to manage project users. Should be set to `true` when using in conjunction with `project_user` resource.
+* resource/project: Add `use_project_group_resource` attribute to toggle if `project` resource should use its `group` or not to manage project users. Should be set to `true` when using in conjunction with `project_group` resource.
 
 ## 1.3.5 (Feburary 9, 2024)
 
