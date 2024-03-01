@@ -15,6 +15,17 @@ import (
 
 const projectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
 
+type ProjectUser struct {
+	ProjectKey        string   `json:"-"`
+	Name              string   `json:"name"`
+	Roles             []string `json:"roles"`
+	IgnoreMissingUser bool     `json:"-"`
+}
+
+func (m ProjectUser) Id() string {
+	return fmt.Sprintf(`%s:%s`, m.ProjectKey, m.Name)
+}
+
 func projectUserResource() *schema.Resource {
 	var projectUserSchema = map[string]*schema.Schema{
 		"project_key": {
@@ -27,6 +38,7 @@ func projectUserResource() *schema.Resource {
 		"name": {
 			Type:             schema.TypeString,
 			Required:         true,
+			ForceNew:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 			Description:      "The name of an artifactory user.",
 		},
@@ -40,8 +52,32 @@ func projectUserResource() *schema.Resource {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			Description: "When set to true, the resource will not fail if the user does not exist. Default to false. This is useful when the user is externally managed and the local account wasn't created yet.",
+			Description: "When set to `true`, the resource will not fail if the user does not exist. Default to `false`. This is useful when the user is externally managed and the local account wasn't created yet.",
 		},
+	}
+
+	var packProjectUser = func(_ context.Context, data *schema.ResourceData, m ProjectUser) diag.Diagnostics {
+		setValue := util.MkLens(data)
+
+		setValue("name", m.Name)
+		setValue("project_key", m.ProjectKey)
+		setValue("roles", m.Roles)
+		errors := setValue("ignore_missing_user", m.IgnoreMissingUser)
+
+		if len(errors) > 0 {
+			return diag.Errorf("failed to pack project member %q", errors)
+		}
+
+		return nil
+	}
+
+	var unpackProjectUser = func(d *schema.ResourceData) ProjectUser {
+		return ProjectUser{
+			ProjectKey:        d.Get("project_key").(string),
+			Name:              d.Get("name").(string),
+			Roles:             util.CastToStringArr(d.Get("roles").(*schema.Set).List()),
+			IgnoreMissingUser: d.Get("ignore_missing_user").(bool),
+		}
 	}
 
 	var readProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {

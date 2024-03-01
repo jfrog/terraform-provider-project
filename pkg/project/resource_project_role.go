@@ -111,7 +111,7 @@ func projectRoleResource() *schema.Resource {
 		},
 	}
 
-	var packRole = func(ctx context.Context, data *schema.ResourceData, role Role, projectKey string) diag.Diagnostics {
+	var packRole = func(_ context.Context, data *schema.ResourceData, role Role, projectKey string) diag.Diagnostics {
 		setValue := util.MkLens(data)
 
 		setValue("name", role.Name)

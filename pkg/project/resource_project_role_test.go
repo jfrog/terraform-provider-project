@@ -24,7 +24,6 @@ func TestAccProjectRole_full(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
-			use_project_role_resource = true
 		}
 
 		resource "project_role" "{{ .name }}" {
@@ -107,6 +106,8 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_role_resource = false
 		}
 
 		resource "project_role" "{{ .name }}" {

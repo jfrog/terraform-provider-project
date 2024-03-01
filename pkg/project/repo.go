@@ -99,7 +99,7 @@ var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys
 		return nil, fmt.Errorf("failed to add repos for project: %s", addErr)
 	}
 
-	deleteErr := deleteRepos(ctx, projectKey, repoKeysToBeDeleted, m)
+	deleteErr := deleteRepos(ctx, repoKeysToBeDeleted, m)
 	if deleteErr != nil {
 		return nil, fmt.Errorf("failed to delete repos for project: %s", deleteErr)
 	}
@@ -139,7 +139,7 @@ var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req 
 	return err
 }
 
-var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
+var deleteRepos = func(ctx context.Context, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepos: %s", repoKeys))
 
 	req := m.(util.ProvderMetadata).Client.R().
@@ -148,7 +148,7 @@ var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKe
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
 
 	for _, repoKey := range repoKeys {
-		err := deleteRepo(ctx, projectKey, repoKey, req)
+		err := deleteRepo(ctx, repoKey, req)
 		if err != nil {
 			return fmt.Errorf("failed to delete repo %s: %s", repoKey, err)
 		}
@@ -157,7 +157,7 @@ var deleteRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKe
 	return nil
 }
 
-var deleteRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req *resty.Request) error {
+var deleteRepo = func(ctx context.Context, repoKey RepoKey, req *resty.Request) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepo: %s", repoKey))
 
 	type Error struct {

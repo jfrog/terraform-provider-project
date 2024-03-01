@@ -37,6 +37,8 @@ func TestAccProject_role(t *testing.T) {
 				index_resources = true
 			}
 
+			use_project_role_resource = false
+
 			role {
 				name = "{{ .role1 }}"
 				description = "test description"
@@ -65,6 +67,8 @@ func TestAccProject_role(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_role_resource = false
 
 			role {
 				name = "{{ .role1 }}"
@@ -102,6 +106,8 @@ func TestAccProject_role(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_role_resource = false
 		}
 	`, params)
 

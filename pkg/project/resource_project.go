@@ -266,8 +266,8 @@ func projectResource() *schema.Resource {
 			"use_project_role_resource": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
-				Description: "When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to false.",
+				Default:     true,
+				Description: "When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to `true`.",
 			},
 		},
 	)
@@ -297,6 +297,12 @@ func projectResource() *schema.Resource {
 				Description: "Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject).",
 				Deprecated:  "Replaced by `project_user` resource. This should not be used in combination with `project_user` resource. Use `use_project_user_resource` attribute to control which resource manages project roles.",
 			},
+			"use_project_user_resource": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to `true`.",
+			},
 			"group": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -319,17 +325,11 @@ func projectResource() *schema.Resource {
 				Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
 				Deprecated:  "Replaced by `project_group` resource. This should not be used in combination with `project_group` resource. Use `use_project_group_resource` attribute to control which resource manages project roles.",
 			},
-			"use_project_user_resource": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to false.",
-			},
 			"use_project_group_resource": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
-				Description: "When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to false.",
+				Default:     true,
+				Description: "When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to `true`.",
 			},
 		},
 	)
@@ -466,7 +466,9 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(util.ProvderMetadata).Client.R().SetBody(project).Post(projectsUrl)
+		_, err = m.(util.ProvderMetadata).Client.R().
+			SetBody(project).
+			Post(projectsUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -534,7 +536,7 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		useProjectUserResource := data.Get("use_project_role_resource").(bool)
+		useProjectUserResource := data.Get("use_project_user_resource").(bool)
 		if !useProjectUserResource {
 			_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
 			if err != nil {
@@ -567,7 +569,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		deleteErr := deleteRepos(ctx, data.Id(), repos, m)
+		deleteErr := deleteRepos(ctx, repos, m)
 		if deleteErr != nil {
 			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErr))
 		}
@@ -607,16 +609,16 @@ func projectResource() *schema.Resource {
 	}
 
 	var resourceStateUpgradeV1 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
-		// set use_project_role_resource to true for existing state so the resource will continue
-		// using `roles` attribute until explicitly set to false
-		rawState["use_project_role_resource"] = true
+		// set use_project_role_resource to false for existing state so the resource will continue
+		// using `roles` attribute until explicitly set to true
+		rawState["use_project_role_resource"] = false
 		return rawState, nil
 	}
 
 	var resourceStateUpgradeV2 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 		// like in v1 where the project_role was introduced, just for project_user and project_group
-		rawState["use_project_user_resource"] = true
-		rawState["use_project_group_resource"] = true
+		rawState["use_project_user_resource"] = false
+		rawState["use_project_group_resource"] = false
 		return rawState, nil
 	}
 

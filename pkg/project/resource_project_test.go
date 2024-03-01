@@ -331,6 +331,10 @@ func TestAccProject_full(t *testing.T) {
 			block_deployments_on_limit = {{ .block_deployments_on_limit }}
 			email_notification = {{ .email_notification }}
 
+			use_project_group_resource = false
+			use_project_user_resource = false
+			use_project_role_resource = false
+
 			member {
 				name  = artifactory_managed_user.{{ .username1 }}.name
 				roles = ["Developer","Project Admin"]
@@ -419,6 +423,8 @@ func TestAccProject_full(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "use_project_user_resource", "false"),
+					resource.TestCheckResourceAttr(resourceName, "use_project_group_resource", "false"),
 					resource.TestCheckResourceAttr(resourceName, "use_project_role_resource", "false"),
 					resource.TestCheckResourceAttr(resourceName, "member.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "member.0.name", username1),
@@ -525,7 +531,6 @@ func TestAccProject_migrate_schema(t *testing.T) {
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
 			block_deployments_on_limit = {{ .block_deployments_on_limit }}
 			email_notification = {{ .email_notification }}
-			use_project_role_resource = true
 		}
 	`
 

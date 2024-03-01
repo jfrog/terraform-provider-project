@@ -14,6 +14,16 @@ import (
 
 const projectGroupsUrl = "access/api/v1/projects/{projectKey}/groups/{name}"
 
+type ProjectGroup struct {
+	ProjectKey string   `json:"-"`
+	Name       string   `json:"name"`
+	Roles      []string `json:"roles"`
+}
+
+func (m ProjectGroup) Id() string {
+	return fmt.Sprintf(`%s:%s`, m.ProjectKey, m.Name)
+}
+
 func projectGroupResource() *schema.Resource {
 	var projectGroupSchema = map[string]*schema.Schema{
 		"project_key": {
@@ -26,6 +36,7 @@ func projectGroupResource() *schema.Resource {
 		"name": {
 			Type:             schema.TypeString,
 			Required:         true,
+			ForceNew:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 			Description:      "The name of an artifactory group.",
 		},
@@ -35,6 +46,28 @@ func projectGroupResource() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Description: "List of pre-defined Project or custom roles",
 		},
+	}
+
+	var unpackProjectGroup = func(d *schema.ResourceData) ProjectGroup {
+		return ProjectGroup{
+			ProjectKey: d.Get("project_key").(string),
+			Name:       d.Get("name").(string),
+			Roles:      util.CastToStringArr(d.Get("roles").(*schema.Set).List()),
+		}
+	}
+
+	var packProjectGroup = func(_ context.Context, data *schema.ResourceData, m ProjectGroup) diag.Diagnostics {
+		setValue := util.MkLens(data)
+
+		setValue("name", m.Name)
+		setValue("project_key", m.ProjectKey)
+		errors := setValue("roles", m.Roles)
+
+		if len(errors) > 0 {
+			return diag.Errorf("failed to pack project member %q", errors)
+		}
+
+		return nil
 	}
 
 	var readProjectGroup = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
