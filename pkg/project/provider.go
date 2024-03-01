@@ -51,6 +51,8 @@ func Provider() *schema.Provider {
 				"project":             projectResource(),
 				"project_environment": projectEnvironmentResource(),
 				"project_role":        projectRoleResource(),
+				"project_user":        projectUserResource(),
+				"project_group":       projectGroupResource(),
 			},
 		),
 	}

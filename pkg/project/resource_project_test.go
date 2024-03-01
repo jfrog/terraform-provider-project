@@ -257,8 +257,8 @@ func TestAccProject_full(t *testing.T) {
 	email2 := username2 + "@tempurl.org"
 	group1 := "group1"
 	group2 := "group2"
-	repo1 := fmt.Sprintf("repo%d", test.RandomInt())
-	repo2 := fmt.Sprintf("repo%d", test.RandomInt())
+	repo1 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
+	repo2 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
@@ -457,7 +457,7 @@ func TestAccProject_full(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 		},
 	})

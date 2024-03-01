@@ -1,0 +1,156 @@
+package project
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/validator"
+)
+
+const projectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
+
+func projectUserResource() *schema.Resource {
+	var projectUserSchema = map[string]*schema.Schema{
+		"project_key": {
+			Type:             schema.TypeString,
+			Required:         true,
+			ForceNew:         true,
+			ValidateDiagFunc: validator.ProjectKey,
+			Description:      "The key of the project to which the user should be assigned to.",
+		},
+		"name": {
+			Type:             schema.TypeString,
+			Required:         true,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+			Description:      "The name of an artifactory user.",
+		},
+		"roles": {
+			Type:        schema.TypeSet,
+			Required:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description: "List of pre-defined Project or custom roles",
+		},
+		"ignore_missing_user": {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			Description: "When set to true, the resource will not fail if the user does not exist. Default to false. This is useful when the user is externally managed and the local account wasn't created yet.",
+		},
+	}
+
+	var readProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+		projectUser := unpackProjectUser(data)
+		var loadedProjectUser ProjectUser
+
+		resp, err := m.(util.ProvderMetadata).Client.R().
+			SetPathParams(map[string]string{
+				"projectKey": projectUser.ProjectKey,
+				"name":       projectUser.Name,
+			}).
+			SetResult(&loadedProjectUser).
+			Get(projectUsersUrl)
+
+		if resp != nil && resp.StatusCode() == http.StatusNotFound && projectUser.IgnoreMissingUser {
+			// ignore missing user, reuse local info for state
+			loadedProjectUser = projectUser
+		} else if err != nil {
+			return diag.FromErr(err)
+		}
+
+		loadedProjectUser.ProjectKey = projectUser.ProjectKey
+		loadedProjectUser.IgnoreMissingUser = projectUser.IgnoreMissingUser
+
+		return packProjectUser(ctx, data, loadedProjectUser)
+	}
+
+	var upsertProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+		projectUser := unpackProjectUser(data)
+
+		resp, err := m.(util.ProvderMetadata).Client.R().
+			SetPathParams(map[string]string{
+				"projectKey": projectUser.ProjectKey,
+				"name":       projectUser.Name,
+			}).
+			SetBody(&projectUser).
+			Put(projectUsersUrl)
+
+		// allow missing user? -> report warning and ignore error
+		diagnostics := diag.Diagnostics{}
+
+		if resp != nil && resp.StatusCode() == http.StatusNotFound {
+			if projectUser.IgnoreMissingUser {
+				diagnostics = append(diagnostics, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("user '%s' not found, but ignore_missing_user is set to true, project membership not created", projectUser.Name),
+				})
+			} else {
+				return diag.Errorf("user '%s' not found, project membership not created", projectUser.Name)
+			}
+		} else if err != nil {
+			return diag.FromErr(err)
+		}
+
+		data.SetId(projectUser.Id())
+
+		diagnostics = append(diagnostics, readProjectUser(ctx, data, m)...)
+
+		if len(diagnostics) > 0 {
+			return diagnostics
+		}
+
+		return nil
+	}
+
+	var deleteProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+		projectUser := unpackProjectUser(data)
+
+		_, err := m.(util.ProvderMetadata).Client.R().
+			SetPathParams(map[string]string{
+				"projectKey": projectUser.ProjectKey,
+				"name":       projectUser.Name,
+			}).
+			Delete(projectUsersUrl)
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		data.SetId("")
+
+		return nil
+	}
+
+	var importForProjectKeyUserName = func(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
+		parts := strings.SplitN(d.Id(), ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("unexpected format of ID (%s), expected project_key:name", d.Id())
+		}
+
+		d.Set("project_key", parts[0])
+		d.Set("name", parts[1])
+
+		return []*schema.ResourceData{d}, nil
+	}
+
+	return &schema.Resource{
+		CreateContext: upsertProjectUser,
+		ReadContext:   readProjectUser,
+		UpdateContext: upsertProjectUser,
+		DeleteContext: deleteProjectUser,
+
+		Importer: &schema.ResourceImporter{
+			State: importForProjectKeyUserName,
+		},
+
+		Schema:        projectUserSchema,
+		SchemaVersion: 1,
+
+		Description: "Add a user as project member. Element has one to one mapping with the [JFrog Project Users API](https://jfrog.com/help/r/jfrog-rest-apis/add-or-update-user-in-project). Requires a user assigned with the 'Administer the Platform' role or Project Admin permissions if `admin_privileges.manage_resoures` is enabled.",
+	}
+}

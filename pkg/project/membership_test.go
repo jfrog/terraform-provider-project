@@ -13,7 +13,7 @@ import (
 func TestAccProject_membership(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	username1 := "user1"
 	email1 := username1 + "@tempurl.org"
@@ -132,7 +132,7 @@ func TestAccProject_membership(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 			{
 				Config: noMemberConfig,
@@ -150,7 +150,7 @@ func TestAccProject_membership(t *testing.T) {
 func TestAccProject_group(t *testing.T) {
 	name := "tftestprojects" + randSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	group1 := "group1"
 	group2 := "group2"
@@ -267,7 +267,7 @@ func TestAccProject_group(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource"},
+				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
 			},
 			{
 				Config: noGroupConfig,

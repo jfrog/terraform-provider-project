@@ -272,6 +272,68 @@ func projectResource() *schema.Resource {
 		},
 	)
 
+	var projectSchemaV3 = util.MergeMaps(
+		projectSchemaV2,
+		map[string]*schema.Schema{
+			"member": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+							Description:      "Must be existing Artifactory user",
+						},
+						"roles": {
+							Type:        schema.TypeSet,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "List of pre-defined Project or custom roles",
+						},
+					},
+				},
+				Description: "Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject).",
+				Deprecated:  "Replaced by `project_user` resource. This should not be used in combination with `project_user` resource. Use `use_project_user_resource` attribute to control which resource manages project roles.",
+			},
+			"group": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:             schema.TypeString,
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+							Description:      "Must be existing Artifactory group",
+						},
+						"roles": {
+							Type:        schema.TypeSet,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "List of pre-defined Project or custom roles",
+						},
+					},
+				},
+				Description: "Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject)",
+				Deprecated:  "Replaced by `project_group` resource. This should not be used in combination with `project_group` resource. Use `use_project_group_resource` attribute to control which resource manages project roles.",
+			},
+			"use_project_user_resource": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to false.",
+			},
+			"use_project_group_resource": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to false.",
+			},
+		},
+	)
+
 	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
 		d := &util.ResourceData{ResourceData: data}
 
@@ -360,14 +422,22 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		users, err := readMembers(ctx, data.Id(), usersMembershipType, m)
-		if err != nil {
-			return diag.FromErr(err)
+		users := []Member{}
+		useProjectUserResource := data.Get("use_project_user_resource").(bool)
+		if !useProjectUserResource {
+			users, err = readMembers(ctx, data.Id(), usersMembershipType, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
-		groups, err := readMembers(ctx, data.Id(), groupssMembershipType, m)
-		if err != nil {
-			return diag.FromErr(err)
+		groups := []Member{}
+		useProjectGroupResource := data.Get("use_project_group_resource").(bool)
+		if !useProjectGroupResource {
+			groups, err = readMembers(ctx, data.Id(), groupssMembershipType, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		roles := []Role{}
@@ -412,14 +482,20 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectUserResource := data.Get("use_project_user_resource").(bool)
+		if !useProjectUserResource {
+			_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
-		_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectGroupResource := data.Get("use_project_group_resource").(bool)
+		if !useProjectGroupResource {
+			_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		_, err = updateRepos(ctx, data.Id(), repos, m)
@@ -458,14 +534,20 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectUserResource := data.Get("use_project_role_resource").(bool)
+		if !useProjectUserResource {
+			_, err = updateMembers(ctx, data.Id(), usersMembershipType, users, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
-		_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectGroupResource := data.Get("use_project_group_resource").(bool)
+		if !useProjectGroupResource {
+			_, err = updateMembers(ctx, data.Id(), groupssMembershipType, groups, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		_, err = updateRepos(ctx, data.Id(), repos, m)
@@ -518,10 +600,23 @@ func projectResource() *schema.Resource {
 		}
 	}
 
+	var resourceV2 = func() *schema.Resource {
+		return &schema.Resource{
+			Schema: projectSchemaV2,
+		}
+	}
+
 	var resourceStateUpgradeV1 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 		// set use_project_role_resource to true for existing state so the resource will continue
 		// using `roles` attribute until explicitly set to false
 		rawState["use_project_role_resource"] = true
+		return rawState, nil
+	}
+
+	var resourceStateUpgradeV2 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
+		// like in v1 where the project_role was introduced, just for project_user and project_group
+		rawState["use_project_user_resource"] = true
+		rawState["use_project_group_resource"] = true
 		return rawState, nil
 	}
 
@@ -535,13 +630,18 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema:        projectSchemaV2,
-		SchemaVersion: 2,
+		Schema:        projectSchemaV3,
+		SchemaVersion: 3,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Type:    resourceV1().CoreConfigSchema().ImpliedType(),
 				Upgrade: resourceStateUpgradeV1,
 				Version: 1,
+			},
+			{
+				Type:    resourceV2().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceStateUpgradeV2,
+				Version: 2,
 			},
 		},
 		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.",

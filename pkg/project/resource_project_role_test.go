@@ -13,7 +13,7 @@ import (
 func TestAccProjectRole_full(t *testing.T) {
 	name := randSeq(20)
 	resourceName := fmt.Sprintf("project_role.%s", name)
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	template := `
 		resource "project" "{{ .project_name }}" {
@@ -96,7 +96,7 @@ func TestAccProjectRole_full(t *testing.T) {
 func TestAccProjectRole_conflict_with_project(t *testing.T) {
 	name := randSeq(20)
 	resourceName := fmt.Sprintf("project_role.%s", name)
-	projectKey := strings.ToLower(randSeq(6))
+	projectKey := strings.ToLower(randSeq(10))
 
 	template := `
 		resource "project" "{{ .project_name }}" {
