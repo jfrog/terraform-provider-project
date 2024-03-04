@@ -67,7 +67,7 @@ func TestAccProjectGroup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			return verifyProjectUser(group, projectKey, request)
+			return verifyProjectGroup(group, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
 		ExternalProviders: map[string]resource.ExternalProvider{
