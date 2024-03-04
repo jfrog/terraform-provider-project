@@ -1,11 +1,16 @@
-## 1.4.0 (not yet released)
+## 1.4.0 (March 4, 2024)
 
 FEATURES:
 
 * **New Resource:** `project_user` - Separate resource to manage project memberships for users.
 * **New Resource:** `project_group` - Separate resource to project project memberships for groups.
-* resource/project: Add `cd ..` attribute to toggle if `project` resource should use its `member` or not to manage project users. Should be set to `true` when using in conjunction with `project_user` resource.
-* resource/project: Add `use_project_group_resource` attribute to toggle if `project` resource should use its `group` or not to manage project users. Should be set to `true` when using in conjunction with `project_group` resource.
+* resource/project: Add `use_project_user_resource` attribute to toggle if `project` resource should use its `member` or not to manage project users. Should be set to `false` to continue using existing `member` attribute.
+* resource/project: Add `use_project_group_resource` attribute to toggle if `project` resource should use its `group` or not to manage project users. Should be set to `false` to continue using existing `group` attribute.
+* resource/project: Switch default value for `use_project_role_resource` attribute to `true` so new provider practioners won't need to explicity set this attribute to use `project_role` resource.
+
+Issue: [#83](https://github.com/jfrog/terraform-provider-project/issues/83), [#98](https://github.com/jfrog/terraform-provider-project/issues/98)
+
+PR: [#101](https://github.com/jfrog/terraform-provider-project/pull/101)
 
 ## 1.3.5 (Feburary 9, 2024)
 

@@ -31,7 +31,7 @@ resource "project_user" "myuser" {
 
 ### Optional
 
-- `ignore_missing_user` (Boolean) When set to true, the resource will not fail if the user does not exist. Default to false. This is useful when the user is externally managed and the local account wasn't created yet.
+- `ignore_missing_user` (Boolean) When set to `true`, the resource will not fail if the user does not exist. Default to `false`. This is useful when the user is externally managed and the local account wasn't created yet.
 
 ### Read-Only
 

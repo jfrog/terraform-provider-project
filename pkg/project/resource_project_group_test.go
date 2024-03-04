@@ -43,9 +43,7 @@ func TestAccProjectGroup(t *testing.T) {
 			block_deployments_on_limit = true
 			email_notification = false
 
-			lifecycle {
-				ignore_changes = ["member"]
-			}
+			use_project_group_resource = true
 		}
 
 		resource "project_group" "{{ .group }}" {
@@ -72,6 +70,12 @@ func TestAccProjectGroup(t *testing.T) {
 			return verifyProjectUser(group, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source:            "jfrog/artifactory",
+				VersionConstraint: "10.1.4",
+			},
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,

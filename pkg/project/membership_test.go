@@ -42,6 +42,8 @@ func TestAccProject_membership(t *testing.T) {
 				index_resources = true
 			}
 
+			use_project_user_resource = false
+
 			member {
 				name = "{{ .username1 }}"
 				roles = ["{{ .developeRole }}"]
@@ -59,6 +61,8 @@ func TestAccProject_membership(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_user_resource = false
 
 			member {
 				name = "{{ .username1 }}"
@@ -82,6 +86,8 @@ func TestAccProject_membership(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_user_resource = false
 		}
 	`, params)
 
@@ -177,6 +183,8 @@ func TestAccProject_group(t *testing.T) {
 				index_resources = true
 			}
 
+			use_project_group_resource = false
+
 			group {
 				name = "{{ .group1 }}"
 				roles = ["{{ .developeRole }}"]
@@ -194,6 +202,8 @@ func TestAccProject_group(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_group_resource = false
 
 			group {
 				name = "{{ .group1 }}"
@@ -217,6 +227,8 @@ func TestAccProject_group(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_group_resource = false
 		}
 	`, params)
 

@@ -49,9 +49,7 @@ func TestAccProjectUser(t *testing.T) {
 			block_deployments_on_limit = true
 			email_notification = false
 
-			lifecycle {
-				ignore_changes = ["member"]
-			}
+			use_project_user_resource = true
 		}
 		
 		resource "project_user" "{{ .username }}" {
@@ -79,6 +77,12 @@ func TestAccProjectUser(t *testing.T) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
 		ProviderFactories: testAccProviders(),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source:            "jfrog/artifactory",
+				VersionConstraint: "10.1.4",
+			},
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -117,8 +121,6 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	username := fmt.Sprintf("not_existing%s", strings.ToLower(randSeq(5)))
 	email := username + "@tempurl.org"
 
-	resourceName := "project_user." + username
-
 	params := map[string]interface{}{
 		"project_name": projectName,
 		"project_key":  projectKey,
@@ -141,9 +143,7 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 			block_deployments_on_limit = true
 			email_notification = false
 
-			lifecycle {
-				ignore_changes = ["member"]
-			}
+			use_project_user_resource = true
 		}
 
 		resource "project_user" "{{ .username }}" {
@@ -156,10 +156,7 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 
 	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			return verifyProjectUser(username, projectKey, request)
-		}),
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders(),
 		Steps: []resource.TestStep{
 			{
@@ -201,9 +198,7 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 			block_deployments_on_limit = true
 			email_notification = false
 
-			lifecycle {
-				ignore_changes = ["member"]
-			}
+			use_project_user_resource = true
 		}
 
 		resource "project_user" "{{ .username }}" {
