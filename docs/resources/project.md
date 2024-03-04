@@ -101,9 +101,9 @@ resource "project" "myproject" {
 ~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).
 - `description` (String)
 - `email_notification` (Boolean) Alerts will be sent when reaching 75% and 95% of the storage quota. This serves as a notification only and is not a blocker
-- `group` (Block Set) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
+- `group` (Block Set, Deprecated) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
 - `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
-- `member` (Block Set) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
+- `member` (Block Set, Deprecated) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
 - `repos` (Set of String) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
 
 ```hcl
@@ -114,7 +114,9 @@ lifecycle {
 }
 ```
 - `role` (Block Set, Deprecated) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
-- `use_project_role_resource` (Boolean) When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to false.
+- `use_project_group_resource` (Boolean) When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to `true`.
+- `use_project_role_resource` (Boolean) When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to `true`.
+- `use_project_user_resource` (Boolean) When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to `true`.
 
 ### Read-Only
 
