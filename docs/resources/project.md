@@ -115,6 +115,7 @@ lifecycle {
 ```
 - `role` (Block Set, Deprecated) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 - `use_project_group_resource` (Boolean) When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to `true`.
+- `use_project_repository_resource` (Boolean) When set to true, this resource will ignore the `repos` attributes and allow repository to be managed by `project_repository` resource instead. Default to `true`.
 - `use_project_role_resource` (Boolean) When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to `true`.
 - `use_project_user_resource` (Boolean) When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to `true`.
 
