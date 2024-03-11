@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/jfrog/terraform-provider-shared/testutil"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
@@ -59,7 +59,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -188,7 +188,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -206,7 +206,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -228,7 +228,7 @@ func TestAccProjectUpdateKey(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -404,7 +404,7 @@ func TestAccProject_full(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
@@ -574,7 +574,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: testAccProviders(),
+				ProviderFactories: ProviderFactories,
 				Config:            config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
@@ -590,7 +590,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: testAccProviders(),
+				ProviderFactories: ProviderFactories,
 				Config:            updatedConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),

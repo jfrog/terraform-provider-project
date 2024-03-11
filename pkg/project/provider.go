@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/jfrog/terraform-provider-shared/client"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 var Version = "0.0.1"
@@ -45,7 +46,7 @@ func Provider() *schema.Provider {
 			},
 		},
 
-		ResourcesMap: util.AddTelemetry(
+		ResourcesMap: sdk.AddTelemetry(
 			productId,
 			map[string]*schema.Resource{
 				"project":             projectResource(),
@@ -53,6 +54,7 @@ func Provider() *schema.Provider {
 				"project_role":        projectRoleResource(),
 				"project_user":        projectUserResource(),
 				"project_group":       projectGroupResource(),
+				"project_repository":  projectRepositoryResource(),
 			},
 		),
 	}
@@ -80,8 +82,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData, terraformVer
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
-	accessToken := d.Get("access_token").(string)
 
+	accessToken := d.Get("access_token").(string)
 	restyBase, err = client.AddAuth(restyBase, "", accessToken)
 	if err != nil {
 		return nil, diag.FromErr(err)
@@ -89,7 +91,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData, terraformVer
 
 	checkLicense := d.Get("check_license").(bool)
 	if checkLicense {
-		licenseErr := util.CheckArtifactoryLicense(restyBase, "Enterprise", "Commercial", "Edge")
+		licenseErr := sdk.CheckArtifactoryLicense(restyBase, "Enterprise", "Commercial", "Edge")
 		if licenseErr != nil {
 			return nil, licenseErr
 		}

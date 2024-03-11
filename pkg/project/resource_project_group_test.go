@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
@@ -69,7 +69,7 @@ func TestAccProjectGroup(t *testing.T) {
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyProjectGroup(group, projectKey, request)
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
@@ -104,7 +104,7 @@ func TestAccProject_membership(t *testing.T) {
 
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -245,7 +245,7 @@ func TestAccProject_group(t *testing.T) {
 
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

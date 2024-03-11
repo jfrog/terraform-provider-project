@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
@@ -82,7 +82,7 @@ func TestAccProject_repo(t *testing.T) {
 
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -209,7 +209,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 			resp, err := verifyProject(id, request)
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -282,7 +282,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 			createTestRepo(t, repo)
 		},
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

@@ -1,16 +1,14 @@
 package project
 
 import (
-	"context"
 	"os"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/jfrog/terraform-provider-shared/client"
 )
 
-func TestProvider(t *testing.T) {
+func TestProvider_validate(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -45,13 +43,4 @@ func getTestResty(t *testing.T) *resty.Client {
 	}
 
 	return restyClient
-}
-
-func testAccPreCheck(t *testing.T) {
-	ctx := context.Background()
-	provider, _ := testAccProviders()["project"]()
-	err := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
-	if err != nil {
-		t.Fatal(err)
-	}
 }

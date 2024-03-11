@@ -5,20 +5,43 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	terraform2 "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
-func testAccProviders() map[string]func() (*schema.Provider, error) {
-	return map[string]func() (*schema.Provider, error){
-		"project": func() (*schema.Provider, error) {
-			return Provider(), nil
-		},
+// Provider PreCheck(t) must be called before using this provider instance.
+var TestProvider *schema.Provider
+
+var ProviderFactories map[string]func() (*schema.Provider, error)
+
+// testAccProviderConfigure ensures Provider is only configured once
+//
+// The PreCheck(t) function is invoked for every test and this prevents
+// extraneous reconfiguration to the same values each time. However, this does
+// not prevent reconfiguration that may happen should the address of
+// Provider be errantly reused in ProviderFactories.
+var testAccProviderConfigure sync.Once
+
+func init() {
+	TestProvider = Provider()
+	ProviderFactories = map[string]func() (*schema.Provider, error){
+		"project": func() (*schema.Provider, error) { return TestProvider, nil },
 	}
+}
+
+func testAccPreCheck(t *testing.T) {
+	testAccProviderConfigure.Do(func() {
+		err := TestProvider.Configure(context.Background(), terraform2.NewResourceConfigRaw(nil))
+		if err != nil && err.HasError() {
+			t.Fatal(err)
+		}
+	})
 }
 
 type CheckFun func(id string, request *resty.Request) (*resty.Response, error)
@@ -31,9 +54,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
-		provider, _ := testAccProviders()["project"]()
-		provider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
-		client := provider.Meta().(util.ProvderMetadata).Client
+		client := TestProvider.Meta().(util.ProvderMetadata).Client
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
 			if resp != nil {
