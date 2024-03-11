@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 func BytesToGibibytes(bytes int64) int {
@@ -25,7 +25,7 @@ func GibibytesToBytes(bytes int) int64 {
 }
 
 type Equatable interface {
-	util.Identifiable
+	sdk.Identifiable
 	Equals(other Equatable) bool
 }
 

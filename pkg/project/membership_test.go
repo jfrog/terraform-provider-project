@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_membership(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAccProject_membership(t *testing.T) {
 		"contributorRole": contributorRole,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectMember", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -51,7 +51,7 @@ func TestAccProject_membership(t *testing.T) {
 		}
 	`, params)
 
-	addMembersConfig := test.ExecuteTemplate("TestAccProjectMember", `
+	addMembersConfig := util.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -76,7 +76,7 @@ func TestAccProject_membership(t *testing.T) {
 		}
 	`, params)
 
-	noMemberConfig := test.ExecuteTemplate("TestAccProjectMember", `
+	noMemberConfig := util.ExecuteTemplate("TestAccProjectMember", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -172,7 +172,7 @@ func TestAccProject_group(t *testing.T) {
 		"contributorRole": contributorRole,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectGroup", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -192,7 +192,7 @@ func TestAccProject_group(t *testing.T) {
 		}
 	`, params)
 
-	addGroupConfig := test.ExecuteTemplate("TestAccProjectGroup", `
+	addGroupConfig := util.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -217,7 +217,7 @@ func TestAccProject_group(t *testing.T) {
 		}
 	`, params)
 
-	noGroupConfig := test.ExecuteTemplate("TestAccProjectGroup", `
+	noGroupConfig := util.ExecuteTemplate("TestAccProjectGroup", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"

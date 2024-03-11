@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 const projectMembershipsUrl = projectUrl + "/{membershipType}"
@@ -34,7 +35,7 @@ type Membership struct {
 	Members []Member
 }
 
-func getMembers(d *util.ResourceData, membershipKey string) []Member {
+func getMembers(d *sdk.ResourceData, membershipKey string) []Member {
 	var members []Member
 
 	if v, ok := d.GetOk(membershipKey); ok {
@@ -48,7 +49,7 @@ func getMembers(d *util.ResourceData, membershipKey string) []Member {
 
 			member := Member{
 				Name:  id["name"].(string),
-				Roles: util.CastToStringArr(id["roles"].(*schema.Set).List()),
+				Roles: sdk.CastToStringArr(id["roles"].(*schema.Set).List()),
 			}
 			members = append(members, member)
 		}
@@ -58,7 +59,7 @@ func getMembers(d *util.ResourceData, membershipKey string) []Member {
 }
 
 var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
-	d := &util.ResourceData{ResourceData: data}
+	d := &sdk.ResourceData{ResourceData: data}
 	membership := Membership{
 		Members: getMembers(d, membershipKey),
 	}
@@ -69,7 +70,7 @@ var unpackMembers = func(data *schema.ResourceData, membershipKey string) Member
 var packMembers = func(ctx context.Context, d *schema.ResourceData, membershipKey string, members []Member) []error {
 	tflog.Debug(ctx, "packMembership")
 
-	setValue := util.MkLens(d)
+	setValue := sdk.MkLens(d)
 
 	var projectMembers []interface{}
 

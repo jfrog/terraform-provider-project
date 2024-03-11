@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectGroup(t *testing.T) {
@@ -53,7 +53,7 @@ func TestAccProjectGroup(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectGroup", template, params)
+	config := util.ExecuteTemplate("TestAccProjectGroup", template, params)
 
 	updateParams := map[string]interface{}{
 		"project_name": params["project_name"],
@@ -62,7 +62,7 @@ func TestAccProjectGroup(t *testing.T) {
 		"roles":        `["Developer"]`,
 	}
 
-	configUpdated := test.ExecuteTemplate("TestAccProjectGroup", template, updateParams)
+	configUpdated := util.ExecuteTemplate("TestAccProjectGroup", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },

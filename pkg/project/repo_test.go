@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_repo(t *testing.T) {
@@ -26,7 +26,7 @@ func TestAccProject_repo(t *testing.T) {
 		"repo2":       repo2,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -41,7 +41,7 @@ func TestAccProject_repo(t *testing.T) {
 		}
 	`, params)
 
-	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -56,7 +56,7 @@ func TestAccProject_repo(t *testing.T) {
 		}
 	`, params)
 
-	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	noReposConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -160,7 +160,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 		"repos":       randomRepoNames,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -173,7 +173,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 		}
 	`, params)
 
-	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -187,7 +187,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 		}
 	`, params)
 
-	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	noReposConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -261,7 +261,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 		"repo":        repo,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"

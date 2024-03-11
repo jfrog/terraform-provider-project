@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
@@ -112,7 +113,7 @@ func projectRoleResource() *schema.Resource {
 	}
 
 	var packRole = func(_ context.Context, data *schema.ResourceData, role Role, projectKey string) diag.Diagnostics {
-		setValue := util.MkLens(data)
+		setValue := sdk.MkLens(data)
 
 		setValue("name", role.Name)
 		setValue("type", role.Type)
@@ -147,7 +148,7 @@ func projectRoleResource() *schema.Resource {
 	}
 
 	var unpackRole = func(data *schema.ResourceData) Role {
-		d := &util.ResourceData{ResourceData: data}
+		d := &sdk.ResourceData{ResourceData: data}
 
 		return Role{
 			Name:         d.GetString("name", false),

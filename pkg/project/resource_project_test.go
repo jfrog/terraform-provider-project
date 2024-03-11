@@ -9,7 +9,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/testutil"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
@@ -31,15 +32,15 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
 	}
-	project := test.ExecuteTemplate("TestAccProjects", `
+	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -99,15 +100,15 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 func testProjectConfig(name, key string) string {
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                key,
 	}
-	return test.ExecuteTemplate("TestAccProjects", `
+	return util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -160,15 +161,15 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   invalidMaxStorage,
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(20)),
 	}
-	project := test.ExecuteTemplate("TestAccProjects", `
+	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -262,11 +263,11 @@ func TestAccProject_full(t *testing.T) {
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(6)),
 		"username1":                  username1,
@@ -378,7 +379,7 @@ func TestAccProject_full(t *testing.T) {
 		}
 	`
 
-	project := test.ExecuteTemplate("TestAccProjects", template, params)
+	project := util.ExecuteTemplate("TestAccProjects", template, params)
 
 	updateParams := map[string]interface{}{
 		"max_storage_in_gibibytes":   params["max_storage_in_gibibytes"],
@@ -398,7 +399,7 @@ func TestAccProject_full(t *testing.T) {
 		"repo1":                      params["repo1"],
 		"repo2":                      params["repo2"],
 	}
-	projectUpdated := test.ExecuteTemplate("TestAccProjects", template, updateParams)
+	projectUpdated := util.ExecuteTemplate("TestAccProjects", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -475,11 +476,11 @@ func TestAccProject_migrate_schema(t *testing.T) {
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(6)),
 	}
@@ -516,7 +517,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProject", template, params)
+	config := util.ExecuteTemplate("TestAccProject", template, params)
 
 	updatedTemplate := `
 		resource "project" "{{ .name }}" {
@@ -544,7 +545,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"name":                       params["name"],
 		"project_key":                params["project_key"],
 	}
-	updatedConfig := test.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
+	updatedConfig := util.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },

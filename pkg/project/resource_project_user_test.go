@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectUser(t *testing.T) {
@@ -59,7 +59,7 @@ func TestAccProjectUser(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
+	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 
 	updateParams := map[string]interface{}{
 		"project_name": params["project_name"],
@@ -69,7 +69,7 @@ func TestAccProjectUser(t *testing.T) {
 		"roles":        `["Developer"]`,
 	}
 
-	configUpdated := test.ExecuteTemplate("TestAccProjectUser", template, updateParams)
+	configUpdated := util.ExecuteTemplate("TestAccProjectUser", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
@@ -154,7 +154,7 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 		}		
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
+	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders(),
@@ -209,7 +209,7 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProjectUser", template, params)
+	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {

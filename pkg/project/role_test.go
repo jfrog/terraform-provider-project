@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_role(t *testing.T) {
@@ -26,7 +26,7 @@ func TestAccProject_role(t *testing.T) {
 		"role3":       role3,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -57,7 +57,7 @@ func TestAccProject_role(t *testing.T) {
 		}
 	`, params)
 
-	addRoleConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	addRoleConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -96,7 +96,7 @@ func TestAccProject_role(t *testing.T) {
 		}
 	`, params)
 
-	noUserConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	noUserConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"

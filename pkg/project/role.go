@@ -7,10 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 var unpackRoles = func(data *schema.ResourceData) []Role {
-	d := &util.ResourceData{ResourceData: data}
+	d := &sdk.ResourceData{ResourceData: data}
 
 	var roles []Role
 
@@ -27,8 +28,8 @@ var unpackRoles = func(data *schema.ResourceData) []Role {
 				Name:         id["name"].(string),
 				Description:  id["description"].(string),
 				Type:         id["type"].(string),
-				Environments: util.CastToStringArr(id["environments"].(*schema.Set).List()),
-				Actions:      util.CastToStringArr(id["actions"].(*schema.Set).List()),
+				Environments: sdk.CastToStringArr(id["environments"].(*schema.Set).List()),
+				Actions:      sdk.CastToStringArr(id["actions"].(*schema.Set).List()),
 			}
 			roles = append(roles, role)
 		}
@@ -40,7 +41,7 @@ var unpackRoles = func(data *schema.ResourceData) []Role {
 var packRoles = func(ctx context.Context, d *schema.ResourceData, roles []Role) []error {
 	tflog.Debug(ctx, "packRoles")
 
-	setValue := util.MkLens(d)
+	setValue := sdk.MkLens(d)
 
 	var projectRoles []interface{}
 
