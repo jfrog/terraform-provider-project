@@ -28,7 +28,7 @@ resource "project_environment" "myenv" {
 ### Required
 
 - `name` (String) Environment name. Must start with a letter and can contain letters, digits and `-` character.
-- `project_key` (String) Project key for this environment. This field supports only 2 - 20 lowercase alphanumeric and hyphen characters. Must begin with a letter.
+- `project_key` (String) Project key for this environment. This field supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter.
 
 ### Read-Only
 

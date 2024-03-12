@@ -96,7 +96,7 @@ func projectRoleResource() *schema.Resource {
 			Required:         true,
 			ForceNew:         true,
 			ValidateDiagFunc: validator.ProjectKey,
-			Description:      "Project key for this environment. This field supports only 2 - 20 lowercase alphanumeric and hyphen characters. Must begin with a letter.",
+			Description:      "Project key for this environment. This field supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter.",
 		},
 		"environments": {
 			Type:        schema.TypeSet,
