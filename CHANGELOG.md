@@ -1,3 +1,16 @@
+## 1.5.0 (March 13, 2024)
+
+FEATURES:
+
+* **New Resource:** `project_repository` - Separate resource to manage project repositories.
+* resource/project: Add `use_project_repository_resource` attribute to toggle if `project` resource should use its `repos` attribute or not to manage project repositories. Should be set to `false` to continue using existing `repos` attribute.
+
+IMPROVEMENTS:
+
+* resource/project, resource/project_environment, resource/project_role: Fix documentation for `project_key` attribute to match validation. Issue: [#103](https://github.com/jfrog/terraform-provider-project/issues/103)
+
+PR: [#105](https://github.com/jfrog/terraform-provider-project/pull/105)
+
 ## 1.4.0 (March 4, 2024)
 
 FEATURES:
