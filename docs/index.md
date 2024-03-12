@@ -37,11 +37,11 @@ terraform {
   required_providers {
     artifactory = {
       source  = "registry.terraform.io/jfrog/artifactory"
-      version = "2.20.0"
+      version = "10.3.0"
     }
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "1.0.3"
+      version = "1.5.0"
     }
   }
 }
@@ -124,53 +124,61 @@ resource "project" "myproject" {
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
+}
 
-  member {
-    name  = "user1"
-    roles = ["Developer", "Project Admin"]
-  }
+resource "project_user" "user1" {
+  project_key = project.myproject.key
+  name        = "user1"
+  roles       = ["developer","project admin"]
+}
 
-  member {
-    name  = "user2"
-    roles = ["Developer"]
-  }
+resource "project_user" "user2" {
+  project_key = project.myproject.key
+  name        = "user2"
+  roles       = ["developer"]
+}
 
-  group {
-    name  = "qa"
-    roles = ["qa"]
-  }
+resource "project_group" "qa" {
+  project_key = project.myproject.key
+  name        = "qa"
+  roles       = ["qa"]
+}
 
-  group {
-    name  = "release"
-    roles = ["Release Manager"]
-  }
+resource "project_group" "release" {
+  project_key = project.myproject.key
+  name        = "release"
+  roles       = ["release manager"]
+}
 
-  role {
-    name         = "qa"
-    description  = "QA role"
-    type         = "CUSTOM"
-    environments = ["DEV"]
-    actions      = var.qa_roles
-  }
+resource "project_role" "qa" {
+  project_key  = project.myproject.key
+  name         = "qa"
+  type         = "CUSTOM"
+  environments = ["DEV"]
+  actions      = var.qa_roles
+}
 
-  role {
-    name         = "devop"
-    description  = "DevOp role"
-    type         = "CUSTOM"
-    environments = ["DEV", "PROD"]
-    actions      = var.devop_roles
-  }
+resource "project_role" "devop" {
+  project_key  = project.myproject.key
+  name         = "devop"
+  type         = "CUSTOM"
+  environments = ["DEV", "PROD"]
+  actions      = var.devop_roles
+}
 
-  repos = ["docker-local", "npm-remote"]
+resource "project_repository" "docker-local" {
+  project_key = project.myproject.key
+  key         = "docker-local"
+}
 
-  depends_on = [
-    artifactory_user.user1,
-    artifactory_user.user2,
-    artifactory_group.qa-group,
-    artifactory_group.release-group,
-    artifactory_local_docker_v2_repository.docker-local,
-    artifactory_remote_npm_repository.npm-remote,
-  ]
+resource "project_repository" "npm-local" {
+  project_key = project.myproject.key
+  key         = "npm-local"
+}
+
+resource "project_environment" "myenv" {
+  project_key = project.myproj.key
+  name        = "myenv"
 }
 ```
 
