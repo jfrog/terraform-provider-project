@@ -165,10 +165,15 @@ func TestAccProject_role(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noUserConfig,

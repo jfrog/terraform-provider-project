@@ -23,11 +23,9 @@ func (r RepoKey) Equals(other Equatable) bool {
 }
 
 var unpackRepos = func(data *schema.ResourceData) []RepoKey {
-	d := &sdk.ResourceData{ResourceData: data}
-
 	var repoKeys []RepoKey
 
-	if v, ok := d.GetOk("repos"); ok {
+	if v, ok := data.GetOk("repos"); ok {
 		for _, key := range sdk.CastToStringArr(v.(*schema.Set).List()) {
 			repoKeys = append(repoKeys, RepoKey(key))
 		}

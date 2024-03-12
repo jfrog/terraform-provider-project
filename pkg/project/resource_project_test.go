@@ -14,7 +14,9 @@ import (
 )
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
-	return request.Head(projectsUrl + id)
+	return request.
+		SetPathParam("projectKey", id).
+		Head(projectUrl)
 }
 
 func getRandomMaxStorageSize() int {
@@ -335,6 +337,7 @@ func TestAccProject_full(t *testing.T) {
 			use_project_group_resource = false
 			use_project_user_resource = false
 			use_project_role_resource = false
+			use_project_repository_resource = false
 
 			member {
 				name  = artifactory_managed_user.{{ .username1 }}.name
@@ -461,10 +464,15 @@ func TestAccProject_full(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 		},
 	})

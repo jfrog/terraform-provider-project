@@ -338,6 +338,16 @@ func projectResource() *schema.Resource {
 	var projectSchemaV4 = sdk.MergeMaps(
 		projectSchemaV3,
 		map[string]*schema.Schema{
+			"repos": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				MinItems:    0,
+				Description: "(Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.\n\n```hcl\nlifecycle {\n\tignore_changes = [\n\t\trepos\n\t]\n}\n```",
+				Deprecated:  "Replaced by `project_repository` resource. This should not be used in combination with `project_repository` resource. Use `use_project_repository_resource` attribute to control which resource manages project repositories.",
+			},
 			"use_project_repository_resource": {
 				Type:        schema.TypeBool,
 				Optional:    true,

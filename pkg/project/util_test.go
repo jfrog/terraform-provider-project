@@ -48,24 +48,25 @@ type CheckFun func(id string, request *resty.Request) (*resty.Response, error)
 
 func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 	return func(s *terraform.State) error {
-
 		rs, ok := s.RootModule().Resources[id]
-
 		if !ok {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
+
 		client := TestProvider.Meta().(util.ProvderMetadata).Client
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
-			if resp != nil {
-				switch resp.StatusCode() {
-				case http.StatusNotFound, http.StatusBadRequest:
-					return nil
-				}
-			}
 			return err
 		}
-		return fmt.Errorf("error: %s still exists", rs.Primary.ID)
+
+		if resp != nil {
+			switch resp.StatusCode() {
+			case http.StatusNotFound, http.StatusBadRequest:
+				return nil
+			}
+		}
+
+		return fmt.Errorf("error: %s still exists: %d", rs.Primary.ID, resp.StatusCode())
 	}
 }
 

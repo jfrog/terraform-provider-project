@@ -11,11 +11,9 @@ import (
 )
 
 var unpackRoles = func(data *schema.ResourceData) []Role {
-	d := &sdk.ResourceData{ResourceData: data}
-
 	var roles []Role
 
-	if v, ok := d.GetOkExists("role"); ok {
+	if v, ok := data.GetOk("role"); ok {
 		projectRoles := v.(*schema.Set).List()
 		if len(projectRoles) == 0 {
 			return roles

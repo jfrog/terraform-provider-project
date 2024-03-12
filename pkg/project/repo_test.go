@@ -37,6 +37,8 @@ func TestAccProject_repo(t *testing.T) {
 				index_resources = true
 			}
 
+			use_project_repository_resource = false
+
 			repos = ["{{ .repo1 }}"]
 		}
 	`, params)
@@ -52,6 +54,8 @@ func TestAccProject_repo(t *testing.T) {
 				index_resources = true
 			}
 
+			use_project_repository_resource = false
+
 			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
 		}
 	`, params)
@@ -66,6 +70,8 @@ func TestAccProject_repo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 		}
 	`, params)
 
@@ -105,10 +111,15 @@ func TestAccProject_repo(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noReposConfig,
@@ -183,6 +194,9 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
+
 			repos = [{{range $idx, $elem := .repos}}{{if $idx}},{{end}}"{{ $elem }}"{{end}}]
 		}
 	`, params)
@@ -197,6 +211,8 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 		}
 	`, params)
 
@@ -230,10 +246,15 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noReposConfig,
@@ -271,6 +292,8 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 
 			repos = ["{{ .repo }}"]
 		}

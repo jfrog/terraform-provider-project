@@ -142,8 +142,8 @@ func verifyEnvironment(projectKey, id string, request *resty.Request) (*resty.Re
 		return e.Name == fmt.Sprintf("%s-%s", projectKey, id)
 	})
 
-	if !envExists {
-		return resp, fmt.Errorf("environment %s does not exist", id)
+	if envExists {
+		return resp, fmt.Errorf("environment %s still exist", id)
 	}
 
 	return resp, nil
