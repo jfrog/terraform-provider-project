@@ -8,12 +8,15 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/testutil"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
-	return request.Head(projectsUrl + id)
+	return request.
+		SetPathParam("projectKey", id).
+		Head(projectUrl)
 }
 
 func getRandomMaxStorageSize() int {
@@ -31,15 +34,15 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
 	}
-	project := test.ExecuteTemplate("TestAccProjects", `
+	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -58,7 +61,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -99,15 +102,15 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 func testProjectConfig(name, key string) string {
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                key,
 	}
-	return test.ExecuteTemplate("TestAccProjects", `
+	return util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -160,15 +163,15 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   invalidMaxStorage,
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(20)),
 	}
-	project := test.ExecuteTemplate("TestAccProjects", `
+	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -187,7 +190,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 	return t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -205,7 +208,7 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -227,7 +230,7 @@ func TestAccProjectUpdateKey(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -262,11 +265,11 @@ func TestAccProject_full(t *testing.T) {
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(6)),
 		"username1":                  username1,
@@ -334,6 +337,7 @@ func TestAccProject_full(t *testing.T) {
 			use_project_group_resource = false
 			use_project_user_resource = false
 			use_project_role_resource = false
+			use_project_repository_resource = false
 
 			member {
 				name  = artifactory_managed_user.{{ .username1 }}.name
@@ -378,7 +382,7 @@ func TestAccProject_full(t *testing.T) {
 		}
 	`
 
-	project := test.ExecuteTemplate("TestAccProjects", template, params)
+	project := util.ExecuteTemplate("TestAccProjects", template, params)
 
 	updateParams := map[string]interface{}{
 		"max_storage_in_gibibytes":   params["max_storage_in_gibibytes"],
@@ -398,12 +402,12 @@ func TestAccProject_full(t *testing.T) {
 		"repo1":                      params["repo1"],
 		"repo2":                      params["repo2"],
 	}
-	projectUpdated := test.ExecuteTemplate("TestAccProjects", template, updateParams)
+	projectUpdated := util.ExecuteTemplate("TestAccProjects", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
@@ -460,10 +464,15 @@ func TestAccProject_full(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 		},
 	})
@@ -475,11 +484,11 @@ func TestAccProject_migrate_schema(t *testing.T) {
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": test.RandBool(),
-		"email_notification":         test.RandBool(),
-		"manage_members":             test.RandBool(),
-		"manage_resources":           test.RandBool(),
-		"index_resources":            test.RandBool(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(randSeq(6)),
 	}
@@ -516,7 +525,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		}
 	`
 
-	config := test.ExecuteTemplate("TestAccProject", template, params)
+	config := util.ExecuteTemplate("TestAccProject", template, params)
 
 	updatedTemplate := `
 		resource "project" "{{ .name }}" {
@@ -544,7 +553,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"name":                       params["name"],
 		"project_key":                params["project_key"],
 	}
-	updatedConfig := test.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
+	updatedConfig := util.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -573,7 +582,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: testAccProviders(),
+				ProviderFactories: ProviderFactories,
 				Config:            config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
@@ -589,7 +598,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: testAccProviders(),
+				ProviderFactories: ProviderFactories,
 				Config:            updatedConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),

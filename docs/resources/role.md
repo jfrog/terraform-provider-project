@@ -31,7 +31,7 @@ resource "project_role" "myrole" {
 - `actions` (Set of String) List of pre-defined actions (READ_REPOSITORY, ANNOTATE_REPOSITORY, DEPLOY_CACHE_REPOSITORY, DELETE_OVERWRITE_REPOSITORY, MANAGE_XRAY_MD_REPOSITORY, READ_RELEASE_BUNDLE, ANNOTATE_RELEASE_BUNDLE, CREATE_RELEASE_BUNDLE, DISTRIBUTE_RELEASE_BUNDLE, DELETE_RELEASE_BUNDLE, MANAGE_XRAY_MD_RELEASE_BUNDLE, READ_BUILD, ANNOTATE_BUILD, DEPLOY_BUILD, DELETE_BUILD, MANAGE_XRAY_MD_BUILD, READ_SOURCES_PIPELINE, TRIGGER_PIPELINE, READ_INTEGRATIONS_PIPELINE, READ_POOLS_PIPELINE, MANAGE_INTEGRATIONS_PIPELINE, MANAGE_SOURCES_PIPELINE, MANAGE_POOLS_PIPELINE, TRIGGER_SECURITY, ISSUES_SECURITY, LICENCES_SECURITY, REPORTS_SECURITY, WATCHES_SECURITY, POLICIES_SECURITY, RULES_SECURITY, MANAGE_MEMBERS, MANAGE_RESOURCES)
 - `environments` (Set of String) A repository can be available in different environments. Members with roles defined in the set environment will have access to the repository. List of pre-defined environments (DEV, PROD)
 - `name` (String)
-- `project_key` (String) Project key for this environment. This field supports only 2 - 20 lowercase alphanumeric and hyphen characters. Must begin with a letter.
+- `project_key` (String) Project key for this environment. This field supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter.
 - `type` (String) Type of role. Only "CUSTOM" is supported
 
 ### Read-Only

@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/util"
 	"golang.org/x/exp/slices"
 )
 
@@ -40,7 +40,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 		}
 	`
 
-	enviroment := test.ExecuteTemplate("TestAccProjectEnvironment", template, params)
+	enviroment := util.ExecuteTemplate("TestAccProjectEnvironment", template, params)
 
 	updateParams := map[string]any{
 		"env_id":      name,
@@ -48,7 +48,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 		"project_key": projectKey,
 	}
 
-	enviromentUpdated := test.ExecuteTemplate("TestAccProjectEnvironment", template, updateParams)
+	enviromentUpdated := util.ExecuteTemplate("TestAccProjectEnvironment", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
@@ -56,7 +56,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 			resp, err := verifyEnvironment(projectKey, id, request)
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: enviroment,
@@ -109,7 +109,7 @@ func TestAccProjectEnvironment_invalid_length(t *testing.T) {
 		}
 	`
 
-	enviroment := test.ExecuteTemplate("TestAccProjectEnvironment", template, params)
+	enviroment := util.ExecuteTemplate("TestAccProjectEnvironment", template, params)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
@@ -117,7 +117,7 @@ func TestAccProjectEnvironment_invalid_length(t *testing.T) {
 			resp, err := verifyEnvironment(projectKey, id, request)
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      enviroment,
@@ -142,8 +142,8 @@ func verifyEnvironment(projectKey, id string, request *resty.Request) (*resty.Re
 		return e.Name == fmt.Sprintf("%s-%s", projectKey, id)
 	})
 
-	if !envExists {
-		return resp, fmt.Errorf("environment %s does not exist", id)
+	if envExists {
+		return resp, fmt.Errorf("environment %s still exist", id)
 	}
 
 	return resp, nil

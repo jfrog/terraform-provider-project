@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_role(t *testing.T) {
@@ -26,7 +26,7 @@ func TestAccProject_role(t *testing.T) {
 		"role3":       role3,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -57,7 +57,7 @@ func TestAccProject_role(t *testing.T) {
 		}
 	`, params)
 
-	addRoleConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	addRoleConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -96,7 +96,7 @@ func TestAccProject_role(t *testing.T) {
 		}
 	`, params)
 
-	noUserConfig := test.ExecuteTemplate("TestAccProjectRole", `
+	noUserConfig := util.ExecuteTemplate("TestAccProjectRole", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -116,7 +116,7 @@ func TestAccProject_role(t *testing.T) {
 			testAccPreCheck(t)
 		},
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -165,10 +165,15 @@ func TestAccProject_role(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noUserConfig,

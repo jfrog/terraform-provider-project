@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectRole_full(t *testing.T) {
@@ -54,15 +54,15 @@ func TestAccProjectRole_full(t *testing.T) {
 		"action":       "ANNOTATE_REPOSITORY",
 	}
 
-	config := test.ExecuteTemplate("TestAccProjectRole", template, testData)
-	updatedConfig := test.ExecuteTemplate("TestAccProjectRole", template, testUpdatedData)
+	config := util.ExecuteTemplate("TestAccProjectRole", template, testData)
+	updatedConfig := util.ExecuteTemplate("TestAccProjectRole", template, testUpdatedData)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -129,14 +129,14 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 		"action":       "READ_REPOSITORY",
 	}
 
-	config := test.ExecuteTemplate("TestAccProjectRole", template, testData)
+	config := util.ExecuteTemplate("TestAccProjectRole", template, testData)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { testAccPreCheck(t) },
 		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,

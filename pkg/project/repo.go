@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 type RepoKey string
@@ -22,12 +23,10 @@ func (r RepoKey) Equals(other Equatable) bool {
 }
 
 var unpackRepos = func(data *schema.ResourceData) []RepoKey {
-	d := &util.ResourceData{ResourceData: data}
-
 	var repoKeys []RepoKey
 
-	if v, ok := d.GetOk("repos"); ok {
-		for _, key := range util.CastToStringArr(v.(*schema.Set).List()) {
+	if v, ok := data.GetOk("repos"); ok {
+		for _, key := range sdk.CastToStringArr(v.(*schema.Set).List()) {
 			repoKeys = append(repoKeys, RepoKey(key))
 		}
 	}
@@ -39,7 +38,7 @@ var packRepos = func(ctx context.Context, d *schema.ResourceData, repoKeys []Rep
 	tflog.Debug(ctx, "packRepos")
 	tflog.Trace(ctx, fmt.Sprintf("repos: %+v\n", repoKeys))
 
-	setValue := util.MkLens(d)
+	setValue := sdk.MkLens(d)
 
 	errors := setValue("repos", repoKeys)
 

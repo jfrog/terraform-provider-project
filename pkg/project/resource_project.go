@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
@@ -52,7 +53,7 @@ func projectResource() *schema.Resource {
 			Required:         true,
 			ForceNew:         true,
 			ValidateDiagFunc: validator.ProjectKey,
-			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 20 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.",
+			Description:      "The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.",
 		},
 		"display_name": {
 			Required: true,
@@ -220,7 +221,7 @@ func projectResource() *schema.Resource {
 		},
 	}
 
-	var projectSchemaV2 = util.MergeMaps(
+	var projectSchemaV2 = sdk.MergeMaps(
 		projectSchema,
 		map[string]*schema.Schema{
 			"role": {
@@ -272,7 +273,7 @@ func projectResource() *schema.Resource {
 		},
 	)
 
-	var projectSchemaV3 = util.MergeMaps(
+	var projectSchemaV3 = sdk.MergeMaps(
 		projectSchemaV2,
 		map[string]*schema.Schema{
 			"member": {
@@ -334,8 +335,30 @@ func projectResource() *schema.Resource {
 		},
 	)
 
+	var projectSchemaV4 = sdk.MergeMaps(
+		projectSchemaV3,
+		map[string]*schema.Schema{
+			"repos": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				MinItems:    0,
+				Description: "(Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.\n\n```hcl\nlifecycle {\n\tignore_changes = [\n\t\trepos\n\t]\n}\n```",
+				Deprecated:  "Replaced by `project_repository` resource. This should not be used in combination with `project_repository` resource. Use `use_project_repository_resource` attribute to control which resource manages project repositories.",
+			},
+			"use_project_repository_resource": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "When set to true, this resource will ignore the `repos` attributes and allow repository to be managed by `project_repository` resource instead. Default to `true`.",
+			},
+		},
+	)
+
 	var unpackProject = func(data *schema.ResourceData) (Project, Membership, Membership, []Role, []RepoKey, error) {
-		d := &util.ResourceData{ResourceData: data}
+		d := &sdk.ResourceData{ResourceData: data}
 
 		project := Project{
 			Key:                    d.GetString("key", false),
@@ -372,7 +395,7 @@ func projectResource() *schema.Resource {
 
 	var packProject = func(ctx context.Context, d *schema.ResourceData, project Project, users []Member, groups []Member, roles []Role, repos []RepoKey) diag.Diagnostics {
 		var errors []error
-		setValue := util.MkLens(d)
+		setValue := sdk.MkLens(d)
 
 		setValue("key", project.Key)
 		setValue("display_name", project.DisplayName)
@@ -449,9 +472,13 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		repos, err := readRepos(ctx, data.Id(), m)
-		if err != nil {
-			return diag.FromErr(err)
+		repos := []RepoKey{}
+		useProjectRepositoryResource := data.Get("use_project_repository_resource").(bool)
+		if !useProjectRepositoryResource {
+			repos, err = readRepos(ctx, data.Id(), m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		return packProject(ctx, data, project, users, groups, roles, repos)
@@ -500,9 +527,12 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, err = updateRepos(ctx, data.Id(), repos, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectRepositoryResource := data.Get("use_project_repository_resource").(bool)
+		if !useProjectRepositoryResource {
+			_, err = updateRepos(ctx, data.Id(), repos, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		return readProject(ctx, data, m)
@@ -552,9 +582,12 @@ func projectResource() *schema.Resource {
 			}
 		}
 
-		_, err = updateRepos(ctx, data.Id(), repos, m)
-		if err != nil {
-			return diag.FromErr(err)
+		useProjectRepositoryResource := data.Get("use_project_repository_resource").(bool)
+		if !useProjectRepositoryResource {
+			_, err = updateRepos(ctx, data.Id(), repos, m)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		return readProject(ctx, data, m)
@@ -608,6 +641,12 @@ func projectResource() *schema.Resource {
 		}
 	}
 
+	var resourceV3 = func() *schema.Resource {
+		return &schema.Resource{
+			Schema: projectSchemaV3,
+		}
+	}
+
 	var resourceStateUpgradeV1 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
 		// set use_project_role_resource to false for existing state so the resource will continue
 		// using `roles` attribute until explicitly set to true
@@ -622,6 +661,11 @@ func projectResource() *schema.Resource {
 		return rawState, nil
 	}
 
+	var resourceStateUpgradeV3 = func(ctx context.Context, rawState map[string]any, meta any) (map[string]any, error) {
+		rawState["use_project_repository_resource"] = false
+		return rawState, nil
+	}
+
 	return &schema.Resource{
 		CreateContext: createProject,
 		ReadContext:   readProject,
@@ -632,8 +676,8 @@ func projectResource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 
-		Schema:        projectSchemaV3,
-		SchemaVersion: 3,
+		Schema:        projectSchemaV4,
+		SchemaVersion: 4,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Type:    resourceV1().CoreConfigSchema().ImpliedType(),
@@ -644,6 +688,11 @@ func projectResource() *schema.Resource {
 				Type:    resourceV2().CoreConfigSchema().ImpliedType(),
 				Upgrade: resourceStateUpgradeV2,
 				Version: 2,
+			},
+			{
+				Type:    resourceV3().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceStateUpgradeV3,
+				Version: 3,
 			},
 		},
 		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.",

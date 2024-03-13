@@ -3,7 +3,7 @@ terraform {
   required_providers {
     project = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "1.3.6"
+      version = "1.5.0"
     }
   }
 }
@@ -19,7 +19,7 @@ variable "devop_roles" {
 }
 
 resource "project" "myproject" {
-  key          = "myproj"
+  key = "myproj"
   display_name = "My Project"
   description  = "My Project"
   admin_privileges {
@@ -30,50 +30,59 @@ resource "project" "myproject" {
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
-  use_project_role_resource  = true
+}
 
-  member {
-    name  = "user1" // Must exist already in Artifactory
-    roles = ["Developer", "Project Admin"]
-  }
+resource "project_user" "user1" {
+  project_key = project.myproject.key
+  name        = "user1"
+  roles       = ["developer","project admin"]
+}
 
-  member {
-    name  = "user2" // Must exist already in Artifactory
-    roles = ["Developer"]
-  }
+resource "project_user" "user2" {
+  project_key = project.myproject.key
+  name        = "user2"
+  roles       = ["developer"]
+}
 
-  group {
-    name  = "qa"
-    roles = ["qa"]
-  }
+resource "project_group" "dev-group" {
+  project_key = project.myproject.key
+  name        = "dev-group"
+  roles       = ["developer"]
+}
 
-  group {
-    name  = "release"
-    roles = ["Release Manager"]
-  }
+resource "project_group" "release-group" {
+  project_key = project.myproject.key
+  name        = "release-group"
+  roles       = ["release manager"]
+}
 
-  repos = ["docker-local", "npm-remote"] // Must exist already in Artifactory
+resource "project_repository" "docker-local" {
+  project_key = project.myproject.key
+  key         = "docker-local"
+}
+
+resource "project_repository" "rpm-local" {
+  project_key = project.myproject.key
+  key         = "rpm-local"
 }
 
 resource "project_environment" "myenv" {
-  name        = "myenv"
   project_key = project.myproj.key
+  name        = "myenv"
 }
 
 resource "project_role" "qa" {
-    name = "qa"
-    type = "CUSTOM"
-    project_key = project.myproject.key
-    
-    environments = ["DEV"]
-    actions = var.qa_roles
+  project_key  = project.myproject.key
+  name         = "qa"
+  type         = "CUSTOM"
+  environments = ["DEV"]
+  actions      = var.qa_roles
 }
 
 resource "project_role" "devop" {
-    name = "devop"
-    type = "CUSTOM"
-    project_key = project.myproject.key
-    
-    environments = ["DEV", "PROD"]
-    actions = var.devop_roles
+  project_key  = project.myproject.key
+  name         = "devop"
+  type         = "CUSTOM"
+  environments = ["DEV", "PROD"]
+  actions      = var.devop_roles
 }

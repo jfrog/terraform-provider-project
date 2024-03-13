@@ -59,29 +59,6 @@ resource "project" "myproject" {
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
   email_notification         = true
-  use_project_role_resource  = true
-
-  member {
-    name  = "user1"
-    roles = ["developer","project admin"]
-  }
-
-  member {
-    name  = "user2"
-    roles = ["developer"]
-  }
-
-  group {
-    name = "dev-group"
-    roles = ["developer"]
-  }
-
-  group {
-    name = "release-group"
-    roles = ["release manager"]
-  }
-
-  repos = ["docker-local", "rpm-local"]
 }
 ```
 
@@ -92,7 +69,7 @@ resource "project" "myproject" {
 
 - `admin_privileges` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
 - `display_name` (String) Also known as project name on the UI
-- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 20 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
+- `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
 
@@ -104,7 +81,7 @@ resource "project" "myproject" {
 - `group` (Block Set, Deprecated) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
 - `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - `member` (Block Set, Deprecated) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- `repos` (Set of String) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
+- `repos` (Set of String, Deprecated) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
 
 ```hcl
 lifecycle {
@@ -115,6 +92,7 @@ lifecycle {
 ```
 - `role` (Block Set, Deprecated) Project role. Element has one to one mapping with the [JFrog Project Roles API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-AddaNewRole) (see [below for nested schema](#nestedblock--role))
 - `use_project_group_resource` (Boolean) When set to true, this resource will ignore the `group` attributes and allow users to be managed by `project_group` resource instead. Default to `true`.
+- `use_project_repository_resource` (Boolean) When set to true, this resource will ignore the `repos` attributes and allow repository to be managed by `project_repository` resource instead. Default to `true`.
 - `use_project_role_resource` (Boolean) When set to true, this resource will ignore the `roles` attributes and allow roles to be managed by `project_role` resource instead. Default to `true`.
 - `use_project_user_resource` (Boolean) When set to true, this resource will ignore the `member` attributes and allow users to be managed by `project_user` resource instead. Default to `true`.
 

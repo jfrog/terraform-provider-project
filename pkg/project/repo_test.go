@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/jfrog/terraform-provider-shared/test"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_repo(t *testing.T) {
@@ -26,7 +26,7 @@ func TestAccProject_repo(t *testing.T) {
 		"repo2":       repo2,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -36,12 +36,14 @@ func TestAccProject_repo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 
 			repos = ["{{ .repo1 }}"]
 		}
 	`, params)
 
-	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -51,12 +53,14 @@ func TestAccProject_repo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 
 			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
 		}
 	`, params)
 
-	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	noReposConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -66,6 +70,8 @@ func TestAccProject_repo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 		}
 	`, params)
 
@@ -82,7 +88,7 @@ func TestAccProject_repo(t *testing.T) {
 
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -105,10 +111,15 @@ func TestAccProject_repo(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noReposConfig,
@@ -160,7 +171,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 		"repos":       randomRepoNames,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -173,7 +184,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 		}
 	`, params)
 
-	addRepoConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -183,11 +194,14 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
+
 			repos = [{{range $idx, $elem := .repos}}{{if $idx}},{{end}}"{{ $elem }}"{{end}}]
 		}
 	`, params)
 
-	noReposConfig := test.ExecuteTemplate("TestAccProjectRepo", `
+	noReposConfig := util.ExecuteTemplate("TestAccProjectRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -197,6 +211,8 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 		}
 	`, params)
 
@@ -209,7 +225,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 			resp, err := verifyProject(id, request)
 			return resp, err
 		}),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -230,10 +246,15 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"use_project_role_resource", "use_project_user_resource", "use_project_group_resource"},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"use_project_role_resource",
+					"use_project_user_resource",
+					"use_project_group_resource",
+					"use_project_repository_resource",
+				},
 			},
 			{
 				Config: noReposConfig,
@@ -261,7 +282,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 		"repo":        repo,
 	}
 
-	initialConfig := test.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
+	initialConfig := util.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -271,6 +292,8 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 				manage_resources = true
 				index_resources = true
 			}
+
+			use_project_repository_resource = false
 
 			repos = ["{{ .repo }}"]
 		}
@@ -282,7 +305,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 			createTestRepo(t, repo)
 		},
 		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: testAccProviders(),
+		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

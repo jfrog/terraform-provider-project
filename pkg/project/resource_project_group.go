@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/jfrog/terraform-provider-shared/util"
+	"github.com/jfrog/terraform-provider-shared/util/sdk"
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
@@ -52,12 +53,12 @@ func projectGroupResource() *schema.Resource {
 		return ProjectGroup{
 			ProjectKey: d.Get("project_key").(string),
 			Name:       d.Get("name").(string),
-			Roles:      util.CastToStringArr(d.Get("roles").(*schema.Set).List()),
+			Roles:      sdk.CastToStringArr(d.Get("roles").(*schema.Set).List()),
 		}
 	}
 
 	var packProjectGroup = func(_ context.Context, data *schema.ResourceData, m ProjectGroup) diag.Diagnostics {
-		setValue := util.MkLens(data)
+		setValue := sdk.MkLens(data)
 
 		setValue("name", m.Name)
 		setValue("project_key", m.ProjectKey)
