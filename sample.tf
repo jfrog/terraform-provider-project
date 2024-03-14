@@ -1,8 +1,7 @@
-# Required for Terraform 0.13 and up (https://www.terraform.io/upgrade-guides/0-13.html)
 terraform {
   required_providers {
     project = {
-      source  = "registry.terraform.io/jfrog/project"
+      source  = "jfrog/project"
       version = "1.5.0"
     }
   }

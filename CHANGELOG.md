@@ -1,3 +1,9 @@
+## 1.5.1 (March 14, 2024)
+
+BUG FIXES:
+
+* Fix HTTP response error handling due to change of behavior (for better consistency) from Resty client. PR: [#106](https://github.com/jfrog/terraform-provider-project/pull/106)
+
 ## 1.5.0 (March 13, 2024)
 
 FEATURES:

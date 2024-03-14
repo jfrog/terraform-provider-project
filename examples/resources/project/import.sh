@@ -1,0 +1,1 @@
+terraform import project.myproject myproj

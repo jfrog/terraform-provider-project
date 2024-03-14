@@ -54,13 +54,18 @@ var readRepos = func(ctx context.Context, projectKey string, m interface{}) ([]R
 
 	artifactoryRepos := []ArtifactoryRepo{}
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&artifactoryRepos).
+		SetError(&projectError).
 		Get("/artifactory/api/repositories?project={projectKey}")
 
 	if err != nil {
 		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("%s", projectError.String())
 	}
 
 	tflog.Trace(ctx, fmt.Sprintf("artifactoryRepos: %+v\n", artifactoryRepos))
@@ -127,13 +132,21 @@ var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, 
 var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req *resty.Request) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepo: %s", repoKey))
 
-	_, err := req.
+	var projectError ProjectErrorsResponse
+	resp, err := req.
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"repoKey":    string(repoKey),
 		}).
 		SetQueryParam("force", "true").
+		SetError(&projectError).
 		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
+	if err != nil {
+		return err
+	}
+	if resp.IsError() {
+		return fmt.Errorf("%s", projectError.String())
+	}
 
 	return err
 }
@@ -159,32 +172,28 @@ var deleteRepos = func(ctx context.Context, repoKeys []RepoKey, m interface{}) e
 var deleteRepo = func(ctx context.Context, repoKey RepoKey, req *resty.Request) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepo: %s", repoKey))
 
-	type Error struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-	}
-
-	type ErrorResponse struct {
-		Errors []Error `json:"errors"`
-	}
-
-	var errorResp ErrorResponse
-
+	var projectError ProjectErrorsResponse
 	resp, err := req.
 		SetPathParam("repoKey", string(repoKey)).
-		SetError(&errorResp).
+		SetError(&projectError).
 		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
+
+	if err != nil {
+		return err
+	}
 
 	// Ignore 404 NOT_FOUND error when unassigning repo from project
 	// Possible that repo was deleted out-of-band from TF
-	if resp.StatusCode() == http.StatusNotFound && len(errorResp.Errors) > 0 {
-		for _, error := range errorResp.Errors {
-			if error.Code == "NOT_FOUND" {
-				tflog.Warn(ctx, fmt.Sprintf("failed to unassign repo: %s", error.Message))
+	if resp.StatusCode() == http.StatusNotFound && len(projectError.Errors) > 0 {
+		for _, e := range projectError.Errors {
+			if e.Code == "NOT_FOUND" {
+				tflog.Warn(ctx, fmt.Sprintf("failed to unassign repo: %s", e.Message))
 				return nil
 			}
 		}
+	} else if resp.IsError() {
+		return fmt.Errorf("%s", projectError.String())
 	}
 
-	return err
+	return nil
 }

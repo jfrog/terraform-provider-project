@@ -132,16 +132,25 @@ func projectRoleResource() *schema.Resource {
 		var role Role
 		projectKey := data.Get("project_key").(string)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectKey,
 				"roleName":   data.Id(),
 			}).
 			SetResult(&role).
+			SetError(&projectError).
 			Get(projectRoleUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound {
+			data.SetId("")
+			return nil
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		return packRole(ctx, data, role, projectKey)
@@ -162,13 +171,18 @@ func projectRoleResource() *schema.Resource {
 		projectKey := data.Get("project_key").(string)
 		role := unpackRole(data)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetBody(role).
+			SetError(&projectError).
 			Post(projectRolesUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(role.Id())
@@ -180,16 +194,21 @@ func projectRoleResource() *schema.Resource {
 		projectKey := data.Get("project_key").(string)
 		role := unpackRole(data)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectKey,
 				"roleName":   role.Name,
 			}).
+			SetError(&projectError).
 			SetBody(role).
 			Put(projectRoleUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(role.Id())
@@ -198,18 +217,20 @@ func projectRoleResource() *schema.Resource {
 	}
 
 	var deleteProjectRole = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+		var projectError ProjectErrorsResponse
 		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"roleName":   data.Id(),
 				"projectKey": data.Get("project_key").(string),
 			}).
+			SetError(&projectError).
 			Delete(projectRoleUrl)
 
 		if err != nil {
-			if resp.StatusCode() == http.StatusNotFound {
-				data.SetId("")
-			}
 			return diag.FromErr(err)
+		}
+		if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		return nil
