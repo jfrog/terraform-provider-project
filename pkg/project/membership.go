@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -101,15 +102,20 @@ var readMembers = func(ctx context.Context, projectKey string, membershipType st
 
 	membership := Membership{}
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
 		}).
 		SetResult(&membership).
+		SetError(&projectError).
 		Get(projectMembershipsUrl)
 	if err != nil {
 		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("%s", projectError.String())
 	}
 
 	tflog.Trace(ctx, fmt.Sprintf("readMembers: %+v\n", membership))
@@ -163,14 +169,22 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
 			"memberName":     member.Name,
 		}).
 		SetBody(member).
+		SetError(&projectError).
 		Put(projectMembershipUrl)
+	if err != nil {
+		return err
+	}
+	if resp.IsError() {
+		return fmt.Errorf("%s", projectError.String())
+	}
 
 	return err
 }
@@ -196,15 +210,20 @@ var deleteMember = func(ctx context.Context, projectKey string, membershipType s
 		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
 			"memberName":     member.Name,
 		}).
+		SetError(&projectError).
 		Delete(projectMembershipUrl)
 	if err != nil {
 		return err
+	}
+	if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("%s", projectError.String())
 	}
 
 	return nil

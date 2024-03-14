@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -79,13 +80,18 @@ var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]R
 
 	roles := []Role{}
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&roles).
+		SetError(&projectError).
 		Get(projectRolesUrl)
 
 	if err != nil {
 		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("%s", projectError.String())
 	}
 
 	tflog.Trace(ctx, fmt.Sprintf("roles: %+v\n", roles))
@@ -145,26 +151,42 @@ var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []
 var addRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
 	tflog.Debug(ctx, "addRole")
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetBody(role).
+		SetError(&projectError).
 		Post(projectRolesUrl)
+	if err != nil {
+		return err
+	}
+	if resp.IsError() {
+		return fmt.Errorf("%s", projectError.String())
+	}
 
-	return err
+	return nil
 }
 
 var updateRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
 	tflog.Debug(ctx, "updateRole")
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
 		}).
 		SetBody(role).
+		SetError(&projectError).
 		Put(projectRoleUrl)
+	if err != nil {
+		return err
+	}
+	if resp.IsError() {
+		return fmt.Errorf("%s", projectError.String())
+	}
 
-	return err
+	return nil
 }
 
 var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m interface{}) error {
@@ -184,16 +206,21 @@ var deleteRole = func(ctx context.Context, projectKey string, role Role, m inter
 	tflog.Debug(ctx, "deleteRole")
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", role))
 
-	_, err := m.(util.ProvderMetadata).Client.R().
+	var projectError ProjectErrorsResponse
+	resp, err := m.(util.ProvderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
 		}).
 		SetBody(role).
+		SetError(&projectError).
 		Delete(projectRoleUrl)
 
 	if err != nil {
 		return err
+	}
+	if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("%s", projectError.String())
 	}
 
 	return nil

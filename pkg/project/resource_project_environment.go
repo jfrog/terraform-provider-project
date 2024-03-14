@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -57,12 +58,21 @@ func projectEnvironmentResource() *schema.Resource {
 		projectKey := data.Get("project_key").(string)
 		var envs []ProjectEnvironment
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetResult(&envs).
+			SetError(&projectError).
 			Get(projectEnvironmentUrl)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound {
+			data.SetId("")
+			return nil
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		var matchedEnv *ProjectEnvironment
@@ -91,12 +101,17 @@ func projectEnvironmentResource() *schema.Resource {
 			Name: fmt.Sprintf("%s-%s", projectKey, data.Get("name").(string)),
 		}
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetBody(projectEnvironment).
+			SetError(&projectError).
 			Post(projectEnvironmentUrl)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(projectEnvironment.Id())
@@ -112,15 +127,20 @@ func projectEnvironmentResource() *schema.Resource {
 			NewName: fmt.Sprintf("%s-%s", projectKey, newName),
 		}
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey":      projectKey,
 				"environmentName": fmt.Sprintf("%s-%s", projectKey, oldName),
 			}).
 			SetBody(projectEnvironmentUpdate).
+			SetError(&projectError).
 			Post(projectEnvironmentUrl + "/{environmentName}/rename")
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(projectEnvironmentUpdate.Id())
@@ -131,14 +151,20 @@ func projectEnvironmentResource() *schema.Resource {
 
 	var deleteProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectKey := data.Get("project_key").(string)
-		_, err := m.(util.ProvderMetadata).Client.R().
+
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey":      projectKey,
 				"environmentName": fmt.Sprintf("%s-%s", projectKey, data.Get("name")),
 			}).
+			SetError(&projectError).
 			Delete(projectEnvironmentUrl + "/{environmentName}")
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId("")

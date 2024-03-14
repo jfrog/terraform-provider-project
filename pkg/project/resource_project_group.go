@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -75,16 +76,25 @@ func projectGroupResource() *schema.Resource {
 		projectGroup := unpackProjectGroup(data)
 		var loadedProjectGroup ProjectGroup
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,
 			}).
 			SetResult(&loadedProjectGroup).
+			SetError(&projectError).
 			Get(projectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound {
+			data.SetId("")
+			return nil
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		loadedProjectGroup.ProjectKey = projectGroup.ProjectKey
@@ -95,16 +105,21 @@ func projectGroupResource() *schema.Resource {
 	var upsertProjectGroup = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectGroup := unpackProjectGroup(data)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,
 			}).
 			SetBody(&projectGroup).
+			SetError(&projectError).
 			Put(projectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(projectGroup.Id())
@@ -115,15 +130,20 @@ func projectGroupResource() *schema.Resource {
 	var deleteProjectGroup = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectGroup := unpackProjectGroup(data)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,
 			}).
+			SetError(&projectError).
 			Delete(projectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId("")

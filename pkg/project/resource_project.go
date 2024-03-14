@@ -437,12 +437,22 @@ func projectResource() *schema.Resource {
 	var readProject = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		project := Project{}
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetResult(&project).
+			SetError(&projectError).
 			Get(projectUrl)
+
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound {
+			data.SetId("")
+			return nil
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		users := []Member{}
@@ -493,11 +503,16 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetBody(project).
+			SetError(&projectError).
 			Post(projectsUrl)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(project.Id())
@@ -547,12 +562,17 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(err)
 		}
 
-		_, err = m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetBody(project).
+			SetError(&projectError).
 			Put(projectUrl)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(project.Id())
@@ -615,15 +635,21 @@ func projectResource() *schema.Resource {
 			},
 		)
 
-		resp, err := req.
+		var projectError ProjectErrorsResponse
+		res, err := req.
 			SetPathParam("projectKey", data.Id()).
+			SetError(&projectError).
 			Delete(projectUrl)
 
 		if err != nil {
-			if resp.StatusCode() == http.StatusNotFound {
-				data.SetId("")
-			}
 			return diag.FromErr(err)
+		}
+		if res.StatusCode() == http.StatusNotFound {
+			data.SetId("")
+			return nil
+		}
+		if res.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		return nil

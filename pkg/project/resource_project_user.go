@@ -85,19 +85,24 @@ func projectUserResource() *schema.Resource {
 		projectUser := unpackProjectUser(data)
 		var loadedProjectUser ProjectUser
 
+		var projectError ProjectErrorsResponse
 		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
 			}).
+			SetError(&projectError).
 			SetResult(&loadedProjectUser).
 			Get(projectUsersUrl)
 
-		if resp != nil && resp.StatusCode() == http.StatusNotFound && projectUser.IgnoreMissingUser {
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound && projectUser.IgnoreMissingUser {
 			// ignore missing user, reuse local info for state
 			loadedProjectUser = projectUser
-		} else if err != nil {
-			return diag.FromErr(err)
+		} else if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		loadedProjectUser.ProjectKey = projectUser.ProjectKey
@@ -109,18 +114,23 @@ func projectUserResource() *schema.Resource {
 	var upsertProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectUser := unpackProjectUser(data)
 
+		var projectError ProjectErrorsResponse
 		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
 			}).
 			SetBody(&projectUser).
+			SetError(&projectError).
 			Put(projectUsersUrl)
 
 		// allow missing user? -> report warning and ignore error
 		diagnostics := diag.Diagnostics{}
 
-		if resp != nil && resp.StatusCode() == http.StatusNotFound {
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if resp.StatusCode() == http.StatusNotFound {
 			if projectUser.IgnoreMissingUser {
 				diagnostics = append(diagnostics, diag.Diagnostic{
 					Severity: diag.Warning,
@@ -129,8 +139,8 @@ func projectUserResource() *schema.Resource {
 			} else {
 				return diag.Errorf("user '%s' not found, project membership not created", projectUser.Name)
 			}
-		} else if err != nil {
-			return diag.FromErr(err)
+		} else if resp.IsError() {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId(projectUser.Id())
@@ -147,15 +157,20 @@ func projectUserResource() *schema.Resource {
 	var deleteProjectUser = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		projectUser := unpackProjectUser(data)
 
-		_, err := m.(util.ProvderMetadata).Client.R().
+		var projectError ProjectErrorsResponse
+		resp, err := m.(util.ProvderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
 			}).
+			SetError(&projectError).
 			Delete(projectUsersUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
+		}
+		if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+			return diag.Errorf("%s", projectError.String())
 		}
 
 		data.SetId("")
