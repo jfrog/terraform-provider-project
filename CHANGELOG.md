@@ -1,3 +1,9 @@
+## 1.5.2 (March 28, 2024)
+
+IMPROVEMENTS:
+
+* resource/project_repository: Add retry logic after resource creation to allow time for repository project assignment to be synced up. Issue: [#110](https://github.com/jfrog/terraform-provider-project/issues/110) PR: [#111](https://github.com/jfrog/terraform-provider-project/pull/111)
+
 ## 1.5.1 (March 14, 2024)
 
 BUG FIXES:
