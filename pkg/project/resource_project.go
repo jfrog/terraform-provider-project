@@ -438,7 +438,7 @@ func projectResource() *schema.Resource {
 		project := Project{}
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetResult(&project).
 			SetError(&projectError).
@@ -504,7 +504,7 @@ func projectResource() *schema.Resource {
 		}
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetBody(project).
 			SetError(&projectError).
 			Post(projectsUrl)
@@ -563,7 +563,7 @@ func projectResource() *schema.Resource {
 		}
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("projectKey", data.Id()).
 			SetBody(project).
 			SetError(&projectError).
@@ -627,7 +627,7 @@ func projectResource() *schema.Resource {
 			return diag.FromErr(fmt.Errorf("failed to delete repos for project: %s", deleteErr))
 		}
 
-		req := m.(util.ProvderMetadata).Client.R()
+		req := m.(util.ProviderMetadata).Client.R()
 		req.AddRetryCondition(
 			func(r *resty.Response, _ error) bool {
 				return r.StatusCode() == http.StatusBadRequest &&

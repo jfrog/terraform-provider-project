@@ -59,7 +59,7 @@ func projectEnvironmentResource() *schema.Resource {
 		var envs []ProjectEnvironment
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetResult(&envs).
 			SetError(&projectError).
@@ -102,7 +102,7 @@ func projectEnvironmentResource() *schema.Resource {
 		}
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetBody(projectEnvironment).
 			SetError(&projectError).
@@ -128,7 +128,7 @@ func projectEnvironmentResource() *schema.Resource {
 		}
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey":      projectKey,
 				"environmentName": fmt.Sprintf("%s-%s", projectKey, oldName),
@@ -153,7 +153,7 @@ func projectEnvironmentResource() *schema.Resource {
 		projectKey := data.Get("project_key").(string)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey":      projectKey,
 				"environmentName": fmt.Sprintf("%s-%s", projectKey, data.Get("name")),

@@ -53,7 +53,7 @@ func verifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
 
-		client := TestProvider.Meta().(util.ProvderMetadata).Client
+		client := TestProvider.Meta().(util.ProviderMetadata).Client
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
 			return err

@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.33.0
 	github.com/hashicorp/terraform-plugin-testing v1.7.0
-	github.com/jfrog/terraform-provider-shared v1.22.0
+	github.com/jfrog/terraform-provider-shared v1.25.1
 	github.com/samber/lo v1.39.0
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 )
