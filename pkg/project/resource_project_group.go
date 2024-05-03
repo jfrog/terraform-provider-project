@@ -77,7 +77,7 @@ func projectGroupResource() *schema.Resource {
 		var loadedProjectGroup ProjectGroup
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,
@@ -106,7 +106,7 @@ func projectGroupResource() *schema.Resource {
 		projectGroup := unpackProjectGroup(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,
@@ -131,7 +131,7 @@ func projectGroupResource() *schema.Resource {
 		projectGroup := unpackProjectGroup(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectGroup.ProjectKey,
 				"name":       projectGroup.Name,

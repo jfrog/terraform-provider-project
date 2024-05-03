@@ -133,7 +133,7 @@ func projectRoleResource() *schema.Resource {
 		projectKey := data.Get("project_key").(string)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectKey,
 				"roleName":   data.Id(),
@@ -172,7 +172,7 @@ func projectRoleResource() *schema.Resource {
 		role := unpackRole(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("projectKey", projectKey).
 			SetBody(role).
 			SetError(&projectError).
@@ -195,7 +195,7 @@ func projectRoleResource() *schema.Resource {
 		role := unpackRole(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectKey,
 				"roleName":   role.Name,
@@ -218,7 +218,7 @@ func projectRoleResource() *schema.Resource {
 
 	var deleteProjectRole = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"roleName":   data.Id(),
 				"projectKey": data.Get("project_key").(string),

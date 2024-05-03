@@ -91,9 +91,9 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData, terraformVer
 
 	checkLicense := d.Get("check_license").(bool)
 	if checkLicense {
-		licenseErr := sdk.CheckArtifactoryLicense(restyBase, "Enterprise", "Commercial", "Edge")
+		licenseErr := util.CheckArtifactoryLicense(restyBase, "Enterprise", "Commercial", "Edge")
 		if licenseErr != nil {
-			return nil, licenseErr
+			return nil, diag.FromErr(licenseErr)
 		}
 	}
 
@@ -103,9 +103,9 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData, terraformVer
 	}
 
 	featureUsage := fmt.Sprintf("Terraform/%s", terraformVersion)
-	util.SendUsage(ctx, restyBase, productId, featureUsage)
+	util.SendUsage(ctx, restyBase.R(), productId, featureUsage)
 
-	return util.ProvderMetadata{
+	return util.ProviderMetadata{
 		Client:             restyBase,
 		ArtifactoryVersion: version,
 	}, nil

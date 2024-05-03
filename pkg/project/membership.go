@@ -103,7 +103,7 @@ var readMembers = func(ctx context.Context, projectKey string, membershipType st
 	membership := Membership{}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
@@ -170,7 +170,7 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 	}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
@@ -211,7 +211,7 @@ var deleteMember = func(ctx context.Context, projectKey string, membershipType s
 	}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,

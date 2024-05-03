@@ -55,7 +55,7 @@ var readRepos = func(ctx context.Context, projectKey string, m interface{}) ([]R
 	artifactoryRepos := []ArtifactoryRepo{}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&artifactoryRepos).
 		SetError(&projectError).
@@ -114,7 +114,7 @@ var updateRepos = func(ctx context.Context, projectKey string, terraformRepoKeys
 var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("addRepos: %s", repoKeys))
 
-	req := m.(util.ProvderMetadata).Client.R().
+	req := m.(util.ProviderMetadata).Client.R().
 		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
@@ -154,7 +154,7 @@ var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req 
 var deleteRepos = func(ctx context.Context, repoKeys []RepoKey, m interface{}) error {
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepos: %s", repoKeys))
 
-	req := m.(util.ProvderMetadata).Client.R().
+	req := m.(util.ProviderMetadata).Client.R().
 		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
 		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))

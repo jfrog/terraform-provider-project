@@ -62,7 +62,7 @@ func projectRepositoryResource() *schema.Resource {
 		repoKey := data.Get("key").(string)
 
 		var repo Repository
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetResult(&repo).
 			SetPathParam("key", repoKey).
 			Get(repositoryEndpoint)
@@ -97,7 +97,7 @@ func projectRepositoryResource() *schema.Resource {
 		repoKey := data.Get("key").(string)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectKey,
 				"repoKey":    repoKey,
@@ -114,7 +114,7 @@ func projectRepositoryResource() *schema.Resource {
 
 		retryError := retry.RetryContext(ctx, data.Timeout(schema.TimeoutCreate), func() *retry.RetryError {
 			var repo Repository
-			resp, err := m.(util.ProvderMetadata).Client.R().
+			resp, err := m.(util.ProviderMetadata).Client.R().
 				SetResult(&repo).
 				SetPathParam("key", repoKey).
 				Get(repositoryEndpoint)
@@ -149,7 +149,7 @@ func projectRepositoryResource() *schema.Resource {
 		repoKey := data.Get("key").(string)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParam("repoKey", repoKey).
 			SetError(&projectError).
 			Delete("/access/api/v1/projects/_/attach/repositories/{repoKey}")

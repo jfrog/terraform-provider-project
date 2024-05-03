@@ -81,7 +81,7 @@ var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]R
 	roles := []Role{}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&roles).
 		SetError(&projectError).
@@ -152,7 +152,7 @@ var addRole = func(ctx context.Context, projectKey string, role Role, m interfac
 	tflog.Debug(ctx, "addRole")
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParam("projectKey", projectKey).
 		SetBody(role).
 		SetError(&projectError).
@@ -171,7 +171,7 @@ var updateRole = func(ctx context.Context, projectKey string, role Role, m inter
 	tflog.Debug(ctx, "updateRole")
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
@@ -207,7 +207,7 @@ var deleteRole = func(ctx context.Context, projectKey string, role Role, m inter
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", role))
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProvderMetadata).Client.R().
+	resp, err := m.(util.ProviderMetadata).Client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,

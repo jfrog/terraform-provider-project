@@ -86,7 +86,7 @@ func projectUserResource() *schema.Resource {
 		var loadedProjectUser ProjectUser
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
@@ -115,7 +115,7 @@ func projectUserResource() *schema.Resource {
 		projectUser := unpackProjectUser(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
@@ -158,7 +158,7 @@ func projectUserResource() *schema.Resource {
 		projectUser := unpackProjectUser(data)
 
 		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProvderMetadata).Client.R().
+		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetPathParams(map[string]string{
 				"projectKey": projectUser.ProjectKey,
 				"name":       projectUser.Name,
