@@ -85,7 +85,7 @@ var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]R
 		SetPathParam("projectKey", projectKey).
 		SetResult(&roles).
 		SetError(&projectError).
-		Get(projectRolesUrl)
+		Get(ProjectRolesUrl)
 
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ var addRole = func(ctx context.Context, projectKey string, role Role, m interfac
 		SetPathParam("projectKey", projectKey).
 		SetBody(role).
 		SetError(&projectError).
-		Post(projectRolesUrl)
+		Post(ProjectRolesUrl)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ var updateRole = func(ctx context.Context, projectKey string, role Role, m inter
 		}).
 		SetBody(role).
 		SetError(&projectError).
-		Put(projectRoleUrl)
+		Put(ProjectRoleUrl)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ var deleteRole = func(ctx context.Context, projectKey string, role Role, m inter
 		}).
 		SetBody(role).
 		SetError(&projectError).
-		Delete(projectRoleUrl)
+		Delete(ProjectRoleUrl)
 
 	if err != nil {
 		return err

@@ -115,9 +115,9 @@ var addRepos = func(ctx context.Context, projectKey string, repoKeys []RepoKey, 
 	tflog.Debug(ctx, fmt.Sprintf("addRepos: %s", repoKeys))
 
 	req := m.(util.ProviderMetadata).Client.R().
-		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
+		AddRetryCondition(RetryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(RetryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(RetryOnSpecificMsgBody("Web server is returning an unknown error"))
 
 	for _, repoKey := range repoKeys {
 		err := addRepo(ctx, projectKey, repoKey, req)
@@ -140,7 +140,7 @@ var addRepo = func(ctx context.Context, projectKey string, repoKey RepoKey, req 
 		}).
 		SetQueryParam("force", "true").
 		SetError(&projectError).
-		Put(projectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
+		Put(ProjectsUrl + "/_/attach/repositories/{repoKey}/{projectKey}")
 	if err != nil {
 		return err
 	}
@@ -155,9 +155,9 @@ var deleteRepos = func(ctx context.Context, repoKeys []RepoKey, m interface{}) e
 	tflog.Debug(ctx, fmt.Sprintf("deleteRepos: %s", repoKeys))
 
 	req := m.(util.ProviderMetadata).Client.R().
-		AddRetryCondition(retryOnSpecificMsgBody("A timeout occurred")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is down")).
-		AddRetryCondition(retryOnSpecificMsgBody("Web server is returning an unknown error"))
+		AddRetryCondition(RetryOnSpecificMsgBody("A timeout occurred")).
+		AddRetryCondition(RetryOnSpecificMsgBody("Web server is down")).
+		AddRetryCondition(RetryOnSpecificMsgBody("Web server is returning an unknown error"))
 
 	for _, repoKey := range repoKeys {
 		err := deleteRepo(ctx, repoKey, req)
@@ -176,7 +176,7 @@ var deleteRepo = func(ctx context.Context, repoKey RepoKey, req *resty.Request) 
 	resp, err := req.
 		SetPathParam("repoKey", string(repoKey)).
 		SetError(&projectError).
-		Delete(projectsUrl + "/_/attach/repositories/{repoKey}")
+		Delete(ProjectsUrl + "/_/attach/repositories/{repoKey}")
 
 	if err != nil {
 		return err

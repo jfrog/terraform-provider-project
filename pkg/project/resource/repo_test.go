@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -6,18 +6,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_repo(t *testing.T) {
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	repo1 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
-	repo2 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
+	repo1 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
+	repo2 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
 	params := map[string]interface{}{
 		"name":        name,
@@ -27,6 +27,14 @@ func TestAccProject_repo(t *testing.T) {
 	}
 
 	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
+		resource "artifactory_local_generic_repository" "{{ .repo1 }}" {
+			key = "{{ .repo1 }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+		
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -39,11 +47,27 @@ func TestAccProject_repo(t *testing.T) {
 
 			use_project_repository_resource = false
 
-			repos = ["{{ .repo1 }}"]
+			repos = [artifactory_local_generic_repository.{{ .repo1 }}.key]
 		}
 	`, params)
 
 	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
+		resource "artifactory_local_generic_repository" "{{ .repo1 }}" {
+			key = "{{ .repo1 }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+		
+		resource "artifactory_local_generic_repository" "{{ .repo2 }}" {
+			key = "{{ .repo2 }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+		
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -56,7 +80,10 @@ func TestAccProject_repo(t *testing.T) {
 
 			use_project_repository_resource = false
 
-			repos = ["{{ .repo1 }}", "{{ .repo2 }}"]
+			repos = [
+				artifactory_local_generic_repository.{{ .repo1 }}.key,
+				artifactory_local_generic_repository.{{ .repo2 }}.key
+			]
 		}
 	`, params)
 
@@ -76,19 +103,14 @@ func TestAccProject_repo(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			createTestRepo(t, repo1)
-			createTestRepo(t, repo2)
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
 		},
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestRepo(t, repo1)
-			deleteTestRepo(t, repo2)
-			resp, err := verifyProject(id, request)
-
-			return resp, err
-		}),
-		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -142,33 +164,22 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 	const numRepos = 5
 	const repoNameInitial = "repo-"
 
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	getRandomRepoNames := func(repoCount int) []string {
 		var repoNames []string
 		for i := 0; i < repoCount; i++ {
-			repoNames = append(repoNames, fmt.Sprintf("%s%s", repoNameInitial, randSeq(10)))
+			repoNames = append(repoNames, fmt.Sprintf("%s%s", repoNameInitial, acctest.RandSeq(10)))
 		}
 		return repoNames
-	}
-
-	randomRepoNames := getRandomRepoNames(numRepos)
-
-	preCheck := func(t *testing.T, repoNames []string) func() {
-		return func() {
-			testAccPreCheck(t)
-			for _, repoName := range repoNames {
-				createTestRepo(t, repoName)
-			}
-		}
 	}
 
 	params := map[string]interface{}{
 		"name":        name,
 		"project_key": projectKey,
-		"repos":       randomRepoNames,
+		"repos":       getRandomRepoNames(numRepos),
 	}
 
 	initialConfig := util.ExecuteTemplate("TestAccProjectRepo", `
@@ -185,6 +196,16 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 	`, params)
 
 	addRepoConfig := util.ExecuteTemplate("TestAccProjectRepo", `
+	{{ range $repoName := .repos }}
+		resource "artifactory_local_generic_repository" "{{ $repoName }}" {
+			key = "{{ $repoName }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+	{{ end }}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -197,11 +218,21 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 
 			use_project_repository_resource = false
 
-			repos = [{{range $idx, $elem := .repos}}{{if $idx}},{{end}}"{{ $elem }}"{{end}}]
+			repos = [{{range $idx, $elem := .repos}}{{if $idx}},{{end}}artifactory_local_generic_repository.{{ $elem }}.key{{end}}]
 		}
 	`, params)
 
 	noReposConfig := util.ExecuteTemplate("TestAccProjectRepo", `
+	{{ range $repoName := .repos }}
+		resource "artifactory_local_generic_repository" "{{ $repoName }}" {
+			key = "{{ $repoName }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+	{{ end }}
+	
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -217,15 +248,14 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: preCheck(t, randomRepoNames),
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			for _, repoName := range randomRepoNames {
-				deleteTestRepo(t, repoName)
-			}
-			resp, err := verifyProject(id, request)
-			return resp, err
-		}),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -270,11 +300,11 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 }
 
 func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	repo := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
+	repo := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
 	params := map[string]interface{}{
 		"name":        name,
@@ -283,6 +313,35 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 	}
 
 	initialConfig := util.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
+		resource "artifactory_local_generic_repository" "{{ .repo }}" {
+			key = "{{ .repo }}"
+
+			lifecycle {
+				ignore_changes = [project_key]
+			}
+		}
+
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+
+			use_project_repository_resource = false
+
+			repos = ["{{ .repo }}"]
+
+			depends_on = [
+				artifactory_local_generic_repository.{{ .repo }}
+			]
+		}
+	`, params)
+
+	updatedConfig := util.ExecuteTemplate("TestAccProjectRepoUnassignNonexistantRepo", `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -300,12 +359,14 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			createTestRepo(t, repo)
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
 		},
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -317,20 +378,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 				),
 			},
 			{
-				// PreConfig is used to delete the repo out-of-band from TF.
-				PreConfig: func() {
-					deleteTestRepo(t, repo)
-				},
-				Config: initialConfig,
-				// SkipFunc is called after PreConfig but before applying the Config.
-				// https://github.com/hashicorp/terraform-plugin-sdk/blob/main/helper/resource/testing_new.go#L133
-				//
-				// We are skipping this checks because there's nothing to check on the resource.
-				// We want to verify the resource is deleted without error which resource.TestCase
-				// will do that for us.
-				SkipFunc: func() (bool, error) {
-					return true, nil
-				},
+				Config: updatedConfig,
 			},
 		},
 	})

@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/testutil"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
@@ -16,11 +18,11 @@ import (
 func verifyProject(id string, request *resty.Request) (*resty.Response, error) {
 	return request.
 		SetPathParam("projectKey", id).
-		Head(projectUrl)
+		Head(project.ProjectUrl)
 }
 
 func getRandomMaxStorageSize() int {
-	randomMaxStorage := rand.Intn(maxStorageInGibibytes)
+	randomMaxStorage := rand.Intn(project.MaxStorageInGibibytes)
 	if randomMaxStorage == 0 {
 		randomMaxStorage = 1
 	}
@@ -29,7 +31,7 @@ func getRandomMaxStorageSize() int {
 }
 
 func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*testing.T, resource.TestCase) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
@@ -40,7 +42,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		"manage_resources":           testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
-		"project_key":                invalidProjectKey, //strings.ToLower(randSeq(20)),
+		"project_key":                invalidProjectKey, //strings.ToLower(acctest.RandSeq(20)),
 	}
 	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
@@ -59,9 +61,9 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 	`, params)
 
 	return t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -80,15 +82,15 @@ func TestAccProjectInvalidProjectKey(t *testing.T) {
 	invalidProjectKeys := []testCase{
 		{
 			Name:  "TooShort",
-			Value: strings.ToLower(randSeq(1)),
+			Value: strings.ToLower(acctest.RandSeq(1)),
 		},
 		{
 			Name:  "TooLong",
-			Value: strings.ToLower(randSeq(33)),
+			Value: strings.ToLower(acctest.RandSeq(33)),
 		},
 		{
 			Name:  "HasUppercase",
-			Value: randSeq(8),
+			Value: acctest.RandSeq(8),
 		},
 	}
 
@@ -158,7 +160,7 @@ func TestAccProjectInvalidMaxStorage(t *testing.T) {
 }
 
 func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t *testing.T) (*testing.T, resource.TestCase) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
@@ -169,7 +171,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 		"manage_resources":           testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(20)),
+		"project_key":                strings.ToLower(acctest.RandSeq(20)),
 	}
 	project := util.ExecuteTemplate("TestAccProjects", `
 		resource "project" "{{ .name }}" {
@@ -188,9 +190,9 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 	`, params)
 
 	return t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -201,14 +203,14 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 }
 
 func TestAccProjectInvalidDisplayName(t *testing.T) {
-	name := fmt.Sprintf("invalidtestprojects%s", randSeq(20))
+	name := fmt.Sprintf("invalidtestprojects%s", acctest.RandSeq(20))
 	resourceName := fmt.Sprintf("project.%s", name)
-	project := testProjectConfig(name, strings.ToLower(randSeq(6)))
+	project := testProjectConfig(name, strings.ToLower(acctest.RandSeq(6)))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
@@ -219,18 +221,18 @@ func TestAccProjectInvalidDisplayName(t *testing.T) {
 }
 
 func TestAccProjectUpdateKey(t *testing.T) {
-	name := fmt.Sprintf("testprojects%s", randSeq(20))
+	name := fmt.Sprintf("testprojects%s", acctest.RandSeq(20))
 	resourceName := fmt.Sprintf("project.%s", name)
-	key1 := strings.ToLower(randSeq(6))
+	key1 := strings.ToLower(acctest.RandSeq(6))
 	config := testProjectConfig(name, key1)
 
-	key2 := strings.ToLower(randSeq(6))
+	key2 := strings.ToLower(acctest.RandSeq(6))
 	configWithNewKey := testProjectConfig(name, key2)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -251,7 +253,7 @@ func TestAccProjectUpdateKey(t *testing.T) {
 }
 
 func TestAccProject_full(t *testing.T) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	username1 := "user1"
@@ -260,8 +262,8 @@ func TestAccProject_full(t *testing.T) {
 	email2 := username2 + "@tempurl.org"
 	group1 := "group1"
 	group2 := "group2"
-	repo1 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
-	repo2 := fmt.Sprintf("repo%s", strings.ToLower(randSeq(6)))
+	repo1 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
+	repo2 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
 	params := map[string]interface{}{
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
@@ -271,7 +273,7 @@ func TestAccProject_full(t *testing.T) {
 		"manage_resources":           testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(6)),
+		"project_key":                strings.ToLower(acctest.RandSeq(6)),
 		"username1":                  username1,
 		"username2":                  username2,
 		"email1":                     email1,
@@ -405,9 +407,9 @@ func TestAccProject_full(t *testing.T) {
 	projectUpdated := util.ExecuteTemplate("TestAccProjects", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
@@ -479,7 +481,7 @@ func TestAccProject_full(t *testing.T) {
 }
 
 func TestAccProject_migrate_schema(t *testing.T) {
-	name := fmt.Sprintf("tftestprojects%s", randSeq(10))
+	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
 	params := map[string]interface{}{
@@ -490,7 +492,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"manage_resources":           testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
-		"project_key":                strings.ToLower(randSeq(6)),
+		"project_key":                strings.ToLower(acctest.RandSeq(6)),
 	}
 
 	template := `
@@ -556,8 +558,8 @@ func TestAccProject_migrate_schema(t *testing.T) {
 	updatedConfig := util.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, verifyProject),
+		PreCheck:     func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, verifyProject),
 		Steps: []resource.TestStep{
 			{
 				ExternalProviders: map[string]resource.ExternalProvider{
@@ -582,8 +584,8 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: ProviderFactories,
-				Config:            config,
+				ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+				Config:                   config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
@@ -598,8 +600,8 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				),
 			},
 			{
-				ProviderFactories: ProviderFactories,
-				Config:            updatedConfig,
+				ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+				Config:                   updatedConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),

@@ -22,7 +22,7 @@ type Repository struct {
 	ProjectKey string `json:"projectKey"`
 }
 
-func projectRepositoryResource() *schema.Resource {
+func ProjectRepositoryResource() *schema.Resource {
 	var projectRepositoryID = func(projectKey, repoKey string) string {
 		return fmt.Sprintf("%s-%s", projectKey, repoKey)
 	}

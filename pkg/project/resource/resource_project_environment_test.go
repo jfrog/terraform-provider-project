@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -8,13 +8,15 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 	"golang.org/x/exp/slices"
 )
 
 func TestAccProjectEnvironment(t *testing.T) {
-	name := strings.ToLower(randSeq(10))
-	projectKey := strings.ToLower(randSeq(10))
+	name := strings.ToLower(acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project_environment.%s", name)
 
 	params := map[string]any{
@@ -44,19 +46,19 @@ func TestAccProjectEnvironment(t *testing.T) {
 
 	updateParams := map[string]any{
 		"env_id":      name,
-		"name":        strings.ToLower(randSeq(10)),
+		"name":        strings.ToLower(acctest.RandSeq(10)),
 		"project_key": projectKey,
 	}
 
 	enviromentUpdated := util.ExecuteTemplate("TestAccProjectEnvironment", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			resp, err := verifyEnvironment(projectKey, id, request)
 			return resp, err
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: enviroment,
@@ -83,8 +85,8 @@ func TestAccProjectEnvironment(t *testing.T) {
 }
 
 func TestAccProjectEnvironment_invalid_length(t *testing.T) {
-	name := fmt.Sprintf("env%s", strings.ToLower(randSeq(15)))
-	projectKey := fmt.Sprintf("project%s", strings.ToLower(randSeq(7)))
+	name := fmt.Sprintf("env%s", strings.ToLower(acctest.RandSeq(15)))
+	projectKey := fmt.Sprintf("project%s", strings.ToLower(acctest.RandSeq(7)))
 	resourceName := fmt.Sprintf("project_environment.%s", name)
 
 	params := map[string]any{
@@ -112,12 +114,12 @@ func TestAccProjectEnvironment_invalid_length(t *testing.T) {
 	enviroment := util.ExecuteTemplate("TestAccProjectEnvironment", template, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			resp, err := verifyEnvironment(projectKey, id, request)
 			return resp, err
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      enviroment,
@@ -128,17 +130,17 @@ func TestAccProjectEnvironment_invalid_length(t *testing.T) {
 }
 
 func verifyEnvironment(projectKey, id string, request *resty.Request) (*resty.Response, error) {
-	envs := []ProjectEnvironment{}
+	envs := []project.ProjectEnvironment{}
 
 	resp, err := request.
 		SetPathParam("projectKey", projectKey).
 		SetResult(&envs).
-		Get(projectEnvironmentUrl)
+		Get(project.ProjectEnvironmentUrl)
 	if err != nil {
 		return resp, err
 	}
 
-	envExists := slices.ContainsFunc(envs, func(e ProjectEnvironment) bool {
+	envExists := slices.ContainsFunc(envs, func(e project.ProjectEnvironment) bool {
 		return e.Name == fmt.Sprintf("%s-%s", projectKey, id)
 	})
 

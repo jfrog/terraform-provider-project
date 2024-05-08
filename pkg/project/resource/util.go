@@ -31,7 +31,7 @@ type Equatable interface {
 	Equals(other Equatable) bool
 }
 
-func retryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {
+func RetryOnSpecificMsgBody(matchString string) func(response *resty.Response, err error) bool {
 	return func(response *resty.Response, err error) bool {
 		return regexp.MustCompile(matchString).MatchString(string(response.Body()[:]))
 	}

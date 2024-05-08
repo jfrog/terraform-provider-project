@@ -40,13 +40,13 @@ func (p Project) Id() string {
 	return p.Key
 }
 
-const projectsUrl = "/access/api/v1/projects"
-const projectUrl = projectsUrl + "/{projectKey}"
-const maxStorageInGibibytes = 8589934591
+const ProjectsUrl = "/access/api/v1/projects"
+const ProjectUrl = ProjectsUrl + "/{projectKey}"
+const MaxStorageInGibibytes = 8589934591
 
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
-func projectResource() *schema.Resource {
+func ProjectResource() *schema.Resource {
 	var projectSchema = map[string]*schema.Schema{
 		"key": {
 			Type:             schema.TypeString,
@@ -97,7 +97,7 @@ func projectResource() *schema.Resource {
 			Default:  -1,
 			ValidateDiagFunc: validation.ToDiagFunc(
 				validation.Any(
-					int64Between(1, maxStorageInGibibytes),
+					int64Between(1, MaxStorageInGibibytes),
 					validation.IntInSlice([]int{-1}),
 				),
 			),
@@ -442,7 +442,7 @@ func projectResource() *schema.Resource {
 			SetPathParam("projectKey", data.Id()).
 			SetResult(&project).
 			SetError(&projectError).
-			Get(projectUrl)
+			Get(ProjectUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -507,7 +507,7 @@ func projectResource() *schema.Resource {
 		resp, err := m.(util.ProviderMetadata).Client.R().
 			SetBody(project).
 			SetError(&projectError).
-			Post(projectsUrl)
+			Post(ProjectsUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -567,7 +567,7 @@ func projectResource() *schema.Resource {
 			SetPathParam("projectKey", data.Id()).
 			SetBody(project).
 			SetError(&projectError).
-			Put(projectUrl)
+			Put(ProjectUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -639,7 +639,7 @@ func projectResource() *schema.Resource {
 		res, err := req.
 			SetPathParam("projectKey", data.Id()).
 			SetError(&projectError).
-			Delete(projectUrl)
+			Delete(ProjectUrl)
 
 		if err != nil {
 			return diag.FromErr(err)

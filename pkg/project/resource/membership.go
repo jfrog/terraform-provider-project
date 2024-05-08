@@ -11,7 +11,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
-const projectMembershipsUrl = projectUrl + "/{membershipType}"
+const projectMembershipsUrl = ProjectUrl + "/{membershipType}"
 const projectMembershipUrl = projectMembershipsUrl + "/{memberName}"
 
 const usersMembershipType = "users"

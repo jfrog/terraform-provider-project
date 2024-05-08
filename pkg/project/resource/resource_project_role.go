@@ -14,8 +14,8 @@ import (
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
-const projectRolesUrl = projectUrl + "/roles"
-const projectRoleUrl = projectRolesUrl + "/{roleName}"
+const ProjectRolesUrl = ProjectUrl + "/roles"
+const ProjectRoleUrl = ProjectRolesUrl + "/{roleName}"
 
 const customRoleType = "CUSTOM"
 
@@ -75,7 +75,7 @@ func (a Role) Equals(b Equatable) bool {
 	return a.Id() == b.Id()
 }
 
-func projectRoleResource() *schema.Resource {
+func ProjectRoleResource() *schema.Resource {
 	var projectRoleSchema = map[string]*schema.Schema{
 		"name": {
 			Type:     schema.TypeString,
@@ -140,7 +140,7 @@ func projectRoleResource() *schema.Resource {
 			}).
 			SetResult(&role).
 			SetError(&projectError).
-			Get(projectRoleUrl)
+			Get(ProjectRoleUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -176,7 +176,7 @@ func projectRoleResource() *schema.Resource {
 			SetPathParam("projectKey", projectKey).
 			SetBody(role).
 			SetError(&projectError).
-			Post(projectRolesUrl)
+			Post(ProjectRolesUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -202,7 +202,7 @@ func projectRoleResource() *schema.Resource {
 			}).
 			SetError(&projectError).
 			SetBody(role).
-			Put(projectRoleUrl)
+			Put(ProjectRoleUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -224,7 +224,7 @@ func projectRoleResource() *schema.Resource {
 				"projectKey": data.Get("project_key").(string),
 			}).
 			SetError(&projectError).
-			Delete(projectRoleUrl)
+			Delete(ProjectRoleUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
