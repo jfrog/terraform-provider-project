@@ -1,3 +1,9 @@
+## 1.5.3 (May 13, 2024)
+
+IMPROVEMENTS:
+
+* resource/project is migrated to Plugin Framework. PR: [#120](https://github.com/jfrog/terraform-provider-project/pull/120)
+
 ## 1.5.2 (March 28, 2024)
 
 IMPROVEMENTS:
