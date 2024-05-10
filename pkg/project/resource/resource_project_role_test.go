@@ -151,7 +151,6 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "actions.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "actions.0", testData["action"]),
 				),
-				ExpectNonEmptyPlan: true,
 			},
 		},
 	})

@@ -5,105 +5,45 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jfrog/terraform-provider-shared/util"
-	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
 const projectMembershipsUrl = ProjectUrl + "/{membershipType}"
 const projectMembershipUrl = projectMembershipsUrl + "/{memberName}"
 
 const usersMembershipType = "users"
-const groupssMembershipType = "groups"
+const groupsMembershipType = "groups"
 
 // Use by both project user and project group, as they shared identical data structure
-type Member struct {
+type MemberAPIModel struct {
 	Name  string   `json:"name"`
 	Roles []string `json:"roles"`
 }
 
-func (m Member) Id() string {
+func (m MemberAPIModel) Id() string {
 	return m.Name
 }
 
-func (a Member) Equals(b Equatable) bool {
+func (a MemberAPIModel) Equals(b Equatable) bool {
 	return a.Id() == b.Id()
 }
 
 // Use by both project user and project group, as they shared identical data structure
-type Membership struct {
-	Members []Member
+type MembershipAPIModel struct {
+	Members []MemberAPIModel
 }
 
-func getMembers(d *sdk.ResourceData, membershipKey string) []Member {
-	var members []Member
-
-	if v, ok := d.GetOk(membershipKey); ok {
-		projectMemberships := v.(*schema.Set).List()
-		if len(projectMemberships) == 0 {
-			return members
-		}
-
-		for _, projectMembership := range projectMemberships {
-			id := projectMembership.(map[string]interface{})
-
-			member := Member{
-				Name:  id["name"].(string),
-				Roles: sdk.CastToStringArr(id["roles"].(*schema.Set).List()),
-			}
-			members = append(members, member)
-		}
-	}
-
-	return members
-}
-
-var unpackMembers = func(data *schema.ResourceData, membershipKey string) Membership {
-	d := &sdk.ResourceData{ResourceData: data}
-	membership := Membership{
-		Members: getMembers(d, membershipKey),
-	}
-
-	return membership
-}
-
-var packMembers = func(ctx context.Context, d *schema.ResourceData, membershipKey string, members []Member) []error {
-	tflog.Debug(ctx, "packMembership")
-
-	setValue := sdk.MkLens(d)
-
-	var projectMembers []interface{}
-
-	for _, member := range members {
-		tflog.Trace(ctx, fmt.Sprintf("%+v\n", member))
-		projectMember := map[string]interface{}{
-			"name":  member.Name,
-			"roles": member.Roles,
-		}
-
-		projectMembers = append(projectMembers, projectMember)
-	}
-
-	tflog.Trace(ctx, fmt.Sprintf("%s\n", membershipKey))
-	tflog.Trace(ctx, fmt.Sprintf("%+v\n", projectMembers))
-
-	errors := setValue(membershipKey, projectMembers)
-
-	return errors
-}
-
-var readMembers = func(ctx context.Context, projectKey string, membershipType string, m interface{}) ([]Member, error) {
+var readMembers = func(ctx context.Context, projectKey, membershipType string, client *resty.Client) ([]MemberAPIModel, error) {
 	tflog.Debug(ctx, "readMembers")
 
-	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+	if membershipType != usersMembershipType && membershipType != groupsMembershipType {
 		return nil, fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
-	membership := Membership{}
-
+	var membership MembershipAPIModel
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
@@ -123,22 +63,23 @@ var readMembers = func(ctx context.Context, projectKey string, membershipType st
 	return membership.Members, nil
 }
 
-var updateMembers = func(ctx context.Context, projectKey string, membershipType string, terraformMembership Membership, m interface{}) ([]Member, error) {
+var updateMembers = func(ctx context.Context, projectKey, membershipType string, members []MemberAPIModel, client *resty.Client) ([]MemberAPIModel, error) {
 	tflog.Debug(ctx, "updateMembers")
-	tflog.Trace(ctx, fmt.Sprintf("terraformMembership.Members: %+v\n", terraformMembership.Members))
+	tflog.Trace(ctx, fmt.Sprintf("terraformMembership.Members: %+v\n", members))
 
-	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+	if membershipType != usersMembershipType && membershipType != groupsMembershipType {
 		return nil, fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
-	projectMembers, err := readMembers(ctx, projectKey, membershipType, m)
+	projectMembers, err := readMembers(ctx, projectKey, membershipType, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch memberships for project: %s", err)
 	}
 	tflog.Trace(ctx, fmt.Sprintf("projectMembers: %+v\n", projectMembers))
 
-	terraformMembersSet := SetFromSlice(terraformMembership.Members)
+	terraformMembersSet := SetFromSlice(members)
 	projectMembersSet := SetFromSlice(projectMembers)
+
 	membersToBeAdded := terraformMembersSet.Difference(projectMembersSet)
 	tflog.Trace(ctx, fmt.Sprintf("membersToBeAdded: %+v\n", membersToBeAdded))
 	membersToBeUpdated := terraformMembersSet.Intersection(projectMembersSet)
@@ -147,30 +88,30 @@ var updateMembers = func(ctx context.Context, projectKey string, membershipType 
 	tflog.Trace(ctx, fmt.Sprintf("membersToBeDeleted: %+v\n", membersToBeDeleted))
 
 	for _, member := range append(membersToBeAdded, membersToBeUpdated...) {
-		err := updateMember(ctx, projectKey, membershipType, member, m)
+		err := updateMember(ctx, projectKey, membershipType, member, client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update members %s: %s", member, err)
 		}
 	}
 
-	deleteErr := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, m)
+	deleteErr := deleteMembers(ctx, projectKey, membershipType, membersToBeDeleted, client)
 	if deleteErr != nil {
 		return nil, fmt.Errorf("failed to delete members for project: %s", deleteErr)
 	}
 
-	return readMembers(ctx, projectKey, membershipType, m)
+	return readMembers(ctx, projectKey, membershipType, client)
 }
 
-var updateMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {
+var updateMember = func(ctx context.Context, projectKey, membershipType string, member MemberAPIModel, client *resty.Client) error {
 	tflog.Debug(ctx, "updateMember")
 	tflog.Trace(ctx, fmt.Sprintf("member: %v", member))
 
-	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+	if membershipType != usersMembershipType && membershipType != groupsMembershipType {
 		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,
@@ -189,11 +130,11 @@ var updateMember = func(ctx context.Context, projectKey string, membershipType s
 	return err
 }
 
-var deleteMembers = func(ctx context.Context, projectKey string, membershipType string, members []Member, m interface{}) error {
+var deleteMembers = func(ctx context.Context, projectKey, membershipType string, members []MemberAPIModel, client *resty.Client) error {
 	tflog.Debug(ctx, "deleteMembers")
 
 	for _, member := range members {
-		err := deleteMember(ctx, projectKey, membershipType, member, m)
+		err := deleteMember(ctx, projectKey, membershipType, member, client)
 		if err != nil {
 			return fmt.Errorf("failed to delete %s %s: %s", membershipType, member, err)
 		}
@@ -202,16 +143,16 @@ var deleteMembers = func(ctx context.Context, projectKey string, membershipType 
 	return nil
 }
 
-var deleteMember = func(ctx context.Context, projectKey string, membershipType string, member Member, m interface{}) error {
+var deleteMember = func(ctx context.Context, projectKey, membershipType string, member MemberAPIModel, client *resty.Client) error {
 	tflog.Debug(ctx, "deleteMember")
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", member))
 
-	if membershipType != usersMembershipType && membershipType != groupssMembershipType {
+	if membershipType != usersMembershipType && membershipType != groupsMembershipType {
 		return fmt.Errorf("invalid membershipType: %s", membershipType)
 	}
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParams(map[string]string{
 			"projectKey":     projectKey,
 			"membershipType": membershipType,

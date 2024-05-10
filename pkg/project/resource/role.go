@@ -5,64 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jfrog/terraform-provider-shared/util"
-	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
-
-var unpackRoles = func(data *schema.ResourceData) []Role {
-	var roles []Role
-
-	if v, ok := data.GetOk("role"); ok {
-		projectRoles := v.(*schema.Set).List()
-		if len(projectRoles) == 0 {
-			return roles
-		}
-
-		for _, projectRole := range projectRoles {
-			id := projectRole.(map[string]interface{})
-
-			role := Role{
-				Name:         id["name"].(string),
-				Description:  id["description"].(string),
-				Type:         id["type"].(string),
-				Environments: sdk.CastToStringArr(id["environments"].(*schema.Set).List()),
-				Actions:      sdk.CastToStringArr(id["actions"].(*schema.Set).List()),
-			}
-			roles = append(roles, role)
-		}
-	}
-
-	return roles
-}
-
-var packRoles = func(ctx context.Context, d *schema.ResourceData, roles []Role) []error {
-	tflog.Debug(ctx, "packRoles")
-
-	setValue := sdk.MkLens(d)
-
-	var projectRoles []interface{}
-
-	for _, role := range roles {
-		tflog.Trace(ctx, fmt.Sprintf("%+v\n", role))
-		projectRole := map[string]interface{}{
-			"name":         role.Name,
-			"description":  role.Description,
-			"type":         role.Type,
-			"environments": role.Environments,
-			"actions":      role.Actions,
-		}
-
-		projectRoles = append(projectRoles, projectRole)
-	}
-
-	tflog.Trace(ctx, fmt.Sprintf("%+v\n", projectRoles))
-
-	errors := setValue("role", projectRoles)
-
-	return errors
-}
 
 func filterRoles(roles []Role, roleType string) []Role {
 	filteredRoles := roles[:0]
@@ -75,13 +20,13 @@ func filterRoles(roles []Role, roleType string) []Role {
 	return filteredRoles
 }
 
-var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]Role, error) {
+var readRoles = func(ctx context.Context, projectKey string, client *resty.Client) ([]Role, error) {
 	tflog.Debug(ctx, "readRoles")
 
-	roles := []Role{}
+	var roles []Role
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParam("projectKey", projectKey).
 		SetResult(&roles).
 		SetError(&projectError).
@@ -104,11 +49,11 @@ var readRoles = func(ctx context.Context, projectKey string, m interface{}) ([]R
 	return customRoles, nil
 }
 
-var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []Role, m interface{}) ([]Role, error) {
+var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []Role, client *resty.Client) ([]Role, error) {
 	tflog.Debug(ctx, "updateRoles")
 	tflog.Trace(ctx, fmt.Sprintf("terraformRoles: %+v\n", terraformRoles))
 
-	projectRoles, err := readRoles(ctx, projectKey, m)
+	projectRoles, err := readRoles(ctx, projectKey, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch roles for project: %s", err)
 	}
@@ -127,51 +72,57 @@ var updateRoles = func(ctx context.Context, projectKey string, terraformRoles []
 	tflog.Trace(ctx, fmt.Sprintf("rolesToBeDeleted: %+v\n", rolesToBeDeleted))
 
 	for _, role := range rolesToBeAdded {
-		err := addRole(ctx, projectKey, role, m)
+		err := addRole(ctx, projectKey, role, client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add role %s: %s", role, err)
 		}
 	}
 
 	for _, role := range rolesToBeUpdated {
-		err := updateRole(ctx, projectKey, role, m)
+		err := updateRole(ctx, projectKey, role, client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update role %s: %s", role, err)
 		}
 	}
 
-	deleteErr := deleteRoles(ctx, projectKey, rolesToBeDeleted, m)
+	deleteErr := deleteRoles(ctx, projectKey, rolesToBeDeleted, client)
 	if deleteErr != nil {
 		return nil, fmt.Errorf("failed to delete roles for project: %s", deleteErr)
 	}
 
-	return readRoles(ctx, projectKey, m)
+	return readRoles(ctx, projectKey, client)
 }
 
-var addRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
+var addRole = func(ctx context.Context, projectKey string, role Role, client *resty.Client) error {
 	tflog.Debug(ctx, "addRole")
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParam("projectKey", projectKey).
 		SetBody(role).
 		SetError(&projectError).
 		Post(ProjectRolesUrl)
 	if err != nil {
+		tflog.Debug(ctx, "addRole", map[string]interface{}{
+			"err": err,
+		})
 		return err
 	}
 	if resp.IsError() {
+		tflog.Debug(ctx, "addRole", map[string]interface{}{
+			"projectError": projectError,
+		})
 		return fmt.Errorf("%s", projectError.String())
 	}
 
 	return nil
 }
 
-var updateRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
+var updateRole = func(ctx context.Context, projectKey string, role Role, client *resty.Client) error {
 	tflog.Debug(ctx, "updateRole")
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,
@@ -189,11 +140,11 @@ var updateRole = func(ctx context.Context, projectKey string, role Role, m inter
 	return nil
 }
 
-var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m interface{}) error {
+var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, client *resty.Client) error {
 	tflog.Debug(ctx, "deleteRoles")
 
 	for _, role := range roles {
-		err := deleteRole(ctx, projectKey, role, m)
+		err := deleteRole(ctx, projectKey, role, client)
 		if err != nil {
 			return fmt.Errorf("failed to delete role %s: %s", role, err)
 		}
@@ -202,12 +153,12 @@ var deleteRoles = func(ctx context.Context, projectKey string, roles []Role, m i
 	return nil
 }
 
-var deleteRole = func(ctx context.Context, projectKey string, role Role, m interface{}) error {
+var deleteRole = func(ctx context.Context, projectKey string, role Role, client *resty.Client) error {
 	tflog.Debug(ctx, "deleteRole")
 	tflog.Trace(ctx, fmt.Sprintf("%+v\n", role))
 
 	var projectError ProjectErrorsResponse
-	resp, err := m.(util.ProviderMetadata).Client.R().
+	resp, err := client.R().
 		SetPathParams(map[string]string{
 			"projectKey": projectKey,
 			"roleName":   role.Name,

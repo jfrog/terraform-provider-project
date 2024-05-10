@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/client"
 	"github.com/jfrog/terraform-provider-shared/util"
 	validatorfw_string "github.com/jfrog/terraform-provider-shared/validator/fw/string"
@@ -155,7 +156,9 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 // Resources satisfies the provider.Provider interface for ProjectProvider.
 func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		project.NewProjectResource,
+	}
 }
 
 // DataSources satisfies the provider.Provider interface for ProjectProvider.
