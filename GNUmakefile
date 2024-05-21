@@ -26,8 +26,21 @@ install: clean build
 		sed -i.bak '0,/version = ".*"/s//version = "${NEXT_VERSION}"/' sample.tf && rm sample.tf.bak && \
 		terraform init
 
+install_tfc: clean build_tfc
+	mkdir -p tfc-testing/${BUILD_PATH} && \
+	mkdir -p tfc-testing/terraform.d/plugins/registry.terraform.io/jfrog/${PRODUCT}/${NEXT_VERSION}/linux_amd64 && \
+		mv -v dist/terraform-provider-${PRODUCT}_${GORELEASER_ARCH}/terraform-provider-${PRODUCT}_v${NEXT_VERSION}* tfc-testing/${BUILD_PATH} && \
+		mv -v dist/terraform-provider-${PRODUCT}_linux_amd64_v1/terraform-provider-${PRODUCT}_v${NEXT_VERSION}* tfc-testing/terraform.d/plugins/registry.terraform.io/jfrog/${PRODUCT}/${NEXT_VERSION}/linux_amd64 && \
+		sed -i.bak '0,/version = ".*"/s//version = "${NEXT_VERSION}"/' tfc-testing/sample.tf && rm tfc-testing/sample.tf.bak && \
+		cd tfc-testing && \
+		terraform providers lock -platform=linux_amd64 -platform=darwin_amd64 -fs-mirror=terraform.d/plugins && \
+		terraform init
+
 clean:
-	rm -fR dist terraform.d/ .terraform terraform.tfstate* terraform.d/ .terraform.lock.hcl
+	rm -fR dist terraform.d/ .terraform terraform.tfstate* .terraform.lock.hcl
+
+clean_tfc:
+	rm -fR dist tfc-testing/terraform.d/ tfc-testing/.terraform tfc-testing/terraform.tfstate* tfc-testing/.terraform.lock.hcl
 
 release:
 	@git tag ${NEXT_VERSION} && git push --mirror
@@ -41,9 +54,16 @@ update_pkg_cache:
 build: fmt
 	GORELEASER_CURRENT_TAG=${NEXT_VERSION} goreleaser build --single-target --clean --snapshot
 
+build_tfc: fmt
+	GORELEASER_CURRENT_TAG=${NEXT_VERSION} goreleaser build --clean --snapshot --config tfc-testing/.goreleaser.yml
+
 test:
 	@echo "==> Starting unit tests"
 	go test $(TEST) -timeout=30s -parallel=4
+
+test_tfc: install_tfc
+	cd tfc-testing && \
+	terraform plan
 
 attach:
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $$(pgrep terraform-provider-${PRODUCT})

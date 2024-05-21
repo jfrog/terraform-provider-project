@@ -1,6 +1,7 @@
 terraform-provider-*
 dist/
 vendor/
+bin/
 .idea/
 .github/
 .modules/
@@ -13,5 +14,7 @@ lib/
 /resources/
 coverage.txt
 .scannerwork
-
+tfc-testing/.terraform
+tfc-testing/terraform.d
+tfc-testing/.terraform.lock.hcl
 .DS_Store
