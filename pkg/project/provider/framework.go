@@ -24,9 +24,10 @@ type ProjectProvider struct{}
 
 // ProjectProviderModel describes the provider data model.
 type ProjectProviderModel struct {
-	Url          types.String `tfsdk:"url"`
-	AccessToken  types.String `tfsdk:"access_token"`
-	CheckLicense types.Bool   `tfsdk:"check_license"`
+	Url              types.String `tfsdk:"url"`
+	AccessToken      types.String `tfsdk:"access_token"`
+	OIDCProviderName types.String `tfsdk:"oidc_provider_name"`
+	CheckLicense     types.Bool   `tfsdk:"check_license"`
 }
 
 // Metadata satisfies the provider.Provider interface for ProjectProvider
@@ -53,6 +54,13 @@ func (p *ProjectProvider) Schema(ctx context.Context, req provider.SchemaRequest
 					stringvalidator.LengthAtLeast(1),
 				},
 				Description: "This is a Bearer token that can be given to you by your admin under `Identity and Access`. This can also be sourced from the `PROJECT_ACCESS_TOKEN` or `JFROG_ACCESS_TOKEN` environment variable. Defauult to empty string if not set.",
+			},
+			"oidc_provider_name": schema.StringAttribute{
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "OIDC provider name. See [Configure an OIDC Integration](https://jfrog.com/help/r/jfrog-platform-administration-documentation/configure-an-oidc-integration) for more details.",
 			},
 			"check_license": schema.BoolAttribute{
 				Optional:    true,
@@ -98,8 +106,23 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	// Check configuration data, which should take precedence over
+	oidcAccessToken, err := util.OIDCTokenExchange(ctx, restyClient, config.OIDCProviderName.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed OIDC ID token exchange",
+			err.Error(),
+		)
+		return
+	}
+
+	// use token from OIDC provider, which should take precedence over
 	// environment variable data, if found.
+	if oidcAccessToken != "" {
+		accessToken = oidcAccessToken
+	}
+
+	// Check configuration data, which should take precedence over
+	// environment variable data or OIDC access token, if found.
 	if config.AccessToken.ValueString() != "" {
 		accessToken = config.AccessToken.ValueString()
 	}
