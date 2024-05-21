@@ -1,26 +1,21 @@
-package project
+package provider
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	resource "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/client"
 	"github.com/jfrog/terraform-provider-shared/util"
 	"github.com/jfrog/terraform-provider-shared/util/sdk"
 )
 
-var Version = "0.0.1"
-
-// needs to be exported so make file can update this
-var productId = "terraform-provider-project/" + Version
-
-// Provider Projects provider that supports configuration via username+password or a token
+// Provider Projects provider that supports configuration via a token
 // Supported resources are repos, users, groups, replications, and permissions
-func Provider() *schema.Provider {
+func SdkV2() *schema.Provider {
 	p := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"url": {
@@ -49,24 +44,17 @@ func Provider() *schema.Provider {
 		ResourcesMap: sdk.AddTelemetry(
 			productId,
 			map[string]*schema.Resource{
-				"project":             projectResource(),
-				"project_environment": projectEnvironmentResource(),
-				"project_role":        projectRoleResource(),
-				"project_user":        projectUserResource(),
-				"project_group":       projectGroupResource(),
-				"project_repository":  projectRepositoryResource(),
+				"project_environment": resource.ProjectEnvironmentResource(),
+				"project_role":        resource.ProjectRoleResource(),
+				"project_user":        resource.ProjectUserResource(),
+				"project_group":       resource.ProjectGroupResource(),
+				"project_repository":  resource.ProjectRepositoryResource(),
 			},
 		),
 	}
 
 	p.ConfigureContextFunc = func(ctx context.Context, data *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		tflog.Info(ctx, fmt.Sprintf("Provider version: %s", Version))
-
-		terraformVersion := p.TerraformVersion
-		if terraformVersion == "" {
-			terraformVersion = "0.13+compatible"
-		}
-		return providerConfigure(ctx, data, terraformVersion)
+		return providerConfigure(ctx, data, p.TerraformVersion)
 	}
 
 	return p

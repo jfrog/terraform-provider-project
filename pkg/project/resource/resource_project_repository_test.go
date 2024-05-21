@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	"github.com/jfrog/terraform-provider-shared/testutil"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectRepository(t *testing.T) {
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 	projectName := fmt.Sprintf("tftestprojects%s", projectKey)
 
 	repoKey1 := fmt.Sprintf("repo%d", testutil.RandomInt())
@@ -78,8 +79,8 @@ func TestAccProjectRepository(t *testing.T) {
 	configUpdated := util.ExecuteTemplate("TestAccProjectRepository", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",

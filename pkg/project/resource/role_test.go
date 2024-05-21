@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_role(t *testing.T) {
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	role1 := "role 1"
 	role2 := "role 2"
@@ -112,11 +113,9 @@ func TestAccProject_role(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-		CheckDestroy:      verifyDeleted(resourceName, verifyProject),
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

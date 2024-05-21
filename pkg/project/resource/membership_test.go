@@ -1,24 +1,22 @@
-package project
+package project_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProject_membership(t *testing.T) {
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	username1 := "user1"
-	email1 := username1 + "@tempurl.org"
 	username2 := "user2"
-	email2 := username2 + "@tempurl.org"
 	developeRole := "Developer"
 	contributorRole := "Contributor"
 
@@ -32,6 +30,12 @@ func TestAccProject_membership(t *testing.T) {
 	}
 
 	initialConfig := util.ExecuteTemplate("TestAccProjectMember", `
+		resource "artifactory_managed_user" "{{ .username1 }}" {
+			name = "{{ .username1 }}"
+			email = "{{ .username1 }}@tempurl.org"
+			password = "Password!123"
+		}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -45,13 +49,25 @@ func TestAccProject_membership(t *testing.T) {
 			use_project_user_resource = false
 
 			member {
-				name = "{{ .username1 }}"
+				name = artifactory_managed_user.{{ .username1 }}.name
 				roles = ["{{ .developeRole }}"]
 			}
 		}
 	`, params)
 
 	addMembersConfig := util.ExecuteTemplate("TestAccProjectMember", `
+		resource "artifactory_managed_user" "{{ .username1 }}" {
+			name = "{{ .username1 }}"
+			email = "{{ .username1 }}@tempurl.org"
+			password = "Password!123"
+		}
+
+		resource "artifactory_managed_user" "{{ .username2 }}" {
+			name = "{{ .username2 }}"
+			email = "{{ .username2 }}@tempurl.org"
+			password = "Password!123"
+		}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -65,12 +81,12 @@ func TestAccProject_membership(t *testing.T) {
 			use_project_user_resource = false
 
 			member {
-				name = "{{ .username1 }}"
+				name = artifactory_managed_user.{{ .username1 }}.name
 				roles = ["{{ .developeRole }}", "{{ .contributorRole }}"]
 			}
 
 			member {
-				name = "{{ .username2 }}"
+				name = artifactory_managed_user.{{ .username2 }}.name
 				roles = ["{{ .contributorRole }}"]
 			}
 		}
@@ -92,19 +108,14 @@ func TestAccProject_membership(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			createTestUser(t, username1, email1)
-			createTestUser(t, username2, email2)
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
 		},
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestUser(t, username1)
-			deleteTestUser(t, username2)
-			resp, err := verifyProject(id, request)
-
-			return resp, err
-		}),
-		ProviderFactories: ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,
@@ -159,9 +170,9 @@ func TestAccProject_membership(t *testing.T) {
 }
 
 func TestAccProject_group(t *testing.T) {
-	name := "tftestprojects" + randSeq(10)
+	name := "tftestprojects" + acctest.RandSeq(10)
 	resourceName := "project." + name
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	group1 := "group1"
 	group2 := "group2"
@@ -178,6 +189,10 @@ func TestAccProject_group(t *testing.T) {
 	}
 
 	initialConfig := util.ExecuteTemplate("TestAccProjectGroup", `
+		resource "artifactory_group" "{{ .group1 }}" {
+			name = "{{ .group1 }}"
+		}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -191,13 +206,21 @@ func TestAccProject_group(t *testing.T) {
 			use_project_group_resource = false
 
 			group {
-				name = "{{ .group1 }}"
+				name = artifactory_group.{{ .group1 }}.name
 				roles = ["{{ .developeRole }}"]
 			}
 		}
 	`, params)
 
 	addGroupConfig := util.ExecuteTemplate("TestAccProjectGroup", `
+		resource "artifactory_group" "{{ .group1 }}" {
+			name = "{{ .group1 }}"
+		}
+
+		resource "artifactory_group" "{{ .group2 }}" {
+			name = "{{ .group2 }}"
+		}
+
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -211,12 +234,12 @@ func TestAccProject_group(t *testing.T) {
 			use_project_group_resource = false
 
 			group {
-				name = "{{ .group1 }}"
+				name = artifactory_group.{{ .group1 }}.name
 				roles = ["{{ .developeRole }}", "{{ .contributorRole }}"]
 			}
 
 			group {
-				name = "{{ .group2 }}"
+				name = artifactory_group.{{ .group2 }}.name
 				roles = ["{{ .contributorRole }}"]
 			}
 		}
@@ -238,19 +261,15 @@ func TestAccProject_group(t *testing.T) {
 	`, params)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-			createTestGroup(t, group1)
-			createTestGroup(t, group2)
-		},
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			deleteTestGroup(t, group1)
-			deleteTestGroup(t, group2)
-			resp, err := verifyProject(id, request)
+		PreCheck: func() { acctest.PreCheck(t) },
 
-			return resp, err
-		}),
-		ProviderFactories: ProviderFactories,
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: initialConfig,

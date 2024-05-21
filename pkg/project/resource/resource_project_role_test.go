@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -7,13 +7,15 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectRole_full(t *testing.T) {
-	name := randSeq(20)
+	name := acctest.RandSeq(20)
 	resourceName := fmt.Sprintf("project_role.%s", name)
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	template := `
 		resource "project" "{{ .project_name }}" {
@@ -58,11 +60,11 @@ func TestAccProjectRole_full(t *testing.T) {
 	updatedConfig := util.ExecuteTemplate("TestAccProjectRole", template, testUpdatedData)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -93,9 +95,9 @@ func TestAccProjectRole_full(t *testing.T) {
 }
 
 func TestAccProjectRole_conflict_with_project(t *testing.T) {
-	name := randSeq(20)
+	name := acctest.RandSeq(20)
 	resourceName := fmt.Sprintf("project_role.%s", name)
-	projectKey := strings.ToLower(randSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
 	template := `
 		resource "project" "{{ .project_name }}" {
@@ -132,11 +134,11 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 	config := util.ExecuteTemplate("TestAccProjectRole", template, testData)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -149,7 +151,6 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "actions.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "actions.0", testData["action"]),
 				),
-				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -161,5 +162,5 @@ func verifyRole(name, projectKey string, request *resty.Request) (*resty.Respons
 			"projectKey": projectKey,
 			"roleName":   name,
 		}).
-		Get(projectRoleUrl)
+		Get(project.ProjectRoleUrl)
 }

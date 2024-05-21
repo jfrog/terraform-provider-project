@@ -31,9 +31,9 @@ func (p ProjectEnvironmentUpdate) Id() string {
 	return p.NewName
 }
 
-const projectEnvironmentUrl = "/access/api/v1/projects/{projectKey}/environments"
+const ProjectEnvironmentUrl = "/access/api/v1/projects/{projectKey}/environments"
 
-func projectEnvironmentResource() *schema.Resource {
+func ProjectEnvironmentResource() *schema.Resource {
 
 	var projectEnvironmentSchema = map[string]*schema.Schema{
 		"name": {
@@ -63,7 +63,7 @@ func projectEnvironmentResource() *schema.Resource {
 			SetPathParam("projectKey", projectKey).
 			SetResult(&envs).
 			SetError(&projectError).
-			Get(projectEnvironmentUrl)
+			Get(ProjectEnvironmentUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -106,7 +106,7 @@ func projectEnvironmentResource() *schema.Resource {
 			SetPathParam("projectKey", projectKey).
 			SetBody(projectEnvironment).
 			SetError(&projectError).
-			Post(projectEnvironmentUrl)
+			Post(ProjectEnvironmentUrl)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -135,7 +135,7 @@ func projectEnvironmentResource() *schema.Resource {
 			}).
 			SetBody(projectEnvironmentUpdate).
 			SetError(&projectError).
-			Post(projectEnvironmentUrl + "/{environmentName}/rename")
+			Post(ProjectEnvironmentUrl + "/{environmentName}/rename")
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -159,7 +159,7 @@ func projectEnvironmentResource() *schema.Resource {
 				"environmentName": fmt.Sprintf("%s-%s", projectKey, data.Get("name")),
 			}).
 			SetError(&projectError).
-			Delete(projectEnvironmentUrl + "/{environmentName}")
+			Delete(ProjectEnvironmentUrl + "/{environmentName}")
 		if err != nil {
 			return diag.FromErr(err)
 		}

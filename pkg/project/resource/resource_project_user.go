@@ -14,7 +14,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
-const projectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
+const ProjectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
 
 type ProjectUser struct {
 	ProjectKey        string   `json:"-"`
@@ -27,7 +27,7 @@ func (m ProjectUser) Id() string {
 	return fmt.Sprintf(`%s:%s`, m.ProjectKey, m.Name)
 }
 
-func projectUserResource() *schema.Resource {
+func ProjectUserResource() *schema.Resource {
 	var projectUserSchema = map[string]*schema.Schema{
 		"project_key": {
 			Type:             schema.TypeString,
@@ -93,7 +93,7 @@ func projectUserResource() *schema.Resource {
 			}).
 			SetError(&projectError).
 			SetResult(&loadedProjectUser).
-			Get(projectUsersUrl)
+			Get(ProjectUsersUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -122,7 +122,7 @@ func projectUserResource() *schema.Resource {
 			}).
 			SetBody(&projectUser).
 			SetError(&projectError).
-			Put(projectUsersUrl)
+			Put(ProjectUsersUrl)
 
 		// allow missing user? -> report warning and ignore error
 		diagnostics := diag.Diagnostics{}
@@ -164,7 +164,7 @@ func projectUserResource() *schema.Resource {
 				"name":       projectUser.Name,
 			}).
 			SetError(&projectError).
-			Delete(projectUsersUrl)
+			Delete(ProjectUsersUrl)
 
 		if err != nil {
 			return diag.FromErr(err)

@@ -14,7 +14,7 @@ import (
 	"github.com/jfrog/terraform-provider-shared/validator"
 )
 
-const projectGroupsUrl = "access/api/v1/projects/{projectKey}/groups/{name}"
+const ProjectGroupsUrl = "access/api/v1/projects/{projectKey}/groups/{name}"
 
 type ProjectGroup struct {
 	ProjectKey string   `json:"-"`
@@ -26,7 +26,7 @@ func (m ProjectGroup) Id() string {
 	return fmt.Sprintf(`%s:%s`, m.ProjectKey, m.Name)
 }
 
-func projectGroupResource() *schema.Resource {
+func ProjectGroupResource() *schema.Resource {
 	var projectGroupSchema = map[string]*schema.Schema{
 		"project_key": {
 			Type:             schema.TypeString,
@@ -84,7 +84,7 @@ func projectGroupResource() *schema.Resource {
 			}).
 			SetResult(&loadedProjectGroup).
 			SetError(&projectError).
-			Get(projectGroupsUrl)
+			Get(ProjectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -113,7 +113,7 @@ func projectGroupResource() *schema.Resource {
 			}).
 			SetBody(&projectGroup).
 			SetError(&projectError).
-			Put(projectGroupsUrl)
+			Put(ProjectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -137,7 +137,7 @@ func projectGroupResource() *schema.Resource {
 				"name":       projectGroup.Name,
 			}).
 			SetError(&projectError).
-			Delete(projectGroupsUrl)
+			Delete(ProjectGroupsUrl)
 
 		if err != nil {
 			return diag.FromErr(err)

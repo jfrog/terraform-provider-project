@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -7,14 +7,16 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectGroup(t *testing.T) {
-	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(10))
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	group := fmt.Sprintf("group%s", strings.ToLower(randSeq(5)))
+	group := fmt.Sprintf("group%s", strings.ToLower(acctest.RandSeq(5)))
 
 	resourceName := "project_group." + group
 
@@ -65,11 +67,11 @@ func TestAccProjectGroup(t *testing.T) {
 	configUpdated := util.ExecuteTemplate("TestAccProjectGroup", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyProjectGroup(group, projectKey, request)
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
@@ -111,5 +113,5 @@ func verifyProjectGroup(name string, projectKey string, request *resty.Request) 
 			"projectKey": projectKey,
 			"name":       name,
 		}).
-		Get(projectGroupsUrl)
+		Get(project.ProjectGroupsUrl)
 }

@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -8,14 +8,16 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
 func TestAccProjectUser(t *testing.T) {
-	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(10))
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	username := fmt.Sprintf("user%s", strings.ToLower(randSeq(5)))
+	username := fmt.Sprintf("user%s", strings.ToLower(acctest.RandSeq(5)))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -72,11 +74,11 @@ func TestAccProjectUser(t *testing.T) {
 	configUpdated := util.ExecuteTemplate("TestAccProjectUser", template, updateParams)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
@@ -115,10 +117,10 @@ func TestAccProjectUser(t *testing.T) {
 }
 
 func TestAccProjectUser_missing_user_fails(t *testing.T) {
-	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(10))
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	username := fmt.Sprintf("not_existing%s", strings.ToLower(randSeq(5)))
+	username := fmt.Sprintf("not_existing%s", strings.ToLower(acctest.RandSeq(5)))
 	email := username + "@tempurl.org"
 
 	params := map[string]interface{}{
@@ -156,8 +158,8 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 
 	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: ProviderFactories,
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      config,
@@ -168,10 +170,10 @@ func TestAccProjectUser_missing_user_fails(t *testing.T) {
 }
 
 func TestAccProjectMember_missing_user_ignored(t *testing.T) {
-	projectName := fmt.Sprintf("tftestprojects%s", randSeq(10))
-	projectKey := strings.ToLower(randSeq(10))
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	username := fmt.Sprintf("not_existing%s", strings.ToLower(randSeq(5)))
+	username := fmt.Sprintf("not_existing%s", strings.ToLower(acctest.RandSeq(5)))
 	email := username + "@tempurl.org"
 
 	resourceName := "project_user." + username
@@ -211,11 +213,11 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 
 	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		CheckDestroy: verifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
-		ProviderFactories: ProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -237,5 +239,5 @@ func verifyProjectUser(name string, projectKey string, request *resty.Request) (
 			"projectKey": projectKey,
 			"name":       name,
 		}).
-		Get(projectUsersUrl)
+		Get(project.ProjectUsersUrl)
 }
