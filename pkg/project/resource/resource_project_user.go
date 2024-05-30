@@ -47,7 +47,8 @@ func ProjectUserResource() *schema.Resource {
 			Type:        schema.TypeSet,
 			Required:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
-			Description: "List of pre-defined Project or custom roles",
+			MinItems:    1,
+			Description: "List of pre-defined Project or custom roles. Must have at least 1 role, e.g. 'Viewer'",
 		},
 		"ignore_missing_user": {
 			Type:        schema.TypeBool,

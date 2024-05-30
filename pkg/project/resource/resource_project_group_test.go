@@ -2,6 +2,7 @@ package project_test
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -102,6 +103,71 @@ func TestAccProjectGroup(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccProjectGroup_invalid_roles(t *testing.T) {
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
+
+	group := fmt.Sprintf("group%s", strings.ToLower(acctest.RandSeq(5)))
+
+	resourceName := "project_group." + group
+
+	params := map[string]interface{}{
+		"project_name": projectName,
+		"project_key":  projectKey,
+		"group":        group,
+	}
+
+	template := `
+		resource "artifactory_group" "{{ .group }}" {
+			name = "{{ .group }}"
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+			max_storage_in_gibibytes = 1
+			block_deployments_on_limit = true
+			email_notification = false
+
+			use_project_group_resource = true
+		}
+
+		resource "project_group" "{{ .group }}" {
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_group.{{ .group }}.name
+			roles = []
+		}
+	`
+
+	config := util.ExecuteTemplate("TestAccProjectGroup", template, params)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
+			return verifyProjectGroup(group, projectKey, request)
+		}),
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source:            "jfrog/artifactory",
+				VersionConstraint: "10.1.4",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`.*Attribute roles requires 1 item minimum, but config has only 0 declared.*`),
 			},
 		},
 	})

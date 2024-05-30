@@ -86,6 +86,6 @@ fmt:
 
 doc:
 	rm -rfv docs/*
-	go generate
+	./bin/tfplugindocs generate
 
 .PHONY: build fmt
