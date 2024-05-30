@@ -2,6 +2,7 @@ package project_test
 
 import (
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"testing"
@@ -55,10 +56,9 @@ func TestAccProjectEnvironment(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { acctest.PreCheck(t) },
 		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			resp, err := verifyEnvironment(projectKey, id, request)
-			return resp, err
+			return verifyEnvironment(projectKey, id, request)
 		}),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: enviroment,
@@ -75,10 +75,11 @@ func TestAccProjectEnvironment(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportStateId:     fmt.Sprintf("%s:%s", projectKey, updateParams["name"]),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:                         resourceName,
+				ImportState:                          true,
+				ImportStateId:                        fmt.Sprintf("%s:%s", updateParams["project_key"], updateParams["name"]),
+				ImportStateVerify:                    true,
+				ImportStateVerifyIdentifierAttribute: "name",
 			},
 		},
 	})
@@ -116,21 +117,20 @@ func TestAccProjectEnvironment_invalid_length(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { acctest.PreCheck(t) },
 		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
-			resp, err := verifyEnvironment(projectKey, id, request)
-			return resp, err
+			return verifyEnvironment(projectKey, id, request)
 		}),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      enviroment,
-				ExpectError: regexp.MustCompile(`.*combined length of project_key and name \(separated by '-'\) cannot exceed 32 characters.*`),
+				ExpectError: regexp.MustCompile(`.*Combined length of project_key and name \(separated by '-'\) cannot exceed 32.*`),
 			},
 		},
 	})
 }
 
 func verifyEnvironment(projectKey, id string, request *resty.Request) (*resty.Response, error) {
-	envs := []project.ProjectEnvironment{}
+	var envs []project.ProjectEnvironmentAPIModel
 
 	resp, err := request.
 		SetPathParam("projectKey", projectKey).
@@ -139,8 +139,15 @@ func verifyEnvironment(projectKey, id string, request *resty.Request) (*resty.Re
 	if err != nil {
 		return resp, err
 	}
+	if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
+		return resp, fmt.Errorf("%s", resp.String())
+	}
 
-	envExists := slices.ContainsFunc(envs, func(e project.ProjectEnvironment) bool {
+	if len(envs) > 0 {
+		return resp, nil
+	}
+
+	envExists := slices.ContainsFunc(envs, func(e project.ProjectEnvironmentAPIModel) bool {
 		return e.Name == fmt.Sprintf("%s-%s", projectKey, id)
 	})
 
