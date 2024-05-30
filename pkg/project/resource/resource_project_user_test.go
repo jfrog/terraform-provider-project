@@ -116,6 +116,70 @@ func TestAccProjectUser(t *testing.T) {
 	})
 }
 
+func TestAccProjectUser_invalid_roles(t *testing.T) {
+	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
+	projectKey := strings.ToLower(acctest.RandSeq(10))
+
+	username := fmt.Sprintf("not_existing%s", strings.ToLower(acctest.RandSeq(5)))
+	email := username + "@tempurl.org"
+
+	params := map[string]interface{}{
+		"project_name": projectName,
+		"project_key":  projectKey,
+		"username":     username,
+		"email":        email,
+	}
+
+	template := `
+		resource "artifactory_managed_user" "{{ .username }}" {
+			name     = "{{ .username }}"
+			email    = "{{ .email }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+			max_storage_in_gibibytes = 1
+			block_deployments_on_limit = true
+			email_notification = false
+
+			use_project_user_resource = true
+		}
+
+		resource "project_user" "{{ .username }}" {
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_managed_user.{{ .username }}.name
+			roles = []
+			ignore_missing_user = false
+		}		
+	`
+
+	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`.*Attribute roles requires 1 item minimum, but config has only 0 declared.*`),
+			},
+		},
+	})
+}
+
 func TestAccProjectUser_missing_user_fails(t *testing.T) {
 	projectName := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	projectKey := strings.ToLower(acctest.RandSeq(10))
