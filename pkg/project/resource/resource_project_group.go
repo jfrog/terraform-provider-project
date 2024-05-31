@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -49,6 +50,7 @@ func (r *ProjectGroupResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *ProjectGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
@@ -105,7 +107,7 @@ func (r *ProjectGroupResource) Create(ctx context.Context, req resource.CreateRe
 	projectKey := plan.ProjectKey.ValueString()
 
 	var roles []string
-	resp.Diagnostics.Append(plan.Roles.ElementsAs(ctx, roles, false)...)
+	resp.Diagnostics.Append(plan.Roles.ElementsAs(ctx, &roles, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -131,7 +133,7 @@ func (r *ProjectGroupResource) Create(ctx context.Context, req resource.CreateRe
 		utilfw.UnableToCreateResourceError(resp, projectError.String())
 	}
 
-	plan.ID = types.StringValue(group.Name)
+	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", projectKey, group.Name))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -172,7 +174,7 @@ func (r *ProjectGroupResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	state.ID = types.StringValue(group.Name)
+	state.ID = types.StringValue(fmt.Sprintf("%s:%s", projectKey, group.Name))
 	state.Name = types.StringValue(group.Name)
 	state.ProjectKey = types.StringValue(projectKey)
 	roles, ds := types.SetValueFrom(ctx, types.StringType, group.Roles)
@@ -200,7 +202,7 @@ func (r *ProjectGroupResource) Update(ctx context.Context, req resource.UpdateRe
 	projectKey := plan.ProjectKey.ValueString()
 
 	var roles []string
-	resp.Diagnostics.Append(plan.Roles.ElementsAs(ctx, roles, false)...)
+	resp.Diagnostics.Append(plan.Roles.ElementsAs(ctx, &roles, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -226,7 +228,7 @@ func (r *ProjectGroupResource) Update(ctx context.Context, req resource.UpdateRe
 		utilfw.UnableToUpdateResourceError(resp, projectError.String())
 	}
 
-	plan.ID = types.StringValue(group.Name)
+	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", projectKey, group.Name))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
