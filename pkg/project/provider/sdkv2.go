@@ -50,7 +50,6 @@ func SdkV2() *schema.Provider {
 			map[string]*schema.Resource{
 				"project_role":       resource.ProjectRoleResource(),
 				"project_user":       resource.ProjectUserResource(),
-				"project_group":      resource.ProjectGroupResource(),
 				"project_repository": resource.ProjectRepositoryResource(),
 			},
 		),
