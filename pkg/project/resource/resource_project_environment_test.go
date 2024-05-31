@@ -11,11 +11,68 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
+	"github.com/jfrog/terraform-provider-shared/testutil"
 	"github.com/jfrog/terraform-provider-shared/util"
 	"golang.org/x/exp/slices"
 )
 
-func TestAccProjectEnvironment(t *testing.T) {
+func TestAccProjectEnvironment_UpgradeFromSDKv2(t *testing.T) {
+	_, _, projectName := testutil.MkNames("test-project-", "project")
+	_, fqrn, projectEnvironmentName := testutil.MkNames("test-env-", "project_environment")
+
+	projectKey := fmt.Sprintf("test%s", strings.ToLower(acctest.RandSeq(6)))
+
+	params := map[string]any{
+		"name":         projectEnvironmentName,
+		"project_name": projectName,
+		"project_key":  projectKey,
+	}
+
+	template := `
+		resource "project" "{{ .project_name }}" {
+			key          = "{{ .project_key }}"
+			display_name = "{{ .project_key }}"
+			admin_privileges {
+				manage_members   = true
+				manage_resources = true
+				index_resources  = true
+			}
+		}
+
+		resource "project_environment" "{{ .name }}" {
+			name        = "{{ .name }}"
+			project_key = project.{{ .project_name }}.key
+		}
+	`
+
+	config := util.ExecuteTemplate("TestAccProjectEnvironment", template, params)
+
+	resource.Test(t, resource.TestCase{
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"project": {
+						Source:            "jfrog/project",
+						VersionConstraint: "1.6.0",
+					},
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "name", params["name"].(string)),
+					resource.TestCheckResourceAttr(fqrn, "project_key", params["project_key"].(string)),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+				Config:                   config,
+				PlanOnly:                 true,
+				ConfigPlanChecks:         testutil.ConfigPlanChecks(fqrn),
+			},
+		},
+	})
+}
+
+func TestAccProjectEnvironment_full(t *testing.T) {
 	name := strings.ToLower(acctest.RandSeq(10))
 	projectKey := strings.ToLower(acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project_environment.%s", name)
@@ -63,6 +120,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 			{
 				Config: enviroment,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "id", fmt.Sprintf("%s-%s", projectKey, params["name"])),
 					resource.TestCheckResourceAttr(resourceName, "name", params["name"].(string)),
 					resource.TestCheckResourceAttr(resourceName, "project_key", params["project_key"].(string)),
 				),
@@ -70,6 +128,7 @@ func TestAccProjectEnvironment(t *testing.T) {
 			{
 				Config: enviromentUpdated,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "id", fmt.Sprintf("%s-%s", projectKey, updateParams["name"])),
 					resource.TestCheckResourceAttr(resourceName, "name", updateParams["name"].(string)),
 					resource.TestCheckResourceAttr(resourceName, "project_key", updateParams["project_key"].(string)),
 				),

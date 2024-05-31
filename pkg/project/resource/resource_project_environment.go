@@ -47,12 +47,13 @@ type ProjectEnvironmentUpdateAPIModel struct {
 }
 
 func (r *ProjectEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "project_environment"
+	resp.TypeName = req.ProviderTypeName + "_environment"
 	r.TypeName = resp.TypeName
 }
 
 func (r *ProjectEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
@@ -164,7 +165,7 @@ func (r *ProjectEnvironmentResource) Read(ctx context.Context, req resource.Read
 	}
 
 	environmentName := strings.TrimPrefix(matchedEnv.Name, fmt.Sprintf("%s-", projectKey))
-	state.ID = types.StringValue(environmentName)
+	state.ID = types.StringValue(matchedEnv.Name)
 	state.Name = types.StringValue(environmentName)
 	state.ProjectKey = types.StringValue(projectKey)
 
@@ -214,7 +215,7 @@ func (r *ProjectEnvironmentResource) Update(ctx context.Context, req resource.Up
 		utilfw.UnableToUpdateResourceError(resp, projectError.String())
 	}
 
-	plan.ID = types.StringValue(newName)
+	plan.ID = types.StringValue(environmentUpdate.NewName)
 	plan.Name = types.StringValue(newName)
 
 	// Save data into Terraform state
