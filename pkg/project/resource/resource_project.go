@@ -400,7 +400,7 @@ type ProjectAPIModel struct {
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "project"
+	resp.TypeName = req.ProviderTypeName
 	r.TypeName = resp.TypeName
 }
 
