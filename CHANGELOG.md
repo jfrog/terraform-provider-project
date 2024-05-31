@@ -4,6 +4,10 @@ BUG FIXES:
 
 * Add validation to `roles` attribute for `project_group` and `project_user` resources to ensure at least one role is defined. Issue: [#126](https://github.com/jfrog/terraform-provider-project/issues/126) PR: [#129](https://github.com/jfrog/terraform-provider-project/pull/129)
 
+IMPROVEMENTS:
+
+* resource/project_environment is migrated to Plugin Framework. PR: [#130](https://github.com/jfrog/terraform-provider-project/pull/130)
+
 ## 1.6.0 (May 22, 2024)
 
 FEATURES:

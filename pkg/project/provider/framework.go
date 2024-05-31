@@ -32,7 +32,7 @@ type ProjectProviderModel struct {
 
 // Metadata satisfies the provider.Provider interface for ProjectProvider
 func (p *ProjectProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "artifactory"
+	resp.TypeName = "project"
 	resp.Version = Version
 }
 
@@ -181,6 +181,7 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		project.NewProjectResource,
+		project.NewProjectEnvironmentResource,
 	}
 }
 

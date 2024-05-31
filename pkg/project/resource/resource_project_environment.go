@@ -7,209 +7,283 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/jfrog/terraform-provider-shared/util"
-	"github.com/jfrog/terraform-provider-shared/validator"
+	utilfw "github.com/jfrog/terraform-provider-shared/util/fw"
+	validatorfw_string "github.com/jfrog/terraform-provider-shared/validator/fw/string"
+	"github.com/samber/lo"
 )
-
-type ProjectEnvironment struct {
-	Name string `json:"name"`
-}
-
-func (p ProjectEnvironment) Id() string {
-	return p.Name
-}
-
-type ProjectEnvironmentUpdate struct {
-	NewName string `json:"new_name"`
-}
-
-func (p ProjectEnvironmentUpdate) Id() string {
-	return p.NewName
-}
 
 const ProjectEnvironmentUrl = "/access/api/v1/projects/{projectKey}/environments"
 
-func ProjectEnvironmentResource() *schema.Resource {
+func NewProjectEnvironmentResource() resource.Resource {
+	return &ProjectEnvironmentResource{}
+}
 
-	var projectEnvironmentSchema = map[string]*schema.Schema{
-		"name": {
-			Required: true,
-			Type:     schema.TypeString,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.All(
-				validation.StringIsNotEmpty,
-				validation.StringMatch(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]+$`), "Must start with a letter and contain letters, digits and `-` character."),
-			)),
-			Description: "Environment name. Must start with a letter and can contain letters, digits and `-` character.",
+type ProjectEnvironmentResource struct {
+	ProviderData util.ProviderMetadata
+	TypeName     string
+}
+
+type ProjectEnvironmentResourceModel struct {
+	ID         types.String `tfsdk:"id"`
+	Name       types.String `tfsdk:"name"`
+	ProjectKey types.String `tfsdk:"project_key"`
+}
+
+type ProjectEnvironmentAPIModel struct {
+	Name string `json:"name"`
+}
+
+type ProjectEnvironmentUpdateAPIModel struct {
+	NewName string `json:"new_name"`
+}
+
+func (r *ProjectEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_environment"
+	r.TypeName = resp.TypeName
+}
+
+func (r *ProjectEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Version: 1,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
+			"name": schema.StringAttribute{
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]+$`), "Must start with a letter and contain letters, digits and `-` character."),
+				},
+				Description: "Environment name. Must start with a letter and can contain letters, digits and `-` character.",
+			},
+			"project_key": schema.StringAttribute{
+				Required: true,
+				Validators: []validator.String{
+					validatorfw_string.ProjectKey(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Description: "Project key for this environment. This field supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter.",
+			},
 		},
-		"project_key": {
-			Type:             schema.TypeString,
-			Required:         true,
-			ForceNew:         true,
-			ValidateDiagFunc: validator.ProjectKey,
-			Description:      "Project key for this environment. This field supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter.",
-		},
-	}
-
-	var readProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		projectKey := data.Get("project_key").(string)
-		var envs []ProjectEnvironment
-
-		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProviderMetadata).Client.R().
-			SetPathParam("projectKey", projectKey).
-			SetResult(&envs).
-			SetError(&projectError).
-			Get(ProjectEnvironmentUrl)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if resp.StatusCode() == http.StatusNotFound {
-			data.SetId("")
-			return nil
-		}
-		if resp.IsError() {
-			return diag.Errorf("%s", projectError.String())
-		}
-
-		var matchedEnv *ProjectEnvironment
-		for _, env := range envs {
-			if env.Name == fmt.Sprintf("%s-%s", projectKey, data.Get("name")) {
-				matchedEnv = &env
-				break
-			}
-		}
-
-		if matchedEnv == nil {
-			data.SetId("")
-			return nil
-		}
-
-		data.Set("name", strings.TrimPrefix(matchedEnv.Name, fmt.Sprintf("%s-", projectKey)))
-		data.Set("project_key", projectKey)
-		data.SetId(matchedEnv.Id())
-
-		return nil
-	}
-
-	var createProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		projectKey := data.Get("project_key").(string)
-		projectEnvironment := ProjectEnvironment{
-			Name: fmt.Sprintf("%s-%s", projectKey, data.Get("name").(string)),
-		}
-
-		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProviderMetadata).Client.R().
-			SetPathParam("projectKey", projectKey).
-			SetBody(projectEnvironment).
-			SetError(&projectError).
-			Post(ProjectEnvironmentUrl)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if resp.IsError() {
-			return diag.Errorf("%s", projectError.String())
-		}
-
-		data.SetId(projectEnvironment.Id())
-
-		return readProjectEnvironment(ctx, data, m)
-	}
-
-	var updateProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		projectKey := data.Get("project_key").(string)
-		oldName, newName := data.GetChange("name")
-
-		projectEnvironmentUpdate := ProjectEnvironmentUpdate{
-			NewName: fmt.Sprintf("%s-%s", projectKey, newName),
-		}
-
-		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProviderMetadata).Client.R().
-			SetPathParams(map[string]string{
-				"projectKey":      projectKey,
-				"environmentName": fmt.Sprintf("%s-%s", projectKey, oldName),
-			}).
-			SetBody(projectEnvironmentUpdate).
-			SetError(&projectError).
-			Post(ProjectEnvironmentUrl + "/{environmentName}/rename")
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if resp.IsError() {
-			return diag.Errorf("%s", projectError.String())
-		}
-
-		data.SetId(projectEnvironmentUpdate.Id())
-		data.Set("name", newName)
-
-		return readProjectEnvironment(ctx, data, m)
-	}
-
-	var deleteProjectEnvironment = func(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
-		projectKey := data.Get("project_key").(string)
-
-		var projectError ProjectErrorsResponse
-		resp, err := m.(util.ProviderMetadata).Client.R().
-			SetPathParams(map[string]string{
-				"projectKey":      projectKey,
-				"environmentName": fmt.Sprintf("%s-%s", projectKey, data.Get("name")),
-			}).
-			SetError(&projectError).
-			Delete(ProjectEnvironmentUrl + "/{environmentName}")
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		if resp.IsError() && resp.StatusCode() != http.StatusNotFound {
-			return diag.Errorf("%s", projectError.String())
-		}
-
-		data.SetId("")
-
-		return nil
-	}
-
-	var importForProjectKeyEnvironmentName = func(d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
-		parts := strings.SplitN(d.Id(), ":", 2)
-		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-			return nil, fmt.Errorf("unexpected format of ID (%s), expected project_key:environment_name", d.Id())
-		}
-
-		d.Set("project_key", parts[0])
-		d.Set("name", parts[1])
-		d.SetId(fmt.Sprintf("%s-%s", parts[0], parts[1]))
-
-		return []*schema.ResourceData{d}, nil
-	}
-
-	var projectEnvironmentLengthDiff = func(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
-		projectEnvironmentName := fmt.Sprintf("%s-%s", diff.Get("project_key"), diff.Get("name"))
-		tflog.Debug(ctx, fmt.Sprintf("projectEnvironmentName: %s", projectEnvironmentName))
-
-		if len(projectEnvironmentName) > 32 {
-			return fmt.Errorf("combined length of project_key and name (separated by '-') cannot exceed 32 characters")
-		}
-
-		return nil
-	}
-
-	return &schema.Resource{
-		SchemaVersion: 1,
-		CreateContext: createProjectEnvironment,
-		ReadContext:   readProjectEnvironment,
-		UpdateContext: updateProjectEnvironment,
-		DeleteContext: deleteProjectEnvironment,
-
-		Importer: &schema.ResourceImporter{
-			State: importForProjectKeyEnvironmentName,
-		},
-
-		CustomizeDiff: projectEnvironmentLengthDiff,
-
-		Schema:      projectEnvironmentSchema,
 		Description: "Creates a new environment for the specified project.\n\n~>The combined length of `project_key` and `name` (separated by '-') cannot not exceeds 32 characters.",
+	}
+}
+
+func (r *ProjectEnvironmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+	r.ProviderData = req.ProviderData.(util.ProviderMetadata)
+}
+
+func (r *ProjectEnvironmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	go util.SendUsageResourceCreate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	var plan ProjectEnvironmentResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	projectKey := plan.ProjectKey.ValueString()
+
+	environment := ProjectEnvironmentAPIModel{
+		Name: fmt.Sprintf("%s-%s", projectKey, plan.Name.ValueString()),
+	}
+
+	var projectError ProjectErrorsResponse
+	response, err := r.ProviderData.Client.R().
+		SetPathParam("projectKey", projectKey).
+		SetBody(environment).
+		SetError(&projectError).
+		Post(ProjectEnvironmentUrl)
+	if err != nil {
+		utilfw.UnableToCreateResourceError(resp, err.Error())
+	}
+	if response.IsError() {
+		utilfw.UnableToCreateResourceError(resp, projectError.String())
+	}
+
+	plan.ID = types.StringValue(environment.Name)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *ProjectEnvironmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	go util.SendUsageResourceRead(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	var state ProjectEnvironmentResourceModel
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	projectKey := state.ProjectKey.ValueString()
+
+	var environments []ProjectEnvironmentAPIModel
+	var projectError ProjectErrorsResponse
+	response, err := r.ProviderData.Client.R().
+		SetPathParam("projectKey", projectKey).
+		SetResult(&environments).
+		SetError(&projectError).
+		Get(ProjectEnvironmentUrl)
+	if err != nil {
+		utilfw.UnableToRefreshResourceError(resp, err.Error())
+		return
+	}
+	if response.StatusCode() == http.StatusNotFound {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	if response.IsError() {
+		utilfw.UnableToRefreshResourceError(resp, projectError.String())
+		return
+	}
+
+	matchedEnv, ok := lo.Find(environments, func(env ProjectEnvironmentAPIModel) bool {
+		return env.Name == fmt.Sprintf("%s-%s", projectKey, state.Name.ValueString())
+	})
+	if !ok {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	environmentName := strings.TrimPrefix(matchedEnv.Name, fmt.Sprintf("%s-", projectKey))
+	state.ID = types.StringValue(matchedEnv.Name)
+	state.Name = types.StringValue(environmentName)
+	state.ProjectKey = types.StringValue(projectKey)
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *ProjectEnvironmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	go util.SendUsageResourceUpdate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	var plan ProjectEnvironmentResourceModel
+	var state ProjectEnvironmentResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Read Terraform state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	oldName := state.Name.ValueString()
+	newName := plan.Name.ValueString()
+	projectKey := plan.ProjectKey.ValueString()
+
+	environmentUpdate := ProjectEnvironmentUpdateAPIModel{
+		NewName: fmt.Sprintf("%s-%s", projectKey, newName),
+	}
+
+	var projectError ProjectErrorsResponse
+	response, err := r.ProviderData.Client.R().
+		SetPathParams(map[string]string{
+			"projectKey":      projectKey,
+			"environmentName": fmt.Sprintf("%s-%s", projectKey, oldName),
+		}).
+		SetBody(environmentUpdate).
+		SetError(&projectError).
+		Post(ProjectEnvironmentUrl + "/{environmentName}/rename")
+	if err != nil {
+		utilfw.UnableToUpdateResourceError(resp, err.Error())
+	}
+	if response.IsError() {
+		utilfw.UnableToUpdateResourceError(resp, projectError.String())
+	}
+
+	plan.ID = types.StringValue(environmentUpdate.NewName)
+	plan.Name = types.StringValue(newName)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *ProjectEnvironmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	go util.SendUsageResourceDelete(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	var state ProjectEnvironmentResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	projectKey := state.ProjectKey.ValueString()
+
+	var projectError ProjectErrorsResponse
+	response, err := r.ProviderData.Client.R().
+		SetPathParams(map[string]string{
+			"projectKey":      projectKey,
+			"environmentName": fmt.Sprintf("%s-%s", projectKey, state.Name.ValueString()),
+		}).
+		SetError(&projectError).
+		Delete(ProjectEnvironmentUrl + "/{environmentName}")
+	if err != nil {
+		utilfw.UnableToDeleteResourceError(resp, err.Error())
+		return
+	}
+	if response.IsError() {
+		utilfw.UnableToDeleteResourceError(resp, projectError.String())
+		return
+	}
+
+	// If the logic reaches here, it implicitly succeeded and will remove
+	// the resource from state if there are no other errors.
+}
+
+// ImportState imports the resource into the Terraform state.
+func (r *ProjectEnvironmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.SplitN(req.ID, ":", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			"Expected project_key:environment_name",
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("project_key"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), parts[1])...)
+}
+
+func (r ProjectEnvironmentResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config ProjectEnvironmentResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	name := fmt.Sprintf("%s-%s", config.ProjectKey.ValueString(), config.Name.ValueString())
+	if len(name) > 32 {
+		resp.Diagnostics.AddError(
+			"Invalid Attributes Configuration",
+			"Combined length of project_key and name (separated by '-') cannot exceed 32 characters",
+		)
+		return
 	}
 }

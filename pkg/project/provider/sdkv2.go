@@ -48,11 +48,10 @@ func SdkV2() *schema.Provider {
 		ResourcesMap: sdk.AddTelemetry(
 			productId,
 			map[string]*schema.Resource{
-				"project_environment": resource.ProjectEnvironmentResource(),
-				"project_role":        resource.ProjectRoleResource(),
-				"project_user":        resource.ProjectUserResource(),
-				"project_group":       resource.ProjectGroupResource(),
-				"project_repository":  resource.ProjectRepositoryResource(),
+				"project_role":       resource.ProjectRoleResource(),
+				"project_user":       resource.ProjectUserResource(),
+				"project_group":      resource.ProjectGroupResource(),
+				"project_repository": resource.ProjectRepositoryResource(),
 			},
 		),
 	}

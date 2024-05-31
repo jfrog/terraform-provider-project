@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/jfrog/terraform-provider-shared/util"
 	utilfw "github.com/jfrog/terraform-provider-shared/util/fw"
 	validatorfw_string "github.com/jfrog/terraform-provider-shared/validator/fw/string"
@@ -401,7 +400,7 @@ type ProjectAPIModel struct {
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "project"
+	resp.TypeName = req.ProviderTypeName
 	r.TypeName = resp.TypeName
 }
 
@@ -692,10 +691,6 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
 		}),
 		Blocks: schemaV3.Blocks,
 	}
-
-	tflog.Debug(ctx, "Schema", map[string]any{
-		"schemaV4": resp.Schema,
-	})
 }
 
 func (r *ProjectResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

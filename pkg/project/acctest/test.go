@@ -39,15 +39,17 @@ var testAccProviderConfigure sync.Once
 // during acceptance tests. Use it only if you need to combine resources from SDK v2 and the Framework in the same test.
 var ProtoV6MuxProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 
-var ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"project": providerserver.NewProtocol6WithError(provider.Framework()()),
-}
+var ProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 
 func init() {
 	Provider = provider.SdkV2()
 
 	ProviderFactories = map[string]func() (*schema.Provider, error){
 		"project": func() (*schema.Provider, error) { return Provider, nil },
+	}
+
+	ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+		"project": providerserver.NewProtocol6WithError(provider.Framework()()),
 	}
 
 	ProtoV6MuxProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
