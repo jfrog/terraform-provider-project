@@ -49,7 +49,6 @@ func SdkV2() *schema.Provider {
 			productId,
 			map[string]*schema.Resource{
 				"project_role":       resource.ProjectRoleResource(),
-				"project_user":       resource.ProjectUserResource(),
 				"project_repository": resource.ProjectRepositoryResource(),
 			},
 		),
