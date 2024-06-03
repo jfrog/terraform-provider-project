@@ -6,15 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func maxLength(length int) func(i interface{}, k string) ([]string, []error) {
-	return func(value interface{}, k string) ([]string, []error) {
-		if len(value.(string)) > length {
-			return nil, []error{fmt.Errorf("string must be less than or equal %d characters long", length)}
-		}
-		return nil, nil
-	}
-}
-
 func int64Between(min, max int64) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (warnings []string, errors []error) {
 		v1, ok := i.(int)

@@ -9,8 +9,78 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
+	"github.com/jfrog/terraform-provider-shared/testutil"
 	"github.com/jfrog/terraform-provider-shared/util"
 )
+
+func TestAccProjectRole_UpgradeFromSDKv2(t *testing.T) {
+	_, _, projectName := testutil.MkNames("test-project-", "project")
+	_, fqrn, roleName := testutil.MkNames("test-project-role-", "project_role")
+
+	projectKey := strings.ToLower(acctest.RandSeq(10))
+
+	template := `
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+		}
+
+		resource "project_role" "{{ .name }}" {
+			name = "{{ .name }}"
+			type = "{{ .type }}"
+			project_key = project.{{ .project_name }}.key
+			
+			environments = ["{{ .environment }}"]
+			actions = ["{{ .action }}"]
+		}
+	`
+
+	testData := map[string]string{
+		"name":         roleName,
+		"project_name": projectName,
+		"project_key":  projectKey,
+		"type":         "CUSTOM",
+		"environment":  "DEV",
+		"action":       "READ_REPOSITORY",
+	}
+
+	config := util.ExecuteTemplate("TestAccProjectRole", template, testData)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { acctest.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"project": {
+						Source:            "jfrog/project",
+						VersionConstraint: "1.6.1",
+					},
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "name", testData["name"]),
+					resource.TestCheckResourceAttr(fqrn, "project_key", testData["project_key"]),
+					resource.TestCheckResourceAttr(fqrn, "type", testData["type"]),
+					resource.TestCheckResourceAttr(fqrn, "environments.#", "1"),
+					resource.TestCheckResourceAttr(fqrn, "environments.0", testData["environment"]),
+					resource.TestCheckResourceAttr(fqrn, "actions.#", "1"),
+					resource.TestCheckResourceAttr(fqrn, "actions.0", testData["action"]),
+				),
+			},
+			{
+				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+				Config:                   config,
+				PlanOnly:                 true,
+				ConfigPlanChecks:         testutil.ConfigPlanChecks(fqrn),
+			},
+		},
+	})
+}
 
 func TestAccProjectRole_full(t *testing.T) {
 	name := acctest.RandSeq(20)
@@ -64,7 +134,7 @@ func TestAccProjectRole_full(t *testing.T) {
 		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -89,6 +159,12 @@ func TestAccProjectRole_full(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "actions.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "actions.0", testUpdatedData["action"]),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateId:     fmt.Sprintf("%s:%s", testUpdatedData["project_key"], testUpdatedData["name"]),
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -138,7 +214,7 @@ func TestAccProjectRole_conflict_with_project(t *testing.T) {
 		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyRole(id, projectKey, request)
 		}),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
