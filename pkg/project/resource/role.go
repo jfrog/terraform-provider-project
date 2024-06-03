@@ -9,6 +9,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+type Role struct {
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Type         string   `json:"type"`
+	Environments []string `json:"environments"`
+	Actions      []string `json:"actions"`
+}
+
+func (r Role) Id() string {
+	return r.Name
+}
+
+func (a Role) Equals(b Equatable) bool {
+	return a.Id() == b.Id()
+}
+
 func filterRoles(roles []Role, roleType string) []Role {
 	filteredRoles := roles[:0]
 	for _, role := range roles {
