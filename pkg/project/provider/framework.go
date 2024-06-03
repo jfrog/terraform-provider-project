@@ -183,6 +183,7 @@ func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resou
 		project.NewProjectResource,
 		project.NewProjectEnvironmentResource,
 		project.NewProjectGroupResource,
+		project.NewProjectUserResource,
 	}
 }
 
