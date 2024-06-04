@@ -20,7 +20,9 @@ import (
 // Ensure the implementation satisfies the provider.Provider interface.
 var _ provider.Provider = &ProjectProvider{}
 
-type ProjectProvider struct{}
+type ProjectProvider struct {
+	Meta util.ProviderMetadata
+}
 
 // ProjectProviderModel describes the provider data model.
 type ProjectProviderModel struct {
@@ -173,6 +175,8 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 		ArtifactoryVersion: version,
 	}
 
+	p.Meta = meta
+
 	resp.DataSourceData = meta
 	resp.ResourceData = meta
 }
@@ -183,6 +187,7 @@ func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resou
 		project.NewProjectResource,
 		project.NewProjectEnvironmentResource,
 		project.NewProjectGroupResource,
+		project.NewProjectRepositoryResource,
 		project.NewProjectRoleResource,
 		project.NewProjectUserResource,
 	}

@@ -11,7 +11,99 @@ import (
 	"github.com/jfrog/terraform-provider-shared/util"
 )
 
-func TestAccProjectRepository(t *testing.T) {
+func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
+	_, _, projectName := testutil.MkNames("test-project-", "project")
+	_, fqrn, projectRepoName := testutil.MkNames("test-project-repo-", "project_repository")
+
+	projectKey := strings.ToLower(acctest.RandSeq(10))
+	repoKey1 := fmt.Sprintf("repo%d", testutil.RandomInt())
+	repoKey2 := fmt.Sprintf("repo%d", testutil.RandomInt())
+
+	params := map[string]interface{}{
+		"project_name":      projectName,
+		"project_key":       projectKey,
+		"repo_key":          repoKey1,
+		"repo_key_1":        repoKey1,
+		"repo_key_2":        repoKey2,
+		"project_repo_name": projectRepoName,
+	}
+
+	template := `
+		resource "artifactory_local_generic_repository" "{{ .repo_key_1 }}" {
+			key = "{{ .repo_key_1 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key"]
+			}
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo_key_2 }}" {
+			key = "{{ .repo_key_2 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key"]
+			}
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key          = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description  = "test description"
+			admin_privileges {
+				manage_members   = true
+				manage_resources = true
+				index_resources  = true
+			}
+			max_storage_in_gibibytes   = 1
+			block_deployments_on_limit = true
+			email_notification         = false
+		}
+
+		resource "project_repository" "{{ .project_repo_name }}" {
+			project_key = project.{{ .project_name }}.key
+			key         = artifactory_local_generic_repository.{{ .repo_key }}.key
+		}
+	`
+
+	config := util.ExecuteTemplate("TestAccProjectRepository", template, params)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { acctest.PreCheck(t) },
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"artifactory": {
+						Source:            "jfrog/artifactory",
+						VersionConstraint: "10.1.4",
+					},
+					"project": {
+						Source:            "jfrog/project",
+						VersionConstraint: "1.6.1",
+					},
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "project_key", params["project_key"].(string)),
+					resource.TestCheckResourceAttr(fqrn, "key", params["repo_key"].(string)),
+				),
+			},
+			{
+				ExternalProviders: map[string]resource.ExternalProvider{
+					"artifactory": {
+						Source:            "jfrog/artifactory",
+						VersionConstraint: "10.1.4",
+					},
+				},
+				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+				Config:                   config,
+				PlanOnly:                 true,
+				ConfigPlanChecks:         testutil.ConfigPlanChecks(fqrn),
+			},
+		},
+	})
+}
+
+func TestAccProjectRepository_full(t *testing.T) {
 	projectKey := strings.ToLower(acctest.RandSeq(10))
 	projectName := fmt.Sprintf("tftestprojects%s", projectKey)
 
@@ -80,7 +172,7 @@ func TestAccProjectRepository(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",

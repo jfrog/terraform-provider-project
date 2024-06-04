@@ -63,7 +63,7 @@ func TestAccProjectEnvironment_UpgradeFromSDKv2(t *testing.T) {
 				),
 			},
 			{
-				ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 				Config:                   config,
 				PlanOnly:                 true,
 				ConfigPlanChecks:         testutil.ConfigPlanChecks(fqrn),
