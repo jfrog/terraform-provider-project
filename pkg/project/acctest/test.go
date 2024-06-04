@@ -1,7 +1,6 @@
 package acctest
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -10,22 +9,14 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
-	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	terraform2 "github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/jfrog/terraform-provider-project/pkg/project/provider"
+	project "github.com/jfrog/terraform-provider-project/pkg/project/provider"
 	"github.com/jfrog/terraform-provider-shared/client"
 	"github.com/jfrog/terraform-provider-shared/testutil"
-	"github.com/jfrog/terraform-provider-shared/util"
 )
-
-// Provider PreCheck(t) must be called before using this provider instance.
-var Provider *schema.Provider
-var ProviderFactories map[string]func() (*schema.Provider, error)
 
 // testAccProviderConfigure ensures Provider is only configured once
 //
@@ -35,50 +26,15 @@ var ProviderFactories map[string]func() (*schema.Provider, error)
 // Provider be errantly reused in ProviderFactories.
 var testAccProviderConfigure sync.Once
 
-// ProtoV6MuxProviderFactories is used to instantiate both SDK v2 and Framework providers
-// during acceptance tests. Use it only if you need to combine resources from SDK v2 and the Framework in the same test.
-var ProtoV6MuxProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
+var Provider provider.Provider
 
 var ProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 
 func init() {
-	Provider = provider.SdkV2()
-
-	ProviderFactories = map[string]func() (*schema.Provider, error){
-		"project": func() (*schema.Provider, error) { return Provider, nil },
-	}
+	Provider = project.Framework()()
 
 	ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-		"project": providerserver.NewProtocol6WithError(provider.Framework()()),
-	}
-
-	ProtoV6MuxProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-		"project": func() (tfprotov6.ProviderServer, error) {
-			ctx := context.Background()
-
-			upgradedSdkServer, err := tf5to6server.UpgradeServer(
-				ctx,
-				provider.SdkV2().GRPCProvider, // terraform-plugin-sdk provider
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			providers := []func() tfprotov6.ProviderServer{
-				providerserver.NewProtocol6(provider.Framework()()), // terraform-plugin-framework provider
-				func() tfprotov6.ProviderServer {
-					return upgradedSdkServer
-				},
-			}
-
-			muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)
-
-			if err != nil {
-				return nil, err
-			}
-
-			return muxServer.ProviderServer(), nil
-		},
+		"project": providerserver.NewProtocol6WithError(Provider),
 	}
 }
 
@@ -99,11 +55,6 @@ func PreCheck(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to set custom base URL: %v", err)
 		}
-
-		configErr := Provider.Configure(context.Background(), (*terraform2.ResourceConfig)(terraform2.NewResourceConfigRaw(nil)))
-		if configErr != nil && configErr.HasError() {
-			t.Fatalf("failed to configure provider %v", configErr)
-		}
 	})
 }
 
@@ -120,7 +71,7 @@ func VerifyDeleted(id string, check CheckFun) func(*terraform.State) error {
 			return fmt.Errorf("error: Resource id [%s] not found", id)
 		}
 
-		client := Provider.Meta().(util.ProviderMetadata).Client
+		client := Provider.(*project.ProjectProvider).Meta.Client
 		resp, err := check(rs.Primary.ID, client.R())
 		if err != nil {
 			return err

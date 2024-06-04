@@ -5,12 +5,12 @@ import (
 	"regexp"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/jfrog/terraform-provider-shared/util/sdk"
+	"github.com/jfrog/terraform-provider-shared/util"
 	"github.com/samber/lo"
 )
 
 type Equatable interface {
-	sdk.Identifiable
+	util.Identifiable
 	Equals(other Equatable) bool
 }
 

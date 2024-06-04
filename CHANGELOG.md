@@ -1,8 +1,9 @@
-## 1.6.2 (June 3, 2024)
+## 1.6.2 (June 4, 2024)
 
 IMPROVEMENTS:
 
 * resource/project_group is migrated to Plugin Framework. PR: [#131](https://github.com/jfrog/terraform-provider-project/pull/131)
+* resource/project_user, resource/project_role, and resource/project_repository are migrated to Plugin Framework. PR: [#133](https://github.com/jfrog/terraform-provider-project/pull/133)
 
 ## 1.6.1 (May 31, 2024)
 

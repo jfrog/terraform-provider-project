@@ -110,7 +110,7 @@ func TestAccProject_membership(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
 		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source: "jfrog/artifactory",
@@ -264,7 +264,7 @@ func TestAccProject_group(t *testing.T) {
 		PreCheck: func() { acctest.PreCheck(t) },
 
 		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
-		ProtoV6ProviderFactories: acctest.ProtoV6MuxProviderFactories,
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source: "jfrog/artifactory",
