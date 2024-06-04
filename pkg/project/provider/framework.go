@@ -182,6 +182,7 @@ func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resou
 	return []func() resource.Resource{
 		project.NewProjectResource,
 		project.NewProjectEnvironmentResource,
+		project.NewProjectGroupResource,
 	}
 }
 
