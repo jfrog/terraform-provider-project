@@ -1,4 +1,4 @@
-## 1.6.2 (June 4, 2024)
+## 1.6.2 (June 4, 2024). Tested on Artifactory 7.84.14 with Terraform  and OpenTofu 1.7.2
 
 IMPROVEMENTS:
 
