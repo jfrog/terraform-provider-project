@@ -1,3 +1,5 @@
+[![Terraform & OpenTofu Acceptance Tests](https://github.com/jfrog/terraform-provider-project/actions/workflows/acceptance-tests.yml/badge.svg)](https://github.com/jfrog/terraform-provider-project/actions/workflows/acceptance-tests.yml)
+
 # Terraform Provider for Artifactory Project
 
 [![Actions Status](https://github.com/jfrog/terraform-provider-project/workflows/release/badge.svg)](https://github.com/jfrog/terraform-provider-project/actions)
