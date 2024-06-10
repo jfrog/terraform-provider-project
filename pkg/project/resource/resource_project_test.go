@@ -159,7 +159,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 					},
 					"artifactory": {
 						Source:            "jfrog/artifactory",
-						VersionConstraint: "10.1.3",
+						VersionConstraint: "10.3.3",
 					},
 				},
 				Config: config,
@@ -200,7 +200,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 				ExternalProviders: map[string]resource.ExternalProvider{
 					"artifactory": {
 						Source:            "jfrog/artifactory",
-						VersionConstraint: "10.1.3",
+						VersionConstraint: "10.3.3",
 					},
 				},
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
@@ -610,7 +610,7 @@ func TestAccProject_full(t *testing.T) {
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.3",
+				VersionConstraint: "10.3.3",
 			},
 		},
 		Steps: []resource.TestStep{
@@ -762,7 +762,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 				ExternalProviders: map[string]resource.ExternalProvider{
 					"project": {
 						VersionConstraint: "1.2.1",
-						Source:            "registry.terraform.io/jfrog/project",
+						Source:            "jfrog/project",
 					},
 				},
 				Config: config,
