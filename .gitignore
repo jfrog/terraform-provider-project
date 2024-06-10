@@ -3,7 +3,6 @@ dist/
 vendor/
 bin/
 .idea/
-.github/
 .modules/
 .terraform*
 terraform.d/

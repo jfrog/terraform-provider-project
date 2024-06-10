@@ -12,19 +12,28 @@ PKG_NAME=pkg/${PRODUCT}
 PKG_VERSION_PATH=github.com/jfrog/terraform-provider-${PRODUCT}/${PKG_NAME}
 VERSION := $(shell git tag --sort=-creatordate | head -1 | sed  -n 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\1.\2.\3/p')
 NEXT_VERSION := $(shell echo ${VERSION}| awk -F '.' '{print $$1 "." $$2 "." $$3 +1 }' )
-BUILD_PATH=terraform.d/plugins/registry.terraform.io/jfrog/${PRODUCT}/${NEXT_VERSION}/${TARGET_ARCH}
+
+TERRAFORM_CLI?=terraform
+
+REGISTRY_HOST=registry.terraform.io
+
+ifeq ($(TERRAFORM_CLI), tofu)
+REGISTRY_HOST=registry.opentofu.org
+endif
+
+BUILD_PATH=terraform.d/plugins/${REGISTRY_HOST}/jfrog/${PRODUCT}/${NEXT_VERSION}/${TARGET_ARCH}
+
 SONAR_SCANNER_VERSION?=4.7.0.2747
 SONAR_SCANNER_HOME?=${HOME}/.sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-macosx
 
 default: build
 
 install: clean build
-	rm -fR .terraform.d && \
 	mkdir -p ${BUILD_PATH} && \
 		mv -v dist/terraform-provider-${PRODUCT}_${GORELEASER_ARCH}/terraform-provider-${PRODUCT}_v${NEXT_VERSION}* ${BUILD_PATH} && \
 		rm -f .terraform.lock.hcl && \
 		sed -i.bak '0,/version = ".*"/s//version = "${NEXT_VERSION}"/' sample.tf && rm sample.tf.bak && \
-		terraform init
+		${TERRAFORM_CLI} init
 
 install_tfc: clean build_tfc
 	mkdir -p tfc-testing/${BUILD_PATH} && \
@@ -33,8 +42,8 @@ install_tfc: clean build_tfc
 		mv -v dist/terraform-provider-${PRODUCT}_linux_amd64_v1/terraform-provider-${PRODUCT}_v${NEXT_VERSION}* tfc-testing/terraform.d/plugins/registry.terraform.io/jfrog/${PRODUCT}/${NEXT_VERSION}/linux_amd64 && \
 		sed -i.bak '0,/version = ".*"/s//version = "${NEXT_VERSION}"/' tfc-testing/sample.tf && rm tfc-testing/sample.tf.bak && \
 		cd tfc-testing && \
-		terraform providers lock -platform=linux_amd64 -platform=darwin_amd64 -fs-mirror=terraform.d/plugins && \
-		terraform init
+		${TERRAFORM_CLI} providers lock -platform=linux_amd64 -platform=darwin_amd64 -fs-mirror=terraform.d/plugins && \
+		${TERRAFORM_CLI} init
 
 clean:
 	rm -fR dist terraform.d/ .terraform terraform.tfstate* .terraform.lock.hcl
@@ -63,7 +72,7 @@ test:
 
 test_tfc: install_tfc
 	cd tfc-testing && \
-	terraform plan
+	${TERRAFORM_CLI} plan
 
 attach:
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient attach $$(pgrep terraform-provider-${PRODUCT})
@@ -82,7 +91,7 @@ scan:
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
-	@go fmt ./...
+	@go fmt ./pkg/...
 
 doc:
 	rm -rfv docs/*
