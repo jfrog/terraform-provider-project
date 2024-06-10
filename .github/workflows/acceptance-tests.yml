@@ -47,9 +47,6 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
           sudo apt-get update
           sudo apt-get install -y terraform
-      - name: Debug TF version
-        id: debug_tf_version
-        run: |
           TF_VERSION=$(terraform -v -json | jq -r .terraform_version)
           echo $TF_VERSION
           echo "version=$TF_VERSION" >> "$GITHUB_OUTPUT"
@@ -148,9 +145,11 @@ jobs:
         with:
           tail: '10000'
       - name: Clean up Docker container
+        if: always()
         run: docker stop artifactory
       - name: Send workflow status to Slack
         uses: slackapi/slack-github-action@v1.26.0
+        if: always()
         with:
           payload: |
             {
