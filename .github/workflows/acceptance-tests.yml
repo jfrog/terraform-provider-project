@@ -139,11 +139,11 @@ jobs:
           cat sample.tf | sed -e "s/version =.*/version = \"${PROVIDER_VERSION}\"/g" > sample.tf.tmp
           cp sample.tf.tmp sample.tf && rm sample.tf.tmp
           TERRAFORM_CLI=${{ matrix.cli }} make install
-      - name: Dump Artifactory logs
-        uses: jwalton/gh-docker-logs@v2
-        if: failure()
-        with:
-          tail: '10000'
+      # - name: Dump Artifactory logs
+      #   uses: jwalton/gh-docker-logs@v2
+      #   if: failure()
+      #   with:
+      #     tail: '10000'
       - name: Clean up Docker container
         if: always()
         run: docker stop artifactory
