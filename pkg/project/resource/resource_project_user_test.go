@@ -170,7 +170,7 @@ func TestAccProjectUser_full(t *testing.T) {
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
 				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.1.4",
+				VersionConstraint: "10.3.3",
 			},
 		},
 		Steps: []resource.TestStep{
