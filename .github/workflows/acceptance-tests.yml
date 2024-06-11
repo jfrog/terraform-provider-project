@@ -13,14 +13,14 @@ jobs:
   acceptance-tests-matrix:
     name: ${{ matrix.cli }}
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: false
     environment: development
     strategy:
       fail-fast: true
       matrix:
         cli: [terraform, tofu]
     outputs:
-      tf_version: ${{ steps.debug_tf_version.outputs.version }}
+      tf_version: ${{ steps.install_terraform_cli.outputs.version }}
       tofu_version: ${{ steps.install_opentofu_cli.outputs.version }}
       artifactory_version: ${{ steps.run_artifactory_container.outputs.version }}
     steps:
@@ -171,7 +171,7 @@ jobs:
   update-changelog:
     runs-on: ubuntu-latest
     needs: acceptance-tests-matrix
-    if: ${{ github.event_name == 'pull_request' && needs.acceptance-tests-matrix.result == 'success' }}
+    if: ${{ github.event_name == 'pull_request' }} && ${{ needs.acceptance-tests-matrix.result == 'success' }}
     permissions:
       contents: write
     steps:
