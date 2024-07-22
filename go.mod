@@ -3,7 +3,7 @@ module github.com/jfrog/terraform-provider-project
 // if you need to do local dev, literally just uncomment the line below
 // replace github.com/jfrog/terraform-provider-shared => ../terraform-provider-shared
 
-go 1.21.5
+go 1.22.5
 
 require (
 	github.com/go-resty/resty/v2 v2.13.1
