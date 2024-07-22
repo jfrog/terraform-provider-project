@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	project "github.com/jfrog/terraform-provider-project/pkg/project/provider"
+	project "github.com/jfrog/terraform-provider-project/pkg/project"
 	"github.com/jfrog/terraform-provider-shared/client"
 	"github.com/jfrog/terraform-provider-shared/testutil"
 )
