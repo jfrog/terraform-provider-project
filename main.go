@@ -24,7 +24,7 @@ func main() {
 		Address: "registry.terraform.io/jfrog/project",
 		Debug:   debug,
 	}
-	err := providerserver.Serve(context.Background(), project.Framework(), opts)
+	err := providerserver.Serve(context.Background(), project.NewProvider(), opts)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

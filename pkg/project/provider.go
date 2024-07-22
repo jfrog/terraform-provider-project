@@ -203,7 +203,7 @@ func (p *ProjectProvider) DataSources(_ context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{}
 }
 
-func Framework() func() provider.Provider {
+func NewProvider() func() provider.Provider {
 	return func() provider.Provider {
 		return &ProjectProvider{}
 	}
