@@ -24,7 +24,9 @@ import (
 const ProjectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
 
 func NewProjectUserResource() resource.Resource {
-	return &ProjectUserResource{}
+	return &ProjectUserResource{
+		TypeName: "project_user",
+	}
 }
 
 type ProjectUserResource struct {
@@ -46,8 +48,7 @@ type ProjectUserAPIModel struct {
 }
 
 func (r *ProjectUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_user"
-	r.TypeName = resp.TypeName
+	resp.TypeName = r.TypeName
 }
 
 func (r *ProjectUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

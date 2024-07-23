@@ -169,8 +169,7 @@ func TestAccProjectUser_full(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.3.3",
+				Source: "jfrog/artifactory",
 			},
 		},
 		Steps: []resource.TestStep{

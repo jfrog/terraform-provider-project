@@ -19,12 +19,12 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
-	username1 := "user1"
+	username1 := fmt.Sprintf("user1%s", strings.ToLower(acctest.RandSeq(5)))
 	email1 := username1 + "@tempurl.org"
-	username2 := "user2"
+	username2 := fmt.Sprintf("user2%s", strings.ToLower(acctest.RandSeq(5)))
 	email2 := username2 + "@tempurl.org"
-	group1 := "group1"
-	group2 := "group2"
+	group1 := fmt.Sprintf("group1%s", strings.ToLower(acctest.RandSeq(5)))
+	group2 := fmt.Sprintf("group2%s", strings.ToLower(acctest.RandSeq(5)))
 	repo1 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 	repo2 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
@@ -158,8 +158,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 						Source:            "jfrog/project",
 					},
 					"artifactory": {
-						Source:            "jfrog/artifactory",
-						VersionConstraint: "10.3.3",
+						Source: "jfrog/artifactory",
 					},
 				},
 				Config: config,
@@ -199,8 +198,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 			{
 				ExternalProviders: map[string]resource.ExternalProvider{
 					"artifactory": {
-						Source:            "jfrog/artifactory",
-						VersionConstraint: "10.3.3",
+						Source: "jfrog/artifactory",
 					},
 				},
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
@@ -453,12 +451,12 @@ func TestAccProject_full(t *testing.T) {
 	name := fmt.Sprintf("tftestprojects%s", acctest.RandSeq(10))
 	resourceName := fmt.Sprintf("project.%s", name)
 
-	username1 := "user1"
+	username1 := fmt.Sprintf("user1%s", strings.ToLower(acctest.RandSeq(5)))
 	email1 := username1 + "@tempurl.org"
-	username2 := "user2"
+	username2 := fmt.Sprintf("user2%s", strings.ToLower(acctest.RandSeq(5)))
 	email2 := username2 + "@tempurl.org"
-	group1 := "group1"
-	group2 := "group2"
+	group1 := fmt.Sprintf("group1%s", strings.ToLower(acctest.RandSeq(5)))
+	group2 := fmt.Sprintf("group2%s", strings.ToLower(acctest.RandSeq(5)))
 	repo1 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 	repo2 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
@@ -609,8 +607,7 @@ func TestAccProject_full(t *testing.T) {
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"artifactory": {
-				Source:            "jfrog/artifactory",
-				VersionConstraint: "10.3.3",
+				Source: "jfrog/artifactory",
 			},
 		},
 		Steps: []resource.TestStep{

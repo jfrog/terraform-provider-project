@@ -23,7 +23,9 @@ import (
 const ProjectGroupsUrl = "access/api/v1/projects/{projectKey}/groups/{name}"
 
 func NewProjectGroupResource() resource.Resource {
-	return &ProjectGroupResource{}
+	return &ProjectGroupResource{
+		TypeName: "project_group",
+	}
 }
 
 type ProjectGroupResource struct {
@@ -44,8 +46,7 @@ type ProjectGroupAPIModel struct {
 }
 
 func (r *ProjectGroupResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_group"
-	r.TypeName = resp.TypeName
+	resp.TypeName = r.TypeName
 }
 
 func (r *ProjectGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

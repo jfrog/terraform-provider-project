@@ -43,3 +43,14 @@ func (r ProjectErrorsResponse) String() string {
 	}, "")
 	return errs
 }
+
+const ProjectRepositoryStatusEndpoint = "access/api/v1/projects/_/repositories/{repo_key}"
+
+type ProjectRepositoryStatusAPIModel struct {
+	ResourceName          string   `json:"resource_name"`
+	Environments          []string `json:"environments"`
+	SharedWithProjects    []string `json:"shared_with_projects"`
+	SharedWithAllProjects bool     `json:"shared_with_all_projects"`
+	SharedReadOnly        bool     `json:"shared_read_only"`
+	AssignedTo            string   `json:"assigned_to"`
+}
