@@ -168,7 +168,7 @@ func (r *ProjectShareRepositoryWithAllResource) Read(ctx context.Context, req re
 func (r *ProjectShareRepositoryWithAllResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddWarning(
 		"Update not supported",
-		"Repository assignment to project cannnot be updated.",
+		"Repository sharing with all projects cannnot be updated.",
 	)
 }
 

@@ -59,6 +59,9 @@ func (r *ProjectShareRepositoryResource) Schema(ctx context.Context, req resourc
 				Validators: []validator.String{
 					validatorfw_string.ProjectKey(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Description: "The project key to which the repository should be shared with.",
 			},
 		},
@@ -176,38 +179,10 @@ func (r *ProjectShareRepositoryResource) Read(ctx context.Context, req resource.
 }
 
 func (r *ProjectShareRepositoryResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	go util.SendUsageResourceUpdate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
-
-	var plan ProjectShareRepositoryResourceModel
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var projectError ProjectErrorsResponse
-
-	response, err := r.ProviderData.Client.R().
-		SetPathParams(map[string]string{
-			"repo_key":           plan.RepoKey.ValueString(),
-			"target_project_key": plan.TargetProjectKey.ValueString(),
-		}).
-		SetError(&projectError).
-		Put(shareWithTargetProject)
-
-	if err != nil {
-		utilfw.UnableToUpdateResourceError(resp, err.Error())
-		return
-	}
-
-	if response.IsError() {
-		utilfw.UnableToUpdateResourceError(resp, projectError.String())
-		return
-	}
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.AddWarning(
+		"Update not supported",
+		"Repository sharing with project cannnot be updated.",
+	)
 }
 
 func (r *ProjectShareRepositoryResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
