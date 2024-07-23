@@ -1,3 +1,17 @@
+## 1.7.0 (July 24, 2024)
+
+NOTES:
+
+* provider: `check_license` attribute is deprecated and provider no longer checks Artifactory license during initialization. It will be removed in the next major version release.
+
+FEATURES:
+
+* **New Resource:** `project_share_repository` - New resource to share repository with a project.
+* **New Resource:** `project_share_repository_with_all` - New resource to share repository with all projects.
+
+Issue: [#80](https://github.com/jfrog/terraform-provider-project/issues/80)
+PR: [#147](https://github.com/jfrog/terraform-provider-project/pull/147)
+
 ## 1.6.2 (June 4, 2024). Tested on Artifactory 7.84.14 with Terraform  and OpenTofu 1.7.2
 
 IMPROVEMENTS:
