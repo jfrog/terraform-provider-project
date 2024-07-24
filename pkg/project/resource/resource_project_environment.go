@@ -24,7 +24,9 @@ import (
 const ProjectEnvironmentUrl = "/access/api/v1/projects/{projectKey}/environments"
 
 func NewProjectEnvironmentResource() resource.Resource {
-	return &ProjectEnvironmentResource{}
+	return &ProjectEnvironmentResource{
+		TypeName: "project_environment",
+	}
 }
 
 type ProjectEnvironmentResource struct {
@@ -47,8 +49,7 @@ type ProjectEnvironmentUpdateAPIModel struct {
 }
 
 func (r *ProjectEnvironmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_environment"
-	r.TypeName = resp.TypeName
+	resp.TypeName = r.TypeName
 }
 
 func (r *ProjectEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

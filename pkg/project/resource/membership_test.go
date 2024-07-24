@@ -15,8 +15,8 @@ func TestAccProject_membership(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	username1 := "user1"
-	username2 := "user2"
+	username1 := fmt.Sprintf("user1%s", strings.ToLower(acctest.RandSeq(5)))
+	username2 := fmt.Sprintf("user2%s", strings.ToLower(acctest.RandSeq(5)))
 	developeRole := "Developer"
 	contributorRole := "Contributor"
 
@@ -174,8 +174,9 @@ func TestAccProject_group(t *testing.T) {
 	resourceName := "project." + name
 	projectKey := strings.ToLower(acctest.RandSeq(10))
 
-	group1 := "group1"
-	group2 := "group2"
+	group1 := fmt.Sprintf("group1%s", strings.ToLower(acctest.RandSeq(5)))
+	group2 := fmt.Sprintf("group2%s", strings.ToLower(acctest.RandSeq(5)))
+
 	developeRole := "Developer"
 	contributorRole := "Contributor"
 

@@ -24,7 +24,9 @@ import (
 const repositoryEndpoint = "/artifactory/api/repositories/{key}"
 
 func NewProjectRepositoryResource() resource.Resource {
-	return &ProjectRepositoryResource{}
+	return &ProjectRepositoryResource{
+		TypeName: "project_repository",
+	}
 }
 
 type ProjectRepositoryResource struct {
@@ -44,8 +46,7 @@ type ProjectRepositoryAPIModel struct {
 }
 
 func (r *ProjectRepositoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_repository"
-	r.TypeName = resp.TypeName
+	resp.TypeName = r.TypeName
 }
 
 func (r *ProjectRepositoryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -169,29 +170,73 @@ func (r *ProjectRepositoryResource) Read(ctx context.Context, req resource.ReadR
 	projectKey := state.ProjectKey.ValueString()
 	repoKey := state.Key.ValueString()
 
-	var repo ProjectRepositoryAPIModel
-	var projectError ProjectErrorsResponse
-	response, err := r.ProviderData.Client.R().
-		SetResult(&repo).
-		SetPathParam("key", repoKey).
-		Get(repositoryEndpoint)
+	newAPIVersion, err := util.CheckVersion(r.ProviderData.ArtifactoryVersion, "7.90.1")
 	if err != nil {
-		utilfw.UnableToRefreshResourceError(resp, err.Error())
-		return
+		resp.Diagnostics.AddError(
+			"Failed to check Artifactory version",
+			err.Error(),
+		)
 	}
 
-	if response.StatusCode() == http.StatusBadRequest || response.StatusCode() == http.StatusNotFound {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if response.IsError() {
-		utilfw.UnableToRefreshResourceError(resp, projectError.String())
-		return
-	}
-	if repo.ProjectKey == "" {
-		tflog.Warn(ctx, "no project_key for repo", map[string]any{"repoKey": repoKey})
-		resp.State.RemoveResource(ctx)
-		return
+	var projectError ProjectErrorsResponse
+	if newAPIVersion {
+		// use new project API
+		var status ProjectRepositoryStatusAPIModel
+		response, err := r.ProviderData.Client.R().
+			SetResult(&status).
+			SetPathParam("repo_key", repoKey).
+			Get(ProjectRepositoryStatusEndpoint)
+		if err != nil {
+			utilfw.UnableToRefreshResourceError(resp, err.Error())
+			return
+		}
+
+		if response.StatusCode() == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		if response.IsError() {
+			utilfw.UnableToRefreshResourceError(resp, projectError.String())
+			return
+		}
+
+		if status.AssignedTo != projectKey {
+			tflog.Warn(ctx, "repo not assigned to project", map[string]any{
+				"repoKey":    repoKey,
+				"projectKey": projectKey,
+			})
+			resp.State.RemoveResource(ctx)
+			return
+		}
+	} else {
+		// continue using old repo API for checking
+		var repo ProjectRepositoryAPIModel
+		response, err := r.ProviderData.Client.R().
+			SetResult(&repo).
+			SetPathParam("key", repoKey).
+			Get(repositoryEndpoint)
+		if err != nil {
+			utilfw.UnableToRefreshResourceError(resp, err.Error())
+			return
+		}
+
+		if response.StatusCode() == http.StatusBadRequest || response.StatusCode() == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		if response.IsError() {
+			utilfw.UnableToRefreshResourceError(resp, projectError.String())
+			return
+		}
+		if repo.ProjectKey == "" {
+			tflog.Warn(ctx, "no project_key for repo", map[string]any{
+				"repoKey":    repoKey,
+				"projectKey": projectKey,
+			})
+			resp.State.RemoveResource(ctx)
+			return
+		}
 	}
 
 	state.ID = types.StringValue(fmt.Sprintf("%s-%s", projectKey, repoKey))

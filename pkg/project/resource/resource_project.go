@@ -38,7 +38,9 @@ const (
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
 func NewProjectResource() resource.Resource {
-	return &ProjectResource{}
+	return &ProjectResource{
+		TypeName: "project",
+	}
 }
 
 type ProjectResource struct {
@@ -401,7 +403,6 @@ type ProjectAPIModel struct {
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName
-	r.TypeName = resp.TypeName
 }
 
 var schemaV1 = schema.Schema{

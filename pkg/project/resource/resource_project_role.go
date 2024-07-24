@@ -65,7 +65,9 @@ var validRoleActions = []string{
 }
 
 func NewProjectRoleResource() resource.Resource {
-	return &ProjectRoleResource{}
+	return &ProjectRoleResource{
+		TypeName: "project_role",
+	}
 }
 
 type ProjectRoleResource struct {
@@ -90,8 +92,7 @@ type ProjectRoleAPIModel struct {
 }
 
 func (r *ProjectRoleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_role"
-	r.TypeName = resp.TypeName
+	resp.TypeName = r.TypeName
 }
 
 func (r *ProjectRoleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

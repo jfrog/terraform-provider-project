@@ -1,0 +1,1 @@
+terraform import project_share_repository.myprojectsharerepo repo_key:project_key
