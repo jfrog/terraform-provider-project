@@ -1,3 +1,9 @@
+## 1.7.1 (July 25, 2024)
+
+BUG FIXES:
+
+* Fix Terraform manifest file is missing from checksum file. PR: [#148](https://github.com/jfrog/terraform-provider-project/pull/148)
+
 ## 1.7.0 (July 24, 2024). Tested on Artifactory 7.84.17 with Terraform 1.9.2 and OpenTofu 1.7.3
 
 NOTES:
