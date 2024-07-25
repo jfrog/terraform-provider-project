@@ -52,8 +52,8 @@ clean_tfc:
 	rm -fR dist tfc-testing/terraform.d/ tfc-testing/.terraform tfc-testing/terraform.tfstate* tfc-testing/.terraform.lock.hcl
 
 release:
-	@git tag ${NEXT_VERSION} && git push --mirror
-	@echo "Pushed ${NEXT_VERSION}"
+	@git tag v${NEXT_VERSION} && git push --mirror
+	@echo "Pushed v${NEXT_VERSION}"
 	GOPROXY=https://proxy.golang.org GO111MODULE=on go get github.com/jfrog/terraform-provider-${PRODUCT}@v${NEXT_VERSION}
 	@echo "Updated pkg cache"
 
