@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -31,7 +33,8 @@ type ProjectShareRepositoryWithAllResource struct {
 }
 
 type ProjectShareRepositoryWithAllResourceModel struct {
-	RepoKey types.String `tfsdk:"repo_key"`
+	RepoKey  types.String `tfsdk:"repo_key"`
+	ReadOnly types.Bool   `tfsdk:"read_only"`
 }
 
 func (r *ProjectShareRepositoryWithAllResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -50,6 +53,15 @@ func (r *ProjectShareRepositoryWithAllResource) Schema(ctx context.Context, req 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Description: "The key of the repository.",
+			},
+			"read_only": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+				Description: "Share repository with all Projects in Read-Only mode to avoid any changes or modifications of the shared content.",
 			},
 		},
 		Description: "Share a local or remote repository with all projects. Project Members of the target project are granted actions to the shared repository according to their Roles and Role actions assigned in the target Project. Requires a user assigned with the 'Administer the Platform' role.\n\n" +
@@ -98,6 +110,7 @@ func (r *ProjectShareRepositoryWithAllResource) Create(ctx context.Context, req 
 
 	response, err := r.ProviderData.Client.R().
 		SetPathParam("repo_key", plan.RepoKey.ValueString()).
+		SetQueryParam("readOnly", fmt.Sprintf("%t", plan.ReadOnly.ValueBool())).
 		SetError(&projectError).
 		Put(shareWithAllProjectsEndpoint)
 
@@ -161,6 +174,8 @@ func (r *ProjectShareRepositoryWithAllResource) Read(ctx context.Context, req re
 		return
 	}
 
+	state.ReadOnly = types.BoolValue(status.SharedReadOnly)
+
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -187,6 +202,7 @@ func (r *ProjectShareRepositoryWithAllResource) Delete(ctx context.Context, req 
 
 	response, err := r.ProviderData.Client.R().
 		SetPathParam("repo_key", state.RepoKey.ValueString()).
+		SetQueryParam("readOnly", fmt.Sprintf("%t", state.ReadOnly.ValueBool())).
 		SetError(&projectError).
 		Delete(shareWithAllProjectsEndpoint)
 

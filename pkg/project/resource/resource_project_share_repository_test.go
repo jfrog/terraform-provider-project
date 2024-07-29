@@ -67,6 +67,7 @@ func TestAccProjectShareRepository_full(t *testing.T) {
 		resource "project_share_repository" "{{ .resource_name }}" {
 			repo_key = artifactory_local_generic_repository.{{ .repo_key }}.key
 			target_project_key = project.{{ .project_name_1 }}.key
+			read_only = true
 		}
 	`
 
@@ -123,6 +124,7 @@ func TestAccProjectShareRepository_full(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "repo_key", params["repo_key"]),
 					resource.TestCheckResourceAttr(fqrn, "target_project_key", params["project_key_1"]),
+					resource.TestCheckResourceAttr(fqrn, "read_only", "true"),
 				),
 			},
 			{
@@ -130,6 +132,7 @@ func TestAccProjectShareRepository_full(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "repo_key", updateParams["repo_key"]),
 					resource.TestCheckResourceAttr(fqrn, "target_project_key", updateParams["project_key_2"]),
+					resource.TestCheckResourceAttr(fqrn, "read_only", "false"),
 				),
 			},
 			{
