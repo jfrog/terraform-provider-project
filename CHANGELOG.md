@@ -1,3 +1,9 @@
+## 1.7.2 (August 8, 2024)
+
+IMPROVEMENTS:
+
+* resource/project: Update documentation for `repos` attribute and "Adding repositories to the project" guide to reflect new way of assigning repository to project. PR: [#152](https://github.com/jfrog/terraform-provider-project/pull/152)
+
 ## 1.7.1 (July 25, 2024)
 
 BUG FIXES:
