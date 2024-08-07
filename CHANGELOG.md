@@ -1,3 +1,9 @@
+## 1.8.0 (July 31, 2024)
+
+IMPROVEMENTS:
+
+* resource/project_share_repository, resource/project_share_repository_with_all: Add `read_only` attribute to support sharing repository with project(s) in read-only mode. PR: [#148](https://github.com/jfrog/terraform-provider-project/pull/148)
+
 ## 1.7.2 (August 8, 2024). Tested on Artifactory 7.90.6 with Terraform 1.9.3 and OpenTofu 1.8.1
 
 IMPROVEMENTS:
