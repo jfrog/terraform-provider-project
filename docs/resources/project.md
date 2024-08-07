@@ -5,7 +5,7 @@ subcategory: ""
 description: |-
   Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
   Repository Configuration
-  After the project configuration is applied, the repository's attributes project_key and project_environments would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply lifecycle.ignore_changes:
+  After the project configuration is applied with `repos` attribute set, the repository's attributes project_key and project_environments would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply lifecycle.ignore_changes:
   ```hcl
   resource "artifactorylocalmavenrepository" "mymaven_releases" {
       key = "my-maven-releases"
@@ -19,7 +19,8 @@ description: |-
   
   }
   ```
-  ~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.
+
+  ~>We strongly recommend using the 'preject_repository' resource instead to manage the list of repositories.
 ---
 
 # project (Resource)
@@ -28,7 +29,7 @@ Provides an Artifactory project resource. This can be used to create and manage 
 
 ## Repository Configuration
 
-After the project configuration is applied, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:
+After the project configuration is applied with `repos` attribute set, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:
 ```hcl
 resource "artifactory_local_maven_repository" "my_maven_releases" {
 	key = "my-maven-releases"
@@ -42,7 +43,8 @@ resource "artifactory_local_maven_repository" "my_maven_releases" {
 	}
 }
 ```
-~>We strongly recommend using the 'repos' attribute to manage the list of repositories. See below for additional details.
+
+~>We strongly recommend using the 'preject_repository' resource instead to manage the list of repositories.
 
 ## Example Usage
 
@@ -81,7 +83,7 @@ resource "project" "myproject" {
 - `group` (Block Set, Deprecated) Project group. Element has one to one mapping with the [JFrog Project Groups API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateGroupinProject) (see [below for nested schema](#nestedblock--group))
 - `max_storage_in_gibibytes` (Number) Storage quota in GiB. Must be 1 or larger. Set to -1 for unlimited storage. This is translated to binary bytes for Artifactory API. So for a 1TB quota, this should be set to 1024 (vs 1000) which will translate to 1099511627776 bytes for the API.
 - `member` (Block Set, Deprecated) Member of the project. Element has one to one mapping with the [JFrog Project Users API](https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-UpdateUserinProject). (see [below for nested schema](#nestedblock--member))
-- `repos` (Set of String, Deprecated) (Optional) List of existing repo keys to be assigned to the project. **Note** We *strongly* recommend using this attribute to manage the list of repositories. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
+- `repos` (Set of String, Deprecated) (Optional) List of existing repo keys to be assigned to the project. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.
 
 ```hcl
 lifecycle {
