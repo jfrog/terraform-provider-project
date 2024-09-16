@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -35,6 +37,7 @@ type ProjectShareRepositoryResource struct {
 type ProjectShareRepositoryResourceModel struct {
 	RepoKey          types.String `tfsdk:"repo_key"`
 	TargetProjectKey types.String `tfsdk:"target_project_key"`
+	ReadOnly         types.Bool   `tfsdk:"read_only"`
 }
 
 func (r *ProjectShareRepositoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -63,6 +66,16 @@ func (r *ProjectShareRepositoryResource) Schema(ctx context.Context, req resourc
 					stringplanmodifier.RequiresReplace(),
 				},
 				Description: "The project key to which the repository should be shared with.",
+			},
+			"read_only": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+				Description: "Share repository with a Project in Read-Only mode to avoid any changes or modifications of the shared content.\n\n" +
+					"->Only available for Artifactory 7.94.0 or later.",
 			},
 		},
 		Description: "Share a local or remote repository with a list of projects. Project Members of the target project are granted actions to the shared repository according to their Roles and Role actions assigned in the target Project. Requires a user assigned with the 'Administer the Platform' role.\n\n" +
@@ -114,6 +127,7 @@ func (r *ProjectShareRepositoryResource) Create(ctx context.Context, req resourc
 			"repo_key":           plan.RepoKey.ValueString(),
 			"target_project_key": plan.TargetProjectKey.ValueString(),
 		}).
+		SetQueryParam("readOnly", fmt.Sprintf("%t", plan.ReadOnly.ValueBool())).
 		SetError(&projectError).
 		Put(shareWithTargetProject)
 
@@ -174,6 +188,8 @@ func (r *ProjectShareRepositoryResource) Read(ctx context.Context, req resource.
 		state.TargetProjectKey = types.StringNull()
 	}
 
+	state.ReadOnly = types.BoolValue(status.SharedReadOnly)
+
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -203,6 +219,7 @@ func (r *ProjectShareRepositoryResource) Delete(ctx context.Context, req resourc
 			"repo_key":           state.RepoKey.ValueString(),
 			"target_project_key": state.TargetProjectKey.ValueString(),
 		}).
+		SetQueryParam("readOnly", fmt.Sprintf("%t", state.ReadOnly.ValueBool())).
 		SetError(&projectError).
 		Delete(shareWithTargetProject)
 

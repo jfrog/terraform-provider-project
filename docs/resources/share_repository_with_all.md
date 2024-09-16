@@ -26,6 +26,9 @@ resource "project_share_repository_with_all" "myprojectsharerepo" {
 ### Required
 
 - `repo_key` (String) The key of the repository.
+- `read_only` (Boolean) Share repository with a Project in Read-Only mode to avoid any changes or modifications of the shared content.
+
+->Only available for Artifactory 7.94.0 or later.
 
 ## Import
 

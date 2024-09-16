@@ -65,6 +65,7 @@ func TestAccProjectShareWithAllRepository_full(t *testing.T) {
 
 		resource "project_share_repository_with_all" "{{ .resource_name }}" {
 			repo_key = artifactory_local_generic_repository.{{ .repo_key }}.key
+			read_only = true
 
 			depends_on = [
 				project.{{ .project_name }}
@@ -73,6 +74,40 @@ func TestAccProjectShareWithAllRepository_full(t *testing.T) {
 	`
 
 	config := util.ExecuteTemplate("TestAccProjectShareRepository", temp, params)
+
+	updatedTemp := `
+		resource "artifactory_local_generic_repository" "{{ .repo_key }}" {
+			key = "{{ .repo_key }}"
+
+			lifecycle {
+				ignore_changes = ["project_key"]
+			}
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key          = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description  = "test description"
+			admin_privileges {
+				manage_members   = true
+				manage_resources = true
+				index_resources  = true
+			}
+			max_storage_in_gibibytes   = 1
+			block_deployments_on_limit = true
+			email_notification         = false
+		}
+
+		resource "project_share_repository_with_all" "{{ .resource_name }}" {
+			repo_key = artifactory_local_generic_repository.{{ .repo_key }}.key
+
+			depends_on = [
+				project.{{ .project_name }}
+			]
+		}
+	`
+
+	updatedConfig := util.ExecuteTemplate("TestAccProjectShareRepository", updatedTemp, params)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
@@ -87,6 +122,14 @@ func TestAccProjectShareWithAllRepository_full(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "repo_key", params["repo_key"].(string)),
+					resource.TestCheckResourceAttr(fqrn, "read_only", "true"),
+				),
+			},
+			{
+				Config: updatedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "repo_key", params["repo_key"].(string)),
+					resource.TestCheckResourceAttr(fqrn, "read_only", "false"),
 				),
 			},
 			{
