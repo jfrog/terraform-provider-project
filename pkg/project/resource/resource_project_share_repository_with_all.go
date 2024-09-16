@@ -61,7 +61,8 @@ func (r *ProjectShareRepositoryWithAllResource) Schema(ctx context.Context, req 
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
-				Description: "Share repository with all Projects in Read-Only mode to avoid any changes or modifications of the shared content.",
+				Description: "Share repository with all Projects in Read-Only mode to avoid any changes or modifications of the shared content.\n\n" +
+					"->Only available for Artifactory 7.94.0 or later.",
 			},
 		},
 		Description: "Share a local or remote repository with all projects. Project Members of the target project are granted actions to the shared repository according to their Roles and Role actions assigned in the target Project. Requires a user assigned with the 'Administer the Platform' role.\n\n" +
