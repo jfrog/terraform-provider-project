@@ -4,6 +4,7 @@ module github.com/jfrog/terraform-provider-project
 // replace github.com/jfrog/terraform-provider-shared => ../terraform-provider-shared
 
 go 1.22.5
+toolchain go1.22.8
 
 require (
 	github.com/go-resty/resty/v2 v2.15.3
@@ -12,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.13.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-testing v1.10.0
-	github.com/jfrog/terraform-provider-shared v1.25.5
+	github.com/jfrog/terraform-provider-shared v1.26.0
 	github.com/samber/lo v1.47.0
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 )
