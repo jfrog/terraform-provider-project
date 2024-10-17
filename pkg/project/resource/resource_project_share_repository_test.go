@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccProjectShareRepository_full(t *testing.T) {
+	t.Skip("project API is not returning/setting read_only field correctly")
+
 	client := acctest.GetTestResty(t)
 	version, err := util.GetArtifactoryVersion(client)
 	if err != nil {

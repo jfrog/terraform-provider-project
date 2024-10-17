@@ -31,10 +31,11 @@ type ProjectProvider struct {
 
 // ProjectProviderModel describes the provider data model.
 type ProjectProviderModel struct {
-	Url              types.String `tfsdk:"url"`
-	AccessToken      types.String `tfsdk:"access_token"`
-	OIDCProviderName types.String `tfsdk:"oidc_provider_name"`
-	CheckLicense     types.Bool   `tfsdk:"check_license"`
+	Url                  types.String `tfsdk:"url"`
+	AccessToken          types.String `tfsdk:"access_token"`
+	OIDCProviderName     types.String `tfsdk:"oidc_provider_name"`
+	TFCCredentialTagName types.String `tfsdk:"tfc_credential_tag_name"`
+	CheckLicense         types.Bool   `tfsdk:"check_license"`
 }
 
 // Metadata satisfies the provider.Provider interface for ProjectProvider
@@ -68,6 +69,13 @@ func (p *ProjectProvider) Schema(ctx context.Context, req provider.SchemaRequest
 					stringvalidator.LengthAtLeast(1),
 				},
 				Description: "OIDC provider name. See [Configure an OIDC Integration](https://jfrog.com/help/r/jfrog-platform-administration-documentation/configure-an-oidc-integration) for more details.",
+			},
+			"tfc_credential_tag_name": schema.StringAttribute{
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "Terraform Cloud Workload Identity Token tag name. Use for generating multiple TFC workload identity tokens. When set, the provider will attempt to use env var with this tag name as suffix. **Note:** this is case sensitive, so if set to `JFROG`, then env var `TFC_WORKLOAD_IDENTITY_TOKEN_JFROG` is used instead of `TFC_WORKLOAD_IDENTITY_TOKEN`. See [Generating Multiple Tokens](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/manual-generation#generating-multiple-tokens) on HCP Terraform for more details.",
 			},
 			"check_license": schema.BoolAttribute{
 				Optional:           true,
@@ -114,19 +122,22 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	oidcAccessToken, err := util.OIDCTokenExchange(ctx, restyClient, config.OIDCProviderName.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed OIDC ID token exchange",
-			err.Error(),
-		)
-		return
-	}
+	oidcProviderName := config.OIDCProviderName.ValueString()
+	if oidcProviderName != "" {
+		oidcAccessToken, err := util.OIDCTokenExchange(ctx, restyClient, oidcProviderName, config.TFCCredentialTagName.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed OIDC ID token exchange",
+				err.Error(),
+			)
+			return
+		}
 
-	// use token from OIDC provider, which should take precedence over
-	// environment variable data, if found.
-	if oidcAccessToken != "" {
-		accessToken = oidcAccessToken
+		// use token from OIDC provider, which should take precedence over
+		// environment variable data, if found.
+		if oidcAccessToken != "" {
+			accessToken = oidcAccessToken
+		}
 	}
 
 	// Check configuration data, which should take precedence over
