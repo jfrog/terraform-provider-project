@@ -20,7 +20,7 @@ description: |-
   }
   ```
 
-  ~>We strongly recommend using the 'preject_repository' resource instead to manage the list of repositories.
+  ~>We strongly recommend using the 'project_repository' resource instead to manage the list of repositories.
 ---
 
 # project (Resource)
@@ -44,7 +44,7 @@ resource "artifactory_local_maven_repository" "my_maven_releases" {
 }
 ```
 
-~>We strongly recommend using the 'preject_repository' resource instead to manage the list of repositories.
+~>We strongly recommend using the 'project_repository' resource instead to manage the list of repositories.
 
 ## Example Usage
 
