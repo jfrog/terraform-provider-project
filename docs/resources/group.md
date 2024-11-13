@@ -27,7 +27,7 @@ resource "project_group" "mygroup" {
 
 - `name` (String) The name of an artifactory group.
 - `project_key` (String) The key of the project to which the group should be assigned to.
-- `roles` (Set of String) List of pre-defined Project or custom roles
+- `roles` (Set of String) List of pre-defined Project or custom roles. Must have at least 1 role, e.g. 'Viewer'
 
 ### Read-Only
 
