@@ -27,7 +27,7 @@ resource "project_user" "myuser" {
 
 - `name` (String) The name of an artifactory user.
 - `project_key` (String) The key of the project to which the user should be assigned to.
-- `roles` (Set of String) List of pre-defined Project or custom roles
+- `roles` (Set of String) List of pre-defined Project or custom roles. Must have at least 1 role, e.g. 'Viewer'
 
 ### Optional
 

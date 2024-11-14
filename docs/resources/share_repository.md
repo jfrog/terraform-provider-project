@@ -3,7 +3,8 @@
 page_title: "project_share_repository Resource - terraform-provider-project"
 subcategory: ""
 description: |-
-  Share a local or remote repository with a list of projects. Project Members of the target project are granted actions to the shared repository according to their Roles and Role actions assigned in the target Project. Requires a user assigned with the 'Administer the Platform' role. Only available for Artifactory 7.90.1 or later.
+  Share a local or remote repository with a list of projects. Project Members of the target project are granted actions to the shared repository according to their Roles and Role actions assigned in the target Project. Requires a user assigned with the 'Administer the Platform' role.
+  ->Only available for Artifactory 7.90.1 or later.
 ---
 
 # project_share_repository (Resource)
@@ -28,6 +29,9 @@ resource "project_share_repository" "myprojectsharerepo" {
 
 - `repo_key` (String) The key of the repository.
 - `target_project_key` (String) The project key to which the repository should be shared with.
+
+### Optional
+
 - `read_only` (Boolean) Share repository with a Project in Read-Only mode to avoid any changes or modifications of the shared content.
 
 ->Only available for Artifactory 7.94.0 or later.
