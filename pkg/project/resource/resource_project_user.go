@@ -191,33 +191,28 @@ func (r *ProjectUserResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	updateStateValues := true
 	if response.StatusCode() == http.StatusNotFound {
-		if state.IgnoreMissingUser.ValueBool() {
-			updateStateValues = false
-		} else {
-			resp.State.RemoveResource(ctx)
-			return
-		}
+		// on read always ensure the resource is not part of the state if user or project_user are missing
+		// this will ensure its detected as deleted and re-created on plan/apply
+		resp.State.RemoveResource(ctx)
+		return
 	} else if response.IsError() {
 		utilfw.UnableToRefreshResourceError(resp, projectError.String())
 		return
 	}
 
-	if updateStateValues {
-		state.ID = types.StringValue(fmt.Sprintf("%s:%s", projectKey, user.Name))
-		state.Name = types.StringValue(user.Name)
-		state.ProjectKey = types.StringValue(projectKey)
-		roles, ds := types.SetValueFrom(ctx, types.StringType, user.Roles)
-		if ds.HasError() {
-			resp.Diagnostics.Append(ds...)
-			return
-		}
-		state.Roles = roles
+	state.ID = types.StringValue(fmt.Sprintf("%s:%s", projectKey, user.Name))
+	state.Name = types.StringValue(user.Name)
+	state.ProjectKey = types.StringValue(projectKey)
+	roles, ds := types.SetValueFrom(ctx, types.StringType, user.Roles)
+	if ds.HasError() {
+		resp.Diagnostics.Append(ds...)
+		return
+	}
+	state.Roles = roles
 
-		if state.IgnoreMissingUser.IsNull() {
-			state.IgnoreMissingUser = types.BoolValue(false)
-		}
+	if state.IgnoreMissingUser.IsNull() {
+		state.IgnoreMissingUser = types.BoolValue(false)
 	}
 
 	// Save updated data into Terraform state
