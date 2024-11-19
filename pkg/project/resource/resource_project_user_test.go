@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/testutil"
@@ -335,6 +336,7 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 		"username":     username,
 		"email":        email,
 		"roles":        `["Developer","Project Admin"]`,
+		"create_user":  false,
 	}
 
 	template := `
@@ -354,24 +356,124 @@ func TestAccProjectMember_missing_user_ignored(t *testing.T) {
 			use_project_user_resource = true
 		}
 
+		{{ if .create_user }}
+
+		resource "artifactory_managed_user" "{{ .username }}" {
+			name     = "{{ .username }}"
+			email    = "{{ .email }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		{{ end }}
+
 		resource "project_user" "{{ .username }}" {
 			project_key = project.{{ .project_name }}.key
 			name = "{{ .username }}"
 			roles = {{ .roles }}
 			ignore_missing_user = true
+			{{ if .create_user }}
+			depends_on = [artifactory_managed_user.{{ .username }}]
+			{{ end }}
 		}
 	`
 
 	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
+
+	updateParams := map[string]interface{}{
+		"project_name": params["project_name"],
+		"project_key":  params["project_key"],
+		"username":     params["username"],
+		"email":        params["email"],
+		"roles":        params["roles"],
+		"create_user":  true,
+	}
+
+	configUpdated := util.ExecuteTemplate("TestAccProjectUser", template, updateParams)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() { acctest.PreCheck(t) },
 		CheckDestroy: acctest.VerifyDeleted(resourceName, func(id string, request *resty.Request) (*resty.Response, error) {
 			return verifyProjectUser(username, projectKey, request)
 		}),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
 		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// attempt create, will not work
 			{
 				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						// expect create of project user
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionCreate),
+					},
+				},
+				ExpectNonEmptyPlan: true,
+				// expect user to be added to state
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
+					resource.TestCheckResourceAttr(resourceName, "name", username),
+					resource.TestCheckResourceAttr(resourceName, "ignore_missing_user", "true"),
+					resource.TestCheckResourceAttr(resourceName, "roles.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "roles.0", "Developer"),
+					resource.TestCheckResourceAttr(resourceName, "roles.1", "Project Admin"),
+				)},
+			// re-attempt create, will still not work
+			{
+				Config: config,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						// again expect create of project user (refresh will mark project user as missing)
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionCreate),
+					},
+				},
+				ExpectNonEmptyPlan: true,
+				// expect user to be in the state
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
+					resource.TestCheckResourceAttr(resourceName, "name", username),
+					resource.TestCheckResourceAttr(resourceName, "ignore_missing_user", "true"),
+					resource.TestCheckResourceAttr(resourceName, "roles.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "roles.0", "Developer"),
+					resource.TestCheckResourceAttr(resourceName, "roles.1", "Project Admin"),
+				)},
+			// re-attempt create with user being added, will work
+			{
+				Config: configUpdated,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						// again expect create of project user (refresh will mark project user as missing)
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionCreate),
+					},
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						// again expect create of project user (refresh will mark project user as missing)
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionNoop),
+					},
+				},
+				// expect user to be in the state
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
+					resource.TestCheckResourceAttr(resourceName, "name", username),
+					resource.TestCheckResourceAttr(resourceName, "ignore_missing_user", "true"),
+					resource.TestCheckResourceAttr(resourceName, "roles.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "roles.0", "Developer"),
+					resource.TestCheckResourceAttr(resourceName, "roles.1", "Project Admin"),
+				)},
+
+			// now user is there, no action should be performed
+			{
+				Config: configUpdated,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PostApplyPostRefresh: []plancheck.PlanCheck{
+						// again expect create of project user (refresh will mark project user as missing)
+						plancheck.ExpectResourceAction(resourceName, plancheck.ResourceActionNoop),
+					},
+				},
+				// expect user to be in the state
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "name", username),
