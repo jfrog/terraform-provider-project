@@ -1,3 +1,9 @@
+## 1.9.1 (November 20, 2024)
+
+BUG FIXES:
+
+* resource/project_user: Recreate resource correctly if `ignore_missing_user` set to `true`. Issue: [#175](https://github.com/jfrog/terraform-provider-shared/issues/175) PR: [#177](https://github.com/jfrog/terraform-provider-project/pull/177)
+
 ## 1.9.0 (October 17, 2024). Tested on Artifactory 7.90.14 with Terraform 1.9.7 and OpenTofu 1.8.3
 
 IMPROVEMENTS:
