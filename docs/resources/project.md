@@ -5,22 +5,21 @@ subcategory: ""
 description: |-
   Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.
   Repository Configuration
-  After the project configuration is applied with `repos` attribute set, the repository's attributes project_key and project_environments would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply lifecycle.ignore_changes:
-  ```hcl
-  resource "artifactorylocalmavenrepository" "mymaven_releases" {
-      key = "my-maven-releases"
-      ...
-  lifecycle {
-      ignore_changes = [
-          project_environments,
-          project_key
-      ]
+  After the project configuration is applied with repos attribute set, the repository's attributes project_key and project_environments would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply lifecycle.ignore_changes:
+  
+  resource "artifactory_local_maven_repository" "my_maven_releases" {
+  	key = "my-maven-releases"
+  	...
+  
+  	lifecycle {
+  		ignore_changes = [
+  			project_environments,
+  			project_key
+  		]
+  	}
   }
   
-  }
-  ```
-
-  ~>We strongly recommend using the 'project_repository' resource instead to manage the list of repositories.
+  ~>We strongly recommend using the project_repository resource instead to manage the list of repositories.
 ---
 
 # project (Resource)
@@ -30,6 +29,7 @@ Provides an Artifactory project resource. This can be used to create and manage 
 ## Repository Configuration
 
 After the project configuration is applied with `repos` attribute set, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:
+
 ```hcl
 resource "artifactory_local_maven_repository" "my_maven_releases" {
 	key = "my-maven-releases"
@@ -44,7 +44,7 @@ resource "artifactory_local_maven_repository" "my_maven_releases" {
 }
 ```
 
-~>We strongly recommend using the 'project_repository' resource instead to manage the list of repositories.
+~>We strongly recommend using the `project_repository` resource instead to manage the list of repositories.
 
 ## Example Usage
 
@@ -69,12 +69,12 @@ resource "project" "myproject" {
 
 ### Required
 
-- `admin_privileges` (Block Set, Min: 1) (see [below for nested schema](#nestedblock--admin_privileges))
 - `display_name` (String) Also known as project name on the UI
 - `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
 
+- `admin_privileges` (Block Set) (see [below for nested schema](#nestedblock--admin_privileges))
 - `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
 
 ~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).
