@@ -538,7 +538,7 @@ var schemaV1 = schema.Schema{
 						Optional: true,
 					},
 					"type": schema.StringAttribute{
-						Optional: true,
+						Required: true,
 						Validators: []validator.String{
 							stringvalidator.RegexMatches(customRoleTypeRegex, fmt.Sprintf(`Only "%s" is supported`, customRoleType)),
 						},
@@ -586,7 +586,7 @@ var schemaV2 = schema.Schema{
 						Optional: true,
 					},
 					"type": schema.StringAttribute{
-						Optional: true,
+						Required: true,
 						Validators: []validator.String{
 							stringvalidator.RegexMatches(customRoleTypeRegex, fmt.Sprintf(`Only "%s" is supported`, customRoleType)),
 						},
@@ -608,6 +608,7 @@ var schemaV2 = schema.Schema{
 			DeprecationMessage: "Replaced by `project_role` resource. This should not be used in combination with `project_role` resource. Use `use_project_role_resource` attribute to control which resource manages project roles.",
 		},
 	}),
+	Description: schemaV1.Description,
 }
 
 var schemaV3 = schema.Schema{
@@ -668,6 +669,7 @@ var schemaV3 = schema.Schema{
 			DeprecationMessage: "Replaced by `project_group` resource. This should not be used in combination with `project_group` resource. Use `use_project_group_resource` attribute to control which resource manages project roles.",
 		},
 	}),
+	Description: schemaV2.Description,
 }
 
 func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -690,7 +692,8 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
 				DeprecationMessage: "Replaced by `project_repository` resource. This should not be used in combination with `project_repository` resource. Use `use_project_repository_resource` attribute to control which resource manages project repositories.",
 			},
 		}),
-		Blocks: schemaV3.Blocks,
+		Blocks:      schemaV3.Blocks,
+		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied with `repos` attribute set, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n\n~>We strongly recommend using the `project_repository` resource instead to manage the list of repositories.",
 	}
 }
 
