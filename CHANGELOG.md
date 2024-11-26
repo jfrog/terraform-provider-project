@@ -1,3 +1,9 @@
+## 1.9.2 (November 26, 2024)
+
+IMPROVEMENTS:
+
+* provider: Update to latest `github.com/hashicorp/terraform-plugin-docs` module to restore auto-generation of documentation. PR: [#183](https://github.com/jfrog/terraform-provider-project/pull/183)
+
 ## 1.9.1 (November 20, 2024). Tested on Artifactory 7.98.8 with Terraform 1.9.8 and OpenTofu 1.8.5
 
 BUG FIXES:
