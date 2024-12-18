@@ -3,7 +3,6 @@ package project
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"regexp"
 	"strings"
 
@@ -114,9 +113,11 @@ func (r *ProjectEnvironmentResource) Create(ctx context.Context, req resource.Cr
 		Post(ProjectEnvironmentUrl)
 	if err != nil {
 		utilfw.UnableToCreateResourceError(resp, err.Error())
+		return
 	}
 	if response.IsError() {
 		utilfw.UnableToCreateResourceError(resp, projectError.String())
+		return
 	}
 
 	plan.ID = types.StringValue(environment.Name)
@@ -146,10 +147,6 @@ func (r *ProjectEnvironmentResource) Read(ctx context.Context, req resource.Read
 		Get(ProjectEnvironmentUrl)
 	if err != nil {
 		utilfw.UnableToRefreshResourceError(resp, err.Error())
-		return
-	}
-	if response.StatusCode() == http.StatusNotFound {
-		resp.State.RemoveResource(ctx)
 		return
 	}
 	if response.IsError() {
@@ -211,9 +208,11 @@ func (r *ProjectEnvironmentResource) Update(ctx context.Context, req resource.Up
 		Post(ProjectEnvironmentUrl + "/{environmentName}/rename")
 	if err != nil {
 		utilfw.UnableToUpdateResourceError(resp, err.Error())
+		return
 	}
 	if response.IsError() {
 		utilfw.UnableToUpdateResourceError(resp, projectError.String())
+		return
 	}
 
 	plan.ID = types.StringValue(environmentUpdate.NewName)
