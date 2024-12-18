@@ -1,3 +1,9 @@
+## 1.9.3 (December 19, 2024)
+
+BUG FIXES:
+
+* resource/project_environment: Fix error handling during creation/update where state shouldn't be stored/updated when there is API error. Issue: [#184](https://github.com/jfrog/terraform-provider-project/issues/184) PR: [#188](https://github.com/jfrog/terraform-provider-project/pull/188)
+
 ## 1.9.2 (November 26, 2024). Tested on Artifactory 7.98.9 with Terraform 1.9.8 and OpenTofu 1.8.6
 
 IMPROVEMENTS:
