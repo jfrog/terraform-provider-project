@@ -71,10 +71,10 @@ resource "project" "myproject" {
 
 - `display_name` (String) Also known as project name on the UI
 - `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
+- `admin_privileges` (Block Set) (see [below for nested schema](#nestedblock--admin_privileges))
 
 ### Optional
 
-- `admin_privileges` (Block Set) (see [below for nested schema](#nestedblock--admin_privileges))
 - `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
 
 ~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).
