@@ -31,7 +31,7 @@ func TestAccProject_repo(t *testing.T) {
 			key = "{{ .repo1 }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = [project_key, project_environments]
 			}
 		}
 		
@@ -56,7 +56,7 @@ func TestAccProject_repo(t *testing.T) {
 			key = "{{ .repo1 }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 		
@@ -64,7 +64,7 @@ func TestAccProject_repo(t *testing.T) {
 			key = "{{ .repo2 }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 		
@@ -201,7 +201,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 			key = "{{ $repoName }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = [project_key, project_environments]
 			}
 		}
 	{{ end }}
@@ -228,7 +228,7 @@ func TestAccProject_repoAssignMultipleRepos(t *testing.T) {
 			key = "{{ $repoName }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 	{{ end }}
@@ -317,7 +317,7 @@ func TestAccProject_repoUnassignNonexistantRepo(t *testing.T) {
 			key = "{{ .repo }}"
 
 			lifecycle {
-				ignore_changes = [project_key]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 

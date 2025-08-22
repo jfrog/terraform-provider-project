@@ -112,6 +112,10 @@ func (r *ProjectShareRepositoryResource) Configure(ctx context.Context, req reso
 func (r *ProjectShareRepositoryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	go util.SendUsageResourceCreate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
 
+	lockName := "share"
+	GlobalMutex.Lock(lockName)
+	defer GlobalMutex.Unlock(lockName)
+
 	var plan ProjectShareRepositoryResourceModel
 
 	// Read Terraform plan data into the model
@@ -203,6 +207,10 @@ func (r *ProjectShareRepositoryResource) Update(ctx context.Context, req resourc
 
 func (r *ProjectShareRepositoryResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	go util.SendUsageResourceDelete(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	lockName := "share"
+	GlobalMutex.Lock(lockName)
+	defer GlobalMutex.Unlock(lockName)
 
 	var state ProjectShareRepositoryResourceModel
 

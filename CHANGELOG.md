@@ -1,3 +1,10 @@
+## 1.9.4. (August 22, 2025). Tested on Artifactory 7.117.14 with Terraform 1.13.0 and OpenTofu 1.10.5
+
+BUG FIXES:
+
+* resource/project_share_repository: Fixed race condition, when the repository couldn't be shared with multiple projects in a loop. Mutex was added tomitigate the overwhelming of the endpoint. Issue: [#209](https://github.com/jfrog/terraform-provider-project/issues/209) PR: [#211](https://github.com/jfrog/terraform-provider-project/pull/211)
+* 
+
 ## 1.9.3 (December 19, 2024). Tested on Artifactory 7.98.11 with Terraform 1.10.3 and OpenTofu 1.8.7
 
 BUG FIXES:

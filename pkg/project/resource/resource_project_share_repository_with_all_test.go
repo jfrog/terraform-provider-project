@@ -45,7 +45,7 @@ func TestAccProjectShareWithAllRepository_full(t *testing.T) {
 			key = "{{ .repo_key }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 
@@ -80,7 +80,7 @@ func TestAccProjectShareWithAllRepository_full(t *testing.T) {
 			key = "{{ .repo_key }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"] 
 			}
 		}
 
