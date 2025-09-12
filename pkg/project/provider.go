@@ -17,7 +17,7 @@ import (
 	validatorfw_string "github.com/jfrog/terraform-provider-shared/validator/fw/string"
 )
 
-var Version = "1.9.1"
+var Version = "1.9.5"
 
 // needs to be exported so make file can update this
 var productId = "terraform-provider-project/" + Version
