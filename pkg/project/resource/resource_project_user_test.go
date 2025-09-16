@@ -95,7 +95,7 @@ func TestAccProjectUser_UpgradeFromSDKv2(t *testing.T) {
 					},
 				},
 				Config:           config,
-				PlanOnly:         true,
+				PlanOnly:         false,
 				ConfigPlanChecks: testutil.ConfigPlanChecks(fqrn),
 			},
 		},
