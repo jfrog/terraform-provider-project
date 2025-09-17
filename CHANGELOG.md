@@ -1,4 +1,4 @@
-## 1.9.5. (September 15, 2025).
+## 1.9.5. (September 15, 2025). Tested on Artifactory 7.117.16 with Terraform 1.13.2 and OpenTofu 1.10.6
 
 IMPROVEMENTS:
 * resource/project, resource/project_repository: Fixed race condition when provider can't create multiple projects (over 50) with assigned repositories. Mutex was added to mitigate the condition. Tested with over 350 projects with assigned repositories. Issue: [#214](https://github.com/jfrog/terraform-provider-project/issues/214) PR:[#215](https://github.com/jfrog/terraform-provider-project/pull/215)
