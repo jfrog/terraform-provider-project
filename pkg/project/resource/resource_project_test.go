@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/testutil"
@@ -203,7 +204,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 				},
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 				Config:                   config,
-				PlanOnly:                 true,
+				PlanOnly:                 false,
 				ConfigPlanChecks:         testutil.ConfigPlanChecks(resourceName),
 			},
 		},
@@ -322,6 +323,133 @@ func testProjectConfig(name, key string) string {
 			email_notification = {{ .email_notification }}
 		}
 	`, params)
+}
+
+func TestAccProject_MultiProjectsWithRepos(t *testing.T) {
+	numberOfProjects := 50
+	config := testProjectConfigMultiProjectsWithRepos(numberOfProjects)
+
+	// Create check functions for all projects
+	var checks []resource.TestCheckFunc
+	for i := 0; i < numberOfProjects; i++ {
+		name := fmt.Sprintf("ctestproject%d", i)
+		key := fmt.Sprintf("ckey%d", i)
+		resourceName := fmt.Sprintf("project.%s", name)
+
+		checks = append(checks,
+			resource.TestCheckResourceAttr(resourceName, "key", key),
+			resource.TestCheckResourceAttr(resourceName, "display_name", name),
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             func(s *terraform.State) error { return testAccCheckProjectMultiDestroy(s, numberOfProjects) },
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check:  resource.ComposeTestCheckFunc(checks...),
+			},
+		},
+	})
+}
+
+func testProjectConfigMultiProjectsWithRepos(n int) string {
+	var config strings.Builder
+
+	// Create global local repository (member of all virtual repos)
+	config.WriteString(`
+	resource "artifactory_local_maven_repository" "global_maven_local" {
+		key         = "maven-local-global"
+		description = "Global Local Maven repository"
+		lifecycle {
+			ignore_changes = ["project_key", "project_environments"] 
+		}
+	}
+	`)
+
+	// Create all projects
+	for i := 0; i < n; i++ {
+		name := fmt.Sprintf("ctestproject%d", i)
+		key := fmt.Sprintf("ckey%d", i)
+
+		projectConfig := fmt.Sprintf(`
+		resource "project" "%s" {
+			key = "%s"
+			display_name = "%s"
+			description = "test description %d"
+			admin_privileges {
+				manage_members = %t
+				manage_resources = %t
+				index_resources = %t
+			}
+			max_storage_in_gibibytes = %d
+			block_deployments_on_limit = %t
+			email_notification = %t
+		}
+		`, name, key, name, i,
+			testutil.RandBool(), testutil.RandBool(), testutil.RandBool(),
+			getRandomMaxStorageSize(), testutil.RandBool(), testutil.RandBool())
+
+		config.WriteString(projectConfig)
+	}
+
+	// Create all virtual repositories (dependency on global local repo)
+	for i := 0; i < n; i++ {
+		key := fmt.Sprintf("ckey%d", i)
+		name := fmt.Sprintf("ctestproject%d", i)
+		virtualRepoName := fmt.Sprintf("project_virtual_maven_%d", i)
+
+		virtualRepoConfig := fmt.Sprintf(`
+		resource "artifactory_virtual_maven_repository" "%s" {
+			key         = "maven-virtual-%s"
+			description = "Virtual Maven repository for %s"
+			repositories = [
+				artifactory_local_maven_repository.global_maven_local.key,
+			]
+			lifecycle {
+				ignore_changes = ["project_key", "project_environments"] 
+			}
+		}
+		`, virtualRepoName, key, name)
+
+		config.WriteString(virtualRepoConfig)
+	}
+
+	// Create all project_repository assignments (implicit dependencies via resource references)
+	for i := 0; i < n; i++ {
+		name := fmt.Sprintf("ctestproject%d", i)
+		virtualRepoName := fmt.Sprintf("project_virtual_maven_%d", i)
+
+		projectRepoConfig := fmt.Sprintf(`
+		resource "project_repository" "project_virtual_maven_repo_%d" {
+			project_key = project.%s.key
+			key         = artifactory_virtual_maven_repository.%s.key
+		}
+		`, i, name, virtualRepoName)
+
+		config.WriteString(projectRepoConfig)
+	}
+
+	return config.String()
+}
+
+func testAccCheckProjectMultiDestroy(s *terraform.State, n int) error {
+	// Custom destroy check that verifies all 100 projects are deleted
+	for i := 0; i < n; i++ {
+		name := fmt.Sprintf("ctestproject%d", i)
+		resourceName := fmt.Sprintf("project.%s", name)
+		if err := acctest.VerifyDeleted(resourceName, verifyProject)(s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func TestAccProject_InvalidMaxStorage(t *testing.T) {

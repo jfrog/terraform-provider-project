@@ -80,7 +80,7 @@ func TestAccProjectGroup_UpgradeFromSDKv2(t *testing.T) {
 				},
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 				Config:                   config,
-				PlanOnly:                 true,
+				PlanOnly:                 false,
 				ConfigPlanChecks:         testutil.ConfigPlanChecks(fqrn),
 			},
 		},

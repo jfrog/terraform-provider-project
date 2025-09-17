@@ -708,6 +708,10 @@ func (r *ProjectResource) Configure(ctx context.Context, req resource.ConfigureR
 func (r *ProjectResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	go util.SendUsageResourceCreate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
 
+	lockName := "project"
+	GlobalMutex.Lock(lockName)
+	defer GlobalMutex.Unlock(lockName)
+
 	var plan ProjectResourceModelV4
 
 	// Read Terraform plan data into the model
@@ -857,6 +861,10 @@ func (r *ProjectResource) Read(ctx context.Context, req resource.ReadRequest, re
 func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	go util.SendUsageResourceUpdate(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
 
+	lockName := "project"
+	GlobalMutex.Lock(lockName)
+	defer GlobalMutex.Unlock(lockName)
+
 	var plan ProjectResourceModelV4
 
 	// Read Terraform plan data into the model
@@ -929,6 +937,10 @@ func (r *ProjectResource) Update(ctx context.Context, req resource.UpdateRequest
 
 func (r *ProjectResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	go util.SendUsageResourceDelete(ctx, r.ProviderData.Client.R(), r.ProviderData.ProductId, r.TypeName)
+
+	lockName := "project"
+	GlobalMutex.Lock(lockName)
+	defer GlobalMutex.Unlock(lockName)
 
 	var state ProjectResourceModelV4
 
