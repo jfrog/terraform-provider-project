@@ -31,7 +31,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.21
+          go-version: 1.26.1
       - name: Install Helm
         run: |
           curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
@@ -208,13 +208,13 @@ jobs:
         with:
           payload: |
             {
-              "text": "Terraform Provider Project. A new PR was submitted by ${{ github.event.pull_request.user.login }} - ${{ github.event.pull_request.html_url }}, branch ${{ github.event.pull_request.base.ref }}. Changes tested successfully. <@U01H1SLSPA8> or <@UNDRUL1EU> please, review and merge.",
+              "text": "Terraform Provider Project. A new PR was submitted by ${{ github.event.pull_request.user.login }} - ${{ github.event.pull_request.html_url }}, branch ${{ github.event.pull_request.base.ref }}. Changes tested successfully. <@DGQ20CJQ1>, <@D03S302UNAU> and <@U01H1SLSPA8> please, review and merge.",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "<http://github.com/${{ github.repository }}|Terraform Provider Project>. A new PR was submitted by *${{ github.event.pull_request.user.login }}* - <${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>, branch *${{ github.event.pull_request.base.ref }}*. Changes tested successfully. <@U01H1SLSPA8> or <@UNDRUL1EU> please, review and merge."
+                    "text": "<http://github.com/${{ github.repository }}|Terraform Provider Project>. A new PR was submitted by *${{ github.event.pull_request.user.login }}* - <${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>, branch *${{ github.event.pull_request.base.ref }}*. Changes tested successfully. <@DGQ20CJQ1>, <@D03S302UNAU> and <@D090TCNT7QC>  please, review and merge."
                   }
                 }
               ]

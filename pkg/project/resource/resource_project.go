@@ -117,9 +117,10 @@ type ProjectResourceModelV4 struct {
 }
 
 var adminPrivilegesAttrType = map[string]attr.Type{
-	"manage_members":   types.BoolType,
-	"manage_resources": types.BoolType,
-	"index_resources":  types.BoolType,
+	"manage_members":           types.BoolType,
+	"manage_resources":         types.BoolType,
+	"manage_remote_repository": types.BoolType,
+	"index_resources":          types.BoolType,
 }
 
 var adminPrivilegesElemType = types.ObjectType{
@@ -190,9 +191,10 @@ func (r *ProjectResourceModelV4) fromAPIModel(ctx context.Context, apiModel Proj
 	r.QuotaEmailNotification = types.BoolValue(apiModel.QuotaEmailNotification)
 
 	ap := map[string]attr.Value{
-		"manage_members":   types.BoolValue(apiModel.AdminPrivileges.ManageMembers),
-		"manage_resources": types.BoolValue(apiModel.AdminPrivileges.ManageResources),
-		"index_resources":  types.BoolValue(apiModel.AdminPrivileges.IndexResources),
+		"manage_members":           types.BoolValue(apiModel.AdminPrivileges.ManageMembers),
+		"manage_resources":         types.BoolValue(apiModel.AdminPrivileges.ManageResources),
+		"manage_remote_repository": types.BoolValue(apiModel.AdminPrivileges.ManageRemoteRepository),
+		"index_resources":          types.BoolValue(apiModel.AdminPrivileges.IndexResources),
 	}
 	apObj, d := types.ObjectValue(adminPrivilegesAttrType, ap)
 	if d.HasError() {
@@ -327,6 +329,7 @@ func (r ProjectResourceModelV4) toAPIModel(ctx context.Context, project *Project
 		attrs := r.AdminPrivileges.Elements()[0].(types.Object).Attributes()
 		proj.AdminPrivileges.ManageMembers = attrs["manage_members"].(types.Bool).ValueBool()
 		proj.AdminPrivileges.ManageResources = attrs["manage_resources"].(types.Bool).ValueBool()
+		proj.AdminPrivileges.ManageRemoteRepository = attrs["manage_remote_repository"].(types.Bool).ValueBool()
 		proj.AdminPrivileges.IndexResources = attrs["index_resources"].(types.Bool).ValueBool()
 	}
 
@@ -384,9 +387,10 @@ func (r ProjectResourceModelV4) toAPIModel(ctx context.Context, project *Project
 }
 
 type AdminPrivilegesAPIModel struct {
-	ManageMembers   bool `json:"manage_members"`
-	ManageResources bool `json:"manage_resources"`
-	IndexResources  bool `json:"index_resources"`
+	ManageMembers          bool `json:"manage_members"`
+	ManageResources        bool `json:"manage_resources"`
+	ManageRemoteRepository bool `json:"manage_remote_repository"`
+	IndexResources         bool `json:"index_resources"`
 }
 
 // Project GET {{ host }}/access/api/v1/projects/{{projKey}}/
@@ -475,6 +479,12 @@ var schemaV1 = schema.Schema{
 					"manage_resources": schema.BoolAttribute{
 						Required:    true,
 						Description: "Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.",
+					},
+					"manage_remote_repository": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "Allows the Project Admin to create and manage remote repositories. Requires manage_resources to be enabled. Available in Artifactory 7.134 and later.",
 					},
 					"index_resources": schema.BoolAttribute{
 						Required:    true,

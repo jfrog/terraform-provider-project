@@ -1,3 +1,9 @@
+## 1.9.6 (March 11, 2026).
+
+IMPROVEMENTS:
+
+* resource/project: Add `manage_remote_repository` attribute to `admin_privileges` block. Allows project admins to create and manage remote repositories when set to `true`. Requires `manage_resources` to be enabled. PR:[#228](https://github.com/jfrog/terraform-provider-project/pull/228)
+
 ## 1.9.5. (September 15, 2025). Tested on Artifactory 7.117.16 with Terraform 1.13.2 and OpenTofu 1.10.6
 
 IMPROVEMENTS:

@@ -30,25 +30,27 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 	repo2 := fmt.Sprintf("repo%s", strings.ToLower(acctest.RandSeq(6)))
 
 	params := map[string]interface{}{
-		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
-		"block_deployments_on_limit": testutil.RandBool(),
-		"email_notification":         testutil.RandBool(),
-		"manage_members":             testutil.RandBool(),
-		"manage_resources":           testutil.RandBool(),
-		"index_resources":            testutil.RandBool(),
-		"name":                       name,
-		"project_key":                strings.ToLower(acctest.RandSeq(6)),
-		"username1":                  username1,
-		"username2":                  username2,
-		"email1":                     email1,
-		"email2":                     email2,
-		"group1":                     group1,
-		"group2":                     group2,
-		"repo1":                      repo1,
-		"repo2":                      repo2,
+		"max_storage_in_gibibytes":    getRandomMaxStorageSize(),
+		"block_deployments_on_limit":  testutil.RandBool(),
+		"email_notification":          testutil.RandBool(),
+		"manage_members":              testutil.RandBool(),
+		"manage_resources":            testutil.RandBool(),
+		"manage_remote_repository":    testutil.RandBool(),
+		"index_resources":             testutil.RandBool(),
+		"name":                        name,
+		"project_key":                 strings.ToLower(acctest.RandSeq(6)),
+		"username1":                   username1,
+		"username2":                   username2,
+		"email1":                      email1,
+		"email2":                      email2,
+		"group1":                      group1,
+		"group2":                      group2,
+		"repo1":                       repo1,
+		"repo2":                       repo2,
 	}
 
-	template := `
+	// Legacy template for Step 1: project provider 1.5.2 did not have manage_remote_repository
+	legacyTemplate := `
 		resource "artifactory_managed_user" "{{ .username1 }}" {
 			name     = "{{ .username1 }}"
 			email    = "{{ .email1 }}"
@@ -148,6 +150,108 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 		}
 	`
 
+	template := `
+		resource "artifactory_managed_user" "{{ .username1 }}" {
+			name     = "{{ .username1 }}"
+			email    = "{{ .email1 }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "artifactory_managed_user" "{{ .username2 }}" {
+			name     = "{{ .username2 }}"
+			email    = "{{ .email2 }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "artifactory_group" "{{ .group1 }}" {
+			name = "{{ .group1 }}"
+		}
+
+		resource "artifactory_group" "{{ .group2 }}" {
+			name = "{{ .group2 }}"
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo1 }}" {
+			key = "{{ .repo1 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key", "project_environments"] 
+			}
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo2 }}" {
+			key = "{{ .repo2 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key", "project_environments"] 
+			}
+		}
+
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+
+			use_project_group_resource = false
+			use_project_user_resource = false
+			use_project_role_resource = false
+			use_project_repository_resource = false
+
+			member {
+				name  = artifactory_managed_user.{{ .username1 }}.name
+				roles = ["Developer","Project Admin"]
+			}
+
+			member {
+				name  = artifactory_managed_user.{{ .username2 }}.name
+				roles = ["Developer"]
+			}
+
+			group {
+				name  = artifactory_group.{{ .group1 }}.name
+				roles = ["qa"]
+			}
+
+			group {
+				name  = artifactory_group.{{ .group2 }}.name
+				roles = ["Release Manager"]
+			}
+
+			role {
+				name         = "qa"
+				description  = "QA role"
+				type         = "CUSTOM"
+				environments = ["DEV"]
+				actions      = ["READ_REPOSITORY","READ_RELEASE_BUNDLE", "READ_BUILD", "READ_SOURCES_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "TRIGGER_PIPELINE"]
+			}
+
+			role {
+				name         = "devop"
+				description  = "DevOp role"
+				type         = "CUSTOM"
+				environments = ["DEV", "PROD"]
+				actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+			}
+
+			repos = [
+				artifactory_local_generic_repository.{{ .repo1 }}.key,
+				artifactory_local_generic_repository.{{ .repo2 }}.key,
+			]
+		}
+	`
+
+	legacyConfig := util.ExecuteTemplate("TestAccProjects", legacyTemplate, params)
 	config := util.ExecuteTemplate("TestAccProjects", template, params)
 
 	resource.Test(t, resource.TestCase{
@@ -162,7 +266,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 						Source: "jfrog/artifactory",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
@@ -172,6 +276,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					// manage_remote_repository not in provider 1.5.2 schema
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "use_project_user_resource", "false"),
 					resource.TestCheckResourceAttr(resourceName, "use_project_group_resource", "false"),
@@ -205,7 +310,7 @@ func TestAccProject_UpgradeFromSDKv2(t *testing.T) {
 				ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
 				Config:                   config,
 				PlanOnly:                 false,
-				ConfigPlanChecks:         testutil.ConfigPlanChecks(resourceName),
+				// No ConfigPlanChecks: upgrading from 1.5.2 adds manage_remote_repository (nil→false) to state, so plan is not empty.
 			},
 		},
 	})
@@ -236,6 +341,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 		"email_notification":         testutil.RandBool(),
 		"manage_members":             testutil.RandBool(),
 		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                invalidProjectKey, //strings.ToLower(acctest.RandSeq(20)),
@@ -248,6 +354,7 @@ func makeInvalidProjectKeyTestCase(invalidProjectKey string, t *testing.T) (*tes
 			admin_privileges {
 				manage_members = {{ .manage_members }}
 				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
 				index_resources = {{ .index_resources }}
 			}
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
@@ -304,6 +411,7 @@ func testProjectConfig(name, key string) string {
 		"email_notification":         testutil.RandBool(),
 		"manage_members":             testutil.RandBool(),
 		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                key,
@@ -316,6 +424,7 @@ func testProjectConfig(name, key string) string {
 			admin_privileges {
 				manage_members = {{ .manage_members }}
 				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
 				index_resources = {{ .index_resources }}
 			}
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
@@ -387,6 +496,7 @@ func testProjectConfigMultiProjectsWithRepos(n int) string {
 			admin_privileges {
 				manage_members = %t
 				manage_resources = %t
+				manage_remote_repository = %t
 				index_resources = %t
 			}
 			max_storage_in_gibibytes = %d
@@ -394,7 +504,7 @@ func testProjectConfigMultiProjectsWithRepos(n int) string {
 			email_notification = %t
 		}
 		`, name, key, name, i,
-			testutil.RandBool(), testutil.RandBool(), testutil.RandBool(),
+			testutil.RandBool(), testutil.RandBool(), testutil.RandBool(), testutil.RandBool(),
 			getRandomMaxStorageSize(), testutil.RandBool(), testutil.RandBool())
 
 		config.WriteString(projectConfig)
@@ -492,6 +602,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 		"email_notification":         testutil.RandBool(),
 		"manage_members":             testutil.RandBool(),
 		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(acctest.RandSeq(20)),
@@ -504,6 +615,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 			admin_privileges {
 				manage_members = {{ .manage_members }}
 				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
 				index_resources = {{ .index_resources }}
 			}
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
@@ -594,6 +706,7 @@ func TestAccProject_full(t *testing.T) {
 		"email_notification":         testutil.RandBool(),
 		"manage_members":             testutil.RandBool(),
 		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(acctest.RandSeq(6)),
@@ -653,6 +766,7 @@ func TestAccProject_full(t *testing.T) {
 			admin_privileges {
 				manage_members = {{ .manage_members }}
 				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
 				index_resources = {{ .index_resources }}
 			}
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
@@ -715,6 +829,7 @@ func TestAccProject_full(t *testing.T) {
 		"email_notification":         !params["email_notification"].(bool),
 		"manage_members":             !params["manage_members"].(bool),
 		"manage_resources":           !params["manage_resources"].(bool),
+		"manage_remote_repository":   !params["manage_remote_repository"].(bool),
 		"index_resources":            !params["index_resources"].(bool),
 		"name":                       params["name"],
 		"project_key":                params["project_key"],
@@ -750,6 +865,7 @@ func TestAccProject_full(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_remote_repository", fmt.Sprintf("%t", params["manage_remote_repository"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "use_project_user_resource", "false"),
 					resource.TestCheckResourceAttr(resourceName, "use_project_group_resource", "false"),
@@ -784,6 +900,7 @@ func TestAccProject_full(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", updateParams["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", updateParams["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", updateParams["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_remote_repository", fmt.Sprintf("%t", updateParams["manage_remote_repository"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", updateParams["index_resources"])),
 				),
 			},
@@ -812,12 +929,14 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"email_notification":         testutil.RandBool(),
 		"manage_members":             testutil.RandBool(),
 		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
 		"index_resources":            testutil.RandBool(),
 		"name":                       name,
 		"project_key":                strings.ToLower(acctest.RandSeq(6)),
 	}
 
-	template := `
+	// Legacy template for Step 1: project provider 1.2.1 did not have manage_remote_repository
+	legacyTemplate := `
 		resource "project" "{{ .name }}" {
 			key = "{{ .project_key }}"
 			display_name = "{{ .name }}"
@@ -849,6 +968,40 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		}
 	`
 
+	template := `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+
+			role {
+				name         = "qa"
+				description  = "QA role"
+				type         = "CUSTOM"
+				environments = ["DEV"]
+				actions      = ["READ_REPOSITORY","READ_RELEASE_BUNDLE", "READ_BUILD", "READ_SOURCES_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "TRIGGER_PIPELINE"]
+			}
+
+			role {
+				name         = "devop"
+				description  = "DevOp role"
+				type         = "CUSTOM"
+				environments = ["DEV", "PROD"]
+				actions      = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY", "DEPLOY_CACHE_REPOSITORY", "DELETE_OVERWRITE_REPOSITORY", "TRIGGER_PIPELINE", "READ_INTEGRATIONS_PIPELINE", "READ_POOLS_PIPELINE", "MANAGE_INTEGRATIONS_PIPELINE", "MANAGE_SOURCES_PIPELINE", "MANAGE_POOLS_PIPELINE", "READ_BUILD", "ANNOTATE_BUILD", "DEPLOY_BUILD", "DELETE_BUILD",]
+			}
+		}
+	`
+
+	legacyConfig := util.ExecuteTemplate("TestAccProject", legacyTemplate, params)
 	config := util.ExecuteTemplate("TestAccProject", template, params)
 
 	updatedTemplate := `
@@ -859,6 +1012,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 			admin_privileges {
 				manage_members = {{ .manage_members }}
 				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
 				index_resources = {{ .index_resources }}
 			}
 			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
@@ -873,6 +1027,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"email_notification":         !params["email_notification"].(bool),
 		"manage_members":             !params["manage_members"].(bool),
 		"manage_resources":           !params["manage_resources"].(bool),
+		"manage_remote_repository":   !params["manage_remote_repository"].(bool),
 		"index_resources":            !params["index_resources"].(bool),
 		"name":                       params["name"],
 		"project_key":                params["project_key"],
@@ -890,7 +1045,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 						Source:            "jfrog/project",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "key", params["project_key"].(string)),
 					resource.TestCheckResourceAttr(resourceName, "display_name", name),
@@ -900,6 +1055,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					// manage_remote_repository not in provider 1.2.1 schema
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
 					resource.TestCheckNoResourceAttr(resourceName, "use_project_role_resource"),
 					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
@@ -917,6 +1073,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", params["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", params["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", params["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_remote_repository", fmt.Sprintf("%t", params["manage_remote_repository"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", params["index_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "role.#", "2"),
 				),
@@ -932,6 +1089,7 @@ func TestAccProject_migrate_schema(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "email_notification", fmt.Sprintf("%t", updateParams["email_notification"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_members", fmt.Sprintf("%t", updateParams["manage_members"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_resources", fmt.Sprintf("%t", updateParams["manage_resources"])),
+					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.manage_remote_repository", fmt.Sprintf("%t", updateParams["manage_remote_repository"])),
 					resource.TestCheckResourceAttr(resourceName, "admin_privileges.0.index_resources", fmt.Sprintf("%t", updateParams["index_resources"])),
 					resource.TestCheckResourceAttr(resourceName, "use_project_role_resource", "true"),
 					resource.TestCheckResourceAttr(resourceName, "role.#", "0"),
