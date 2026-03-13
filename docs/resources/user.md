@@ -25,7 +25,7 @@ resource "project_user" "myuser" {
 
 ### Required
 
-- `name` (String) The name of an artifactory user.
+- `name` (String) The name of an Artifactory user. This field is **case-sensitive** and must match the exact case of the user's name as it appears in the Artifactory GUI. If the case does not match, Terraform will treat it as a different user and attempt to add the user to the project on every `terraform plan` or `terraform apply` operation. Additionally, when you remove the user from your Terraform configuration, Terraform will fail to remove the user from the Artifactory project and will incorrectly report that no infrastructure changes are required.
 - `project_key` (String) The key of the project to which the user should be assigned to.
 - `roles` (Set of String) List of pre-defined Project or custom roles. Must have at least 1 role, e.g. 'Viewer'
 
