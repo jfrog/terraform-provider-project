@@ -54,9 +54,10 @@ resource "project" "myproject" {
   display_name = "My Project"
   description  = "My Project"
   admin_privileges {
-    manage_members   = true
-    manage_resources = true
-    index_resources  = true
+    manage_members           = true
+    manage_resources         = true
+    manage_remote_repository = true
+    index_resources          = true
   }
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
@@ -71,10 +72,10 @@ resource "project" "myproject" {
 
 - `display_name` (String) Also known as project name on the UI
 - `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
-- `admin_privileges` (Block Set) (see [below for nested schema](#nestedblock--admin_privileges))
 
 ### Optional
 
+- `admin_privileges` (Block Set) (see [below for nested schema](#nestedblock--admin_privileges))
 - `block_deployments_on_limit` (Boolean) Block deployment of artifacts if storage quota is exceeded.
 
 ~>This setting only applies to self-hosted environment. See [Manage Storage Quotas](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-storage-quotas).
@@ -110,6 +111,10 @@ Required:
 - `index_resources` (Boolean) Enables a project admin to define the resources to be indexed by Xray
 - `manage_members` (Boolean) Allows the Project Admin to manage Platform users/groups as project members with different roles.
 - `manage_resources` (Boolean) Allows the Project Admin to manage resources - repositories, builds and Pipelines resources on the project level.
+
+Optional:
+
+- `manage_remote_repository` (Boolean) Allows the Project Admin to create and manage remote repositories. Requires manage_resources to be enabled. Available in Artifactory 7.134 and later.
 
 
 <a id="nestedblock--group"></a>
@@ -147,6 +152,8 @@ Optional:
 ## Import
 
 Import is supported using the following syntax:
+
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
 terraform import project.myproject myproj

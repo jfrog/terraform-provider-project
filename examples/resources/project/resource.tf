@@ -3,9 +3,10 @@ resource "project" "myproject" {
   display_name = "My Project"
   description  = "My Project"
   admin_privileges {
-    manage_members   = true
-    manage_resources = true
-    index_resources  = true
+    manage_members           = true
+    manage_resources         = true
+    manage_remote_repository = true
+    index_resources          = true
   }
   max_storage_in_gibibytes   = 10
   block_deployments_on_limit = false
