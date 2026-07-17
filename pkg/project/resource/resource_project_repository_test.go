@@ -33,7 +33,7 @@ func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
 			key = "{{ .repo_key_1 }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"]
 			}
 		}
 
@@ -41,7 +41,7 @@ func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
 			key = "{{ .repo_key_2 }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"]
 			}
 		}
 
@@ -126,7 +126,7 @@ func TestAccProjectRepository_full(t *testing.T) {
 			key = "{{ .repo_key_1 }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"]
 			}
 		}
 
@@ -134,7 +134,7 @@ func TestAccProjectRepository_full(t *testing.T) {
 			key = "{{ .repo_key_2 }}"
 
 			lifecycle {
-				ignore_changes = ["project_key"]
+				ignore_changes = ["project_key", "project_environments"]
 			}
 		}
 
