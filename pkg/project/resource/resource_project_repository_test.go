@@ -28,7 +28,8 @@ func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
 		"project_repo_name": projectRepoName,
 	}
 
-	template := `
+	// Legacy template for Step 1: project provider 1.6.1 did not have manage_remote_repository
+	legacyTemplate := `
 		resource "artifactory_local_generic_repository" "{{ .repo_key_1 }}" {
 			key = "{{ .repo_key_1 }}"
 
@@ -65,6 +66,48 @@ func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
 		}
 	`
 
+	// Template for Step 2: current provider adds manage_remote_repository. Set it
+	// explicitly to match the value Artifactory assigns to the project created by
+	// the legacy provider, so the post-upgrade plan is empty.
+	template := `
+		resource "artifactory_local_generic_repository" "{{ .repo_key_1 }}" {
+			key = "{{ .repo_key_1 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key", "project_environments"]
+			}
+		}
+
+		resource "artifactory_local_generic_repository" "{{ .repo_key_2 }}" {
+			key = "{{ .repo_key_2 }}"
+
+			lifecycle {
+				ignore_changes = ["project_key", "project_environments"]
+			}
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key          = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description  = "test description"
+			admin_privileges {
+				manage_members           = true
+				manage_resources         = true
+				manage_remote_repository = true
+				index_resources          = true
+			}
+			max_storage_in_gibibytes   = 1
+			block_deployments_on_limit = true
+			email_notification         = false
+		}
+
+		resource "project_repository" "{{ .project_repo_name }}" {
+			project_key = project.{{ .project_name }}.key
+			key         = artifactory_local_generic_repository.{{ .repo_key }}.key
+		}
+	`
+
+	legacyConfig := util.ExecuteTemplate("TestAccProjectRepository", legacyTemplate, params)
 	config := util.ExecuteTemplate("TestAccProjectRepository", template, params)
 
 	resource.Test(t, resource.TestCase{
@@ -81,7 +124,7 @@ func TestAccProjectRepository_UpgradeFromSDKv2(t *testing.T) {
 						VersionConstraint: "1.6.1",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "project_key", params["project_key"].(string)),
 					resource.TestCheckResourceAttr(fqrn, "key", params["repo_key"].(string)),

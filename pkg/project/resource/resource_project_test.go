@@ -927,12 +927,17 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
 		"block_deployments_on_limit": testutil.RandBool(),
 		"email_notification":         testutil.RandBool(),
-		"manage_members":             testutil.RandBool(),
-		"manage_resources":           testutil.RandBool(),
-		"manage_remote_repository":   testutil.RandBool(),
-		"index_resources":            testutil.RandBool(),
-		"name":                       name,
-		"project_key":                strings.ToLower(acctest.RandSeq(6)),
+		// admin_privileges are kept stable across steps (not toggled in updateParams
+		// below): the Artifactory PUT project endpoint does not persist changes to
+		// the admin_privileges block (other fields update fine), so toggling them
+		// produces a permanent non-empty plan. manage_remote_repository requires
+		// manage_resources, so both are enabled.
+		"manage_members":           true,
+		"manage_resources":         true,
+		"manage_remote_repository": true,
+		"index_resources":          true,
+		"name":                     name,
+		"project_key":              strings.ToLower(acctest.RandSeq(6)),
 	}
 
 	// Legacy template for Step 1: project provider 1.2.1 did not have manage_remote_repository
@@ -1025,12 +1030,13 @@ func TestAccProject_migrate_schema(t *testing.T) {
 		"max_storage_in_gibibytes":   params["max_storage_in_gibibytes"],
 		"block_deployments_on_limit": !params["block_deployments_on_limit"].(bool),
 		"email_notification":         !params["email_notification"].(bool),
-		"manage_members":             !params["manage_members"].(bool),
-		"manage_resources":           !params["manage_resources"].(bool),
-		"manage_remote_repository":   !params["manage_remote_repository"].(bool),
-		"index_resources":            !params["index_resources"].(bool),
-		"name":                       params["name"],
-		"project_key":                params["project_key"],
+		// admin_privileges are kept unchanged; see note on params above.
+		"manage_members":           params["manage_members"],
+		"manage_resources":         params["manage_resources"],
+		"manage_remote_repository": params["manage_remote_repository"],
+		"index_resources":          params["index_resources"],
+		"name":                     params["name"],
+		"project_key":              params["project_key"],
 	}
 	updatedConfig := util.ExecuteTemplate("TestAccProject", updatedTemplate, updateParams)
 

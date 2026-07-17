@@ -28,7 +28,8 @@ func TestAccProjectGroup_UpgradeFromSDKv2(t *testing.T) {
 		"roles":        `["Developer","Project Admin"]`,
 	}
 
-	template := `
+	// Legacy template for Step 1: project provider 1.6.0 did not have manage_remote_repository
+	legacyTemplate := `
 		resource "artifactory_group" "{{ .group }}" {
 			name = "{{ .group }}"
 		}
@@ -50,6 +51,33 @@ func TestAccProjectGroup_UpgradeFromSDKv2(t *testing.T) {
 		}
 	`
 
+	// Template for Step 2: current provider adds manage_remote_repository. Set it
+	// explicitly to match the value Artifactory assigns to the project created by
+	// the legacy provider, so the post-upgrade plan is empty.
+	template := `
+		resource "artifactory_group" "{{ .group }}" {
+			name = "{{ .group }}"
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				manage_remote_repository = true
+				index_resources = true
+			}
+		}
+
+		resource "project_group" "{{ .group }}" {
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_group.{{ .group }}.name
+			roles = {{ .roles }}
+		}
+	`
+
+	legacyConfig := util.ExecuteTemplate("TestAccProjectGroup", legacyTemplate, params)
 	config := util.ExecuteTemplate("TestAccProjectGroup", template, params)
 
 	resource.Test(t, resource.TestCase{
@@ -64,7 +92,7 @@ func TestAccProjectGroup_UpgradeFromSDKv2(t *testing.T) {
 						VersionConstraint: "1.6.0",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "project_key", params["project_key"]),
 					resource.TestCheckResourceAttr(fqrn, "name", groupName),

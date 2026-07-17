@@ -19,6 +19,31 @@ func TestAccProjectRole_UpgradeFromSDKv2(t *testing.T) {
 
 	projectKey := strings.ToLower(acctest.RandSeq(10))
 
+	// Legacy template for Step 1: project provider 1.6.1 did not have manage_remote_repository
+	legacyTemplate := `
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+		}
+
+		resource "project_role" "{{ .name }}" {
+			name = "{{ .name }}"
+			type = "{{ .type }}"
+			project_key = project.{{ .project_name }}.key
+			
+			environments = ["{{ .environment }}"]
+			actions = ["{{ .action }}"]
+		}
+	`
+
+	// Template for Step 2: current provider adds manage_remote_repository. Set it
+	// explicitly to match the value Artifactory assigns to the project created by
+	// the legacy provider, so the post-upgrade plan is empty.
 	template := `
 		resource "project" "{{ .project_name }}" {
 			key = "{{ .project_key }}"
@@ -26,6 +51,7 @@ func TestAccProjectRole_UpgradeFromSDKv2(t *testing.T) {
 			admin_privileges {
 				manage_members = true
 				manage_resources = true
+				manage_remote_repository = true
 				index_resources = true
 			}
 		}
@@ -49,6 +75,7 @@ func TestAccProjectRole_UpgradeFromSDKv2(t *testing.T) {
 		"action":       "READ_REPOSITORY",
 	}
 
+	legacyConfig := util.ExecuteTemplate("TestAccProjectRole", legacyTemplate, testData)
 	config := util.ExecuteTemplate("TestAccProjectRole", template, testData)
 
 	resource.Test(t, resource.TestCase{
@@ -61,7 +88,7 @@ func TestAccProjectRole_UpgradeFromSDKv2(t *testing.T) {
 						VersionConstraint: "1.6.1",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "name", testData["name"]),
 					resource.TestCheckResourceAttr(fqrn, "project_key", testData["project_key"]),
