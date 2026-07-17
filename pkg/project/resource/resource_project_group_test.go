@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	acctest "github.com/jfrog/terraform-provider-project/pkg/project/acctest"
 	project "github.com/jfrog/terraform-provider-project/pkg/project/resource"
 	"github.com/jfrog/terraform-provider-shared/testutil"
@@ -169,6 +170,105 @@ func TestAccProjectGroup_full(t *testing.T) {
 				ImportState:       true,
 				ImportStateId:     fmt.Sprintf("%s:%s", updateParams["project_key"], updateParams["group"]),
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccProjectGroup_name_change_force_replace(t *testing.T) {
+	_, _, projectName := testutil.MkNames("test-project-", "project")
+	_, fqrn, resourceName := testutil.MkNames("test-project-group-", "project_group")
+
+	projectKey := strings.ToLower(acctest.RandSeq(10))
+	group1 := fmt.Sprintf("%s-1", strings.ToLower(acctest.RandSeq(10)))
+	group2 := fmt.Sprintf("%s-2", strings.ToLower(acctest.RandSeq(10)))
+
+	params := map[string]string{
+		"project_name":  projectName,
+		"project_key":   projectKey,
+		"resource_name": resourceName,
+		"group1":        group1,
+		"group2":        group2,
+	}
+
+	template := `
+		resource "artifactory_group" "{{ .group1 }}" {
+			name = "{{ .group1 }}"
+		}
+
+		resource "artifactory_group" "{{ .group2 }}" {
+			name = "{{ .group2 }}"
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				index_resources = true
+			}
+		}
+
+		resource "project_group" "{{ .resource_name }}" {
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_group.{{ .group1 }}.name
+			roles = ["Viewer"]
+		}
+	`
+
+	config := util.ExecuteTemplate("TestAccProjectGroup", template, params)
+
+	// Same resource but pointing name at a different group. Because `name` is
+	// part of the resource identity, this must force a replace (destroy the old
+	// group mapping, create the new one) rather than an in-place update which
+	// would leave the original group mapping orphaned in JFrog.
+	updatedTemplate := strings.Replace(
+		template,
+		"name = artifactory_group.{{ .group1 }}.name",
+		"name = artifactory_group.{{ .group2 }}.name",
+		1,
+	)
+	configUpdated := util.ExecuteTemplate("TestAccProjectGroup", updatedTemplate, params)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { acctest.PreCheck(t) },
+		CheckDestroy: acctest.VerifyDeleted(fqrn, func(id string, request *resty.Request) (*resty.Response, error) {
+			return verifyProjectGroup(group2, projectKey, request)
+		}),
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"artifactory": {
+				Source: "jfrog/artifactory",
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "project_key", projectKey),
+					resource.TestCheckResourceAttr(fqrn, "name", group1),
+					resource.TestCheckResourceAttr(fqrn, "roles.#", "1"),
+					resource.TestCheckResourceAttr(fqrn, "roles.0", "Viewer"),
+				),
+			},
+			{
+				Config: configUpdated,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(fqrn, plancheck.ResourceActionReplace),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fqrn, "project_key", projectKey),
+					resource.TestCheckResourceAttr(fqrn, "name", group2),
+					resource.TestCheckResourceAttr(fqrn, "roles.#", "1"),
+					resource.TestCheckResourceAttr(fqrn, "roles.0", "Viewer"),
+					// the previous group mapping must no longer exist on the project
+					acctest.VerifyDeleted(fqrn, func(_ string, request *resty.Request) (*resty.Response, error) {
+						return verifyProjectGroup(group1, projectKey, request)
+					}),
+				),
 			},
 		},
 	})
