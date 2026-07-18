@@ -1,3 +1,9 @@
+## 1.9.7 (July 17, 2026). Tested on Artifactory 7.146.28 with Terraform 1.15.8 and OpenTofu 1.12.4
+
+BUG FIXES:
+
+* resource/project_group: Fixed an issue where changing the `name` attribute updated the resource in-place, which created a new project group mapping while leaving the previous group mapping orphaned in JFrog (the old group retained its project access). The `name` attribute now forces resource replacement, so the old group mapping is removed and the new one is created, matching the behavior of `resource/project_user`. PR:[#233](https://github.com/jfrog/terraform-provider-project/pull/233)
+
 ## 1.9.6 (March 11, 2026). Tested on Artifactory 7.133.12 with Terraform 1.14.7 and OpenTofu 1.11.5
 
 IMPROVEMENTS:

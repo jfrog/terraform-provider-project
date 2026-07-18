@@ -31,7 +31,8 @@ func TestAccProjectUser_UpgradeFromSDKv2(t *testing.T) {
 		"roles":        `["Developer","Project Admin"]`,
 	}
 
-	template := `
+	// Legacy template for Step 1: project provider 1.6.1 did not have manage_remote_repository
+	legacyTemplate := `
 		resource "artifactory_managed_user" "{{ .username }}" {
 			name     = "{{ .username }}"
 			email    = "{{ .email }}"
@@ -62,6 +63,42 @@ func TestAccProjectUser_UpgradeFromSDKv2(t *testing.T) {
 		}
 	`
 
+	// Template for Step 2: current provider adds manage_remote_repository. Set it
+	// explicitly to match the value Artifactory assigns to the project created by
+	// the legacy provider, so the post-upgrade plan is empty.
+	template := `
+		resource "artifactory_managed_user" "{{ .username }}" {
+			name     = "{{ .username }}"
+			email    = "{{ .email }}"
+			password = "Password1!"
+			admin    = false
+		}
+
+		resource "project" "{{ .project_name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .project_name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = true
+				manage_resources = true
+				manage_remote_repository = true
+				index_resources = true
+			}
+			max_storage_in_gibibytes = 1
+			block_deployments_on_limit = true
+			email_notification = false
+
+			use_project_user_resource = true
+		}
+		
+		resource "project_user" "{{ .username }}" {
+			project_key = project.{{ .project_name }}.key
+			name = artifactory_managed_user.{{ .username }}.name
+			roles = {{ .roles }}
+		}
+	`
+
+	legacyConfig := util.ExecuteTemplate("TestAccProjectUser", legacyTemplate, params)
 	config := util.ExecuteTemplate("TestAccProjectUser", template, params)
 
 	resource.Test(t, resource.TestCase{
@@ -77,7 +114,7 @@ func TestAccProjectUser_UpgradeFromSDKv2(t *testing.T) {
 						VersionConstraint: "1.6.1",
 					},
 				},
-				Config: config,
+				Config: legacyConfig,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fqrn, "project_key", fmt.Sprintf("%s", params["project_key"])),
 					resource.TestCheckResourceAttr(fqrn, "name", userName),

@@ -61,6 +61,9 @@ func (r *ProjectGroupResource) Schema(ctx context.Context, req resource.SchemaRe
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Description: "The name of an artifactory group.",
 			},
 			"project_key": schema.StringAttribute{
