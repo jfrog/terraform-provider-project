@@ -189,7 +189,12 @@ func (r *ProjectShareRepositoryResource) Read(ctx context.Context, req resource.
 	}
 
 	if !slices.Contains(status.SharedWithProjects, state.TargetProjectKey.ValueString()) {
-		state.TargetProjectKey = types.StringNull()
+		resp.Diagnostics.AddWarning(
+			"repo not shared with project",
+			fmt.Sprintf("%s not shared with %s", repoKey, state.TargetProjectKey.ValueString()),
+		)
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	state.ReadOnly = types.BoolValue(status.SharedReadOnly)
