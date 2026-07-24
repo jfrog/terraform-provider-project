@@ -1,0 +1,1 @@
+terraform import jfrog_project_repository.myprojectrepo project_key:repository_key

@@ -39,13 +39,24 @@ var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType)
 
 func NewProjectResource() resource.Resource {
 	return &ProjectResource{
-		TypeName: "project",
+		TypeName: "jfrog_project",
+	}
+}
+
+// NewProjectResourceDeprecated registers the legacy, un-namespaced resource
+// name. It is deprecated in favor of jfrog_project and will be removed in the
+// next major release.
+func NewProjectResourceDeprecated() resource.Resource {
+	return &ProjectResource{
+		TypeName:           "project",
+		DeprecationMessage: "Use `jfrog_project` instead. The `project` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectResourceModelV1 struct {
@@ -406,7 +417,7 @@ type ProjectAPIModel struct {
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName
+	resp.TypeName = r.TypeName
 }
 
 var schemaV1 = schema.Schema{
@@ -684,7 +695,8 @@ var schemaV3 = schema.Schema{
 
 func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 4,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            4,
 		Attributes: lo.Assign(schemaV3.Attributes, map[string]schema.Attribute{
 			"use_project_repository_resource": schema.BoolAttribute{
 				Optional:    true,

@@ -24,13 +24,24 @@ const ProjectEnvironmentUrl = "/access/api/v1/projects/{projectKey}/environments
 
 func NewProjectEnvironmentResource() resource.Resource {
 	return &ProjectEnvironmentResource{
-		TypeName: "project_environment",
+		TypeName: "jfrog_project_environment",
+	}
+}
+
+// NewProjectEnvironmentResourceDeprecated registers the legacy, un-namespaced
+// resource name. It is deprecated in favor of jfrog_project_environment and
+// will be removed in the next major release.
+func NewProjectEnvironmentResourceDeprecated() resource.Resource {
+	return &ProjectEnvironmentResource{
+		TypeName:           "project_environment",
+		DeprecationMessage: "Use `jfrog_project_environment` instead. The `project_environment` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectEnvironmentResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectEnvironmentResourceModel struct {
@@ -53,7 +64,8 @@ func (r *ProjectEnvironmentResource) Metadata(ctx context.Context, req resource.
 
 func (r *ProjectEnvironmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,

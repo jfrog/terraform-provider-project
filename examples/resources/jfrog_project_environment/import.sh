@@ -1,0 +1,1 @@
+terraform import jfrog_project_environment.myenv project_key:environment_name

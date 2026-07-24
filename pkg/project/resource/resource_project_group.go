@@ -24,13 +24,24 @@ const ProjectGroupsUrl = "access/api/v1/projects/{projectKey}/groups/{name}"
 
 func NewProjectGroupResource() resource.Resource {
 	return &ProjectGroupResource{
-		TypeName: "project_group",
+		TypeName: "jfrog_project_group",
+	}
+}
+
+// NewProjectGroupResourceDeprecated registers the legacy, un-namespaced
+// resource name. It is deprecated in favor of jfrog_project_group and will be
+// removed in the next major release.
+func NewProjectGroupResourceDeprecated() resource.Resource {
+	return &ProjectGroupResource{
+		TypeName:           "project_group",
+		DeprecationMessage: "Use `jfrog_project_group` instead. The `project_group` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectGroupResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectGroupResourceModel struct {
@@ -51,7 +62,8 @@ func (r *ProjectGroupResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *ProjectGroupResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,

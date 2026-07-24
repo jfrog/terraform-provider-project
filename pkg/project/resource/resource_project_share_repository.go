@@ -25,13 +25,24 @@ const shareWithTargetProject = "access/api/v1/projects/_/share/repositories/{rep
 
 func NewProjectShareRepositoryResource() resource.Resource {
 	return &ProjectShareRepositoryResource{
-		TypeName: "project_share_repository",
+		TypeName: "jfrog_project_share_repository",
+	}
+}
+
+// NewProjectShareRepositoryResourceDeprecated registers the legacy,
+// un-namespaced resource name. It is deprecated in favor of
+// jfrog_project_share_repository and will be removed in the next major release.
+func NewProjectShareRepositoryResourceDeprecated() resource.Resource {
+	return &ProjectShareRepositoryResource{
+		TypeName:           "project_share_repository",
+		DeprecationMessage: "Use `jfrog_project_share_repository` instead. The `project_share_repository` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectShareRepositoryResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectShareRepositoryResourceModel struct {
@@ -46,6 +57,7 @@ func (r *ProjectShareRepositoryResource) Metadata(ctx context.Context, req resou
 
 func (r *ProjectShareRepositoryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"repo_key": schema.StringAttribute{
 				Required: true,

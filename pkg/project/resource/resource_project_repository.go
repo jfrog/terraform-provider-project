@@ -25,13 +25,24 @@ const repositoryEndpoint = "/artifactory/api/repositories/{key}"
 
 func NewProjectRepositoryResource() resource.Resource {
 	return &ProjectRepositoryResource{
-		TypeName: "project_repository",
+		TypeName: "jfrog_project_repository",
+	}
+}
+
+// NewProjectRepositoryResourceDeprecated registers the legacy, un-namespaced
+// resource name. It is deprecated in favor of jfrog_project_repository and will
+// be removed in the next major release.
+func NewProjectRepositoryResourceDeprecated() resource.Resource {
+	return &ProjectRepositoryResource{
+		TypeName:           "project_repository",
+		DeprecationMessage: "Use `jfrog_project_repository` instead. The `project_repository` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectRepositoryResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectRepositoryResourceModel struct {
@@ -51,7 +62,8 @@ func (r *ProjectRepositoryResource) Metadata(ctx context.Context, req resource.M
 
 func (r *ProjectRepositoryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,

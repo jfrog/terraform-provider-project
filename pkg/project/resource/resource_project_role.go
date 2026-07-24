@@ -66,13 +66,24 @@ var validRoleActions = []string{
 
 func NewProjectRoleResource() resource.Resource {
 	return &ProjectRoleResource{
-		TypeName: "project_role",
+		TypeName: "jfrog_project_role",
+	}
+}
+
+// NewProjectRoleResourceDeprecated registers the legacy, un-namespaced resource
+// name. It is deprecated in favor of jfrog_project_role and will be removed in
+// the next major release.
+func NewProjectRoleResourceDeprecated() resource.Resource {
+	return &ProjectRoleResource{
+		TypeName:           "project_role",
+		DeprecationMessage: "Use `jfrog_project_role` instead. The `project_role` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectRoleResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectRoleResourceModel struct {
@@ -97,7 +108,8 @@ func (r *ProjectRoleResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *ProjectRoleResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,

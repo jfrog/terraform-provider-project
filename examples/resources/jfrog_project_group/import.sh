@@ -1,0 +1,1 @@
+terraform import jfrog_project_group.mygroup project_key:groupname

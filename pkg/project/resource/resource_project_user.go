@@ -25,13 +25,24 @@ const ProjectUsersUrl = "access/api/v1/projects/{projectKey}/users/{name}"
 
 func NewProjectUserResource() resource.Resource {
 	return &ProjectUserResource{
-		TypeName: "project_user",
+		TypeName: "jfrog_project_user",
+	}
+}
+
+// NewProjectUserResourceDeprecated registers the legacy, un-namespaced resource
+// name. It is deprecated in favor of jfrog_project_user and will be removed in
+// the next major release.
+func NewProjectUserResourceDeprecated() resource.Resource {
+	return &ProjectUserResource{
+		TypeName:           "project_user",
+		DeprecationMessage: "Use `jfrog_project_user` instead. The `project_user` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectUserResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectUserResourceModel struct {
@@ -53,7 +64,8 @@ func (r *ProjectUserResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *ProjectUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		DeprecationMessage: r.DeprecationMessage,
+		Version:            1,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,

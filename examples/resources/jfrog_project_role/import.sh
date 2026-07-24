@@ -1,0 +1,1 @@
+terraform import jfrog_project_role.myrole project_key:role_name

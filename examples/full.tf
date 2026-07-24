@@ -5,9 +5,9 @@ terraform {
       source  = "registry.terraform.io/jfrog/artifactory"
       version = "10.3.0"
     }
-    project = {
+    jfrog = {
       source  = "registry.terraform.io/jfrog/project"
-      version = "1.5.0"
+      version = "1.10.0"
     }
   }
 }
@@ -21,7 +21,7 @@ provider "artifactory" {
   url = "${var.artifactory_url}"
 }
 
-provider "project" {
+provider "jfrog" {
   url = "${var.artifactory_url}"
 }
 
@@ -78,7 +78,7 @@ resource "artifactory_remote_npm_repository" "npm-remote" {
 
 # Project resources
 
-resource "project" "myproject" {
+resource "jfrog_project" "myproject" {
   key = "myproj"
   display_name = "My Project"
   description  = "My Project"
@@ -93,57 +93,57 @@ resource "project" "myproject" {
   email_notification         = true
 }
 
-resource "project_user" "user1" {
-  project_key = project.myproject.key
+resource "jfrog_project_user" "user1" {
+  project_key = jfrog_project.myproject.key
   name        = "user1"
   roles       = ["developer","project admin"]
 }
 
-resource "project_user" "user2" {
-  project_key = project.myproject.key
+resource "jfrog_project_user" "user2" {
+  project_key = jfrog_project.myproject.key
   name        = "user2"
   roles       = ["developer"]
 }
 
-resource "project_group" "qa" {
-  project_key = project.myproject.key
+resource "jfrog_project_group" "qa" {
+  project_key = jfrog_project.myproject.key
   name        = "qa"
   roles       = ["qa"]
 }
 
-resource "project_group" "release" {
-  project_key = project.myproject.key
+resource "jfrog_project_group" "release" {
+  project_key = jfrog_project.myproject.key
   name        = "release"
   roles       = ["release manager"]
 }
 
-resource "project_role" "qa" {
-  project_key  = project.myproject.key
+resource "jfrog_project_role" "qa" {
+  project_key  = jfrog_project.myproject.key
   name         = "qa"
   type         = "CUSTOM"
   environments = ["DEV"]
   actions      = var.qa_roles
 }
 
-resource "project_role" "devop" {
-  project_key  = project.myproject.key
+resource "jfrog_project_role" "devop" {
+  project_key  = jfrog_project.myproject.key
   name         = "devop"
   type         = "CUSTOM"
   environments = ["DEV", "PROD"]
   actions      = var.devop_roles
 }
 
-resource "project_repository" "docker-local" {
-  project_key = project.myproject.key
+resource "jfrog_project_repository" "docker-local" {
+  project_key = jfrog_project.myproject.key
   key         = "docker-local"
 }
 
-resource "project_repository" "npm-local" {
-  project_key = project.myproject.key
+resource "jfrog_project_repository" "npm-local" {
+  project_key = jfrog_project.myproject.key
   key         = "npm-local"
 }
 
-resource "project_environment" "myenv" {
-  project_key = project.myproj.key
+resource "jfrog_project_environment" "myenv" {
+  project_key = jfrog_project.myproject.key
   name        = "myenv"
 }
