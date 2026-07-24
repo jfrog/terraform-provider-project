@@ -1,0 +1,1 @@
+terraform import jfrog_project_user.myuser project_key:username

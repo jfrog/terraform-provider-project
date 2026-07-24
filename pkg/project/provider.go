@@ -191,6 +191,7 @@ func (p *ProjectProvider) Configure(ctx context.Context, req provider.ConfigureR
 // Resources satisfies the provider.Provider interface for ProjectProvider.
 func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		// Namespaced resources (primary, `jfrog_` prefix).
 		project.NewProjectResource,
 		project.NewProjectEnvironmentResource,
 		project.NewProjectGroupResource,
@@ -199,6 +200,17 @@ func (p *ProjectProvider) Resources(ctx context.Context) []func() resource.Resou
 		project.NewProjectShareRepositoryResource,
 		project.NewProjectShareRepositoryWithAllResource,
 		project.NewProjectUserResource,
+		// Deprecated, un-namespaced aliases. These are kept for backward
+		// compatibility (Phase 1 of https://github.com/jfrog/terraform-provider-project/issues/210)
+		// and will be removed in the next major release.
+		project.NewProjectResourceDeprecated,
+		project.NewProjectEnvironmentResourceDeprecated,
+		project.NewProjectGroupResourceDeprecated,
+		project.NewProjectRepositoryResourceDeprecated,
+		project.NewProjectRoleResourceDeprecated,
+		project.NewProjectShareRepositoryResourceDeprecated,
+		project.NewProjectShareRepositoryWithAllResourceDeprecated,
+		project.NewProjectUserResourceDeprecated,
 	}
 }
 

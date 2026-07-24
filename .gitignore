@@ -17,3 +17,6 @@ tfc-testing/.terraform
 tfc-testing/terraform.d
 tfc-testing/.terraform.lock.hcl
 .DS_Store
+
+# Local environment / credentials
+.env

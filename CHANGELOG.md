@@ -1,3 +1,13 @@
+## 1.10.0 (July 24, 2026)
+
+FEATURES:
+
+* All resources are now available under the `jfrog_` namespace: `jfrog_project`, `jfrog_project_environment`, `jfrog_project_group`, `jfrog_project_repository`, `jfrog_project_role`, `jfrog_project_share_repository`, `jfrog_project_share_repository_with_all`, and `jfrog_project_user`. This makes it clear the resources belong to the JFrog Platform and conforms to the `<provider>_<resource>` naming convention expected by the ecosystem (including Crossplane Upjet). To use the namespaced resources, configure the provider under the `jfrog` local name, e.g. `required_providers { jfrog = { source = "jfrog/project" } }`. See the "Migrating to the `jfrog_` namespace" guide for details. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210) PR: [#235](https://github.com/jfrog/terraform-provider-project/pull/235)
+
+DEPRECATIONS:
+
+* The un-namespaced resource names (`project`, `project_environment`, `project_group`, `project_repository`, `project_role`, `project_share_repository`, `project_share_repository_with_all`, `project_user`) are deprecated in favor of their `jfrog_`-namespaced equivalents. They continue to work in this release (using the `project` local name) but will be removed in the next major release. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210) PR: [#235](https://github.com/jfrog/terraform-provider-project/pull/235)
+
 ## 1.9.7 (July 17, 2026). Tested on Artifactory 7.146.28 with Terraform 1.15.8 and OpenTofu 1.12.4
 
 BUG FIXES:

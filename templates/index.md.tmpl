@@ -25,6 +25,8 @@ curl -sL ${host}/projects/api/system/licenses/ | jq .
 
 ## Example Usage
 
+~> As of v1.10.0 the resources are namespaced under the `jfrog_` prefix (e.g. `jfrog_project`) and the provider is configured under the `jfrog` local name. The previous un-namespaced resource names (`project`, `project_*`) still work but are deprecated. See the [Migrating to the `jfrog_` namespace](guides/migrating_to_jfrog_namespace) guide.
+
 {{tffile "examples/full.tf"}}
 
 ## Authentication
@@ -40,7 +42,7 @@ Artifactory access tokens may be used via the Authorization header by providing 
 Usage:
 ```hcl
 # Configure the Artifactory provider
-provider "project" {
+provider "jfrog" {
   url = "projects.site.com/projects"
   access_token = "abc...xy"
 }
@@ -85,14 +87,14 @@ terraform {
   }
 
   required_providers {
-    project = {
+    jfrog = {
       source  = "jfrog/project"
-      version = "1.6.0"
+      version = "1.10.0"
     }
   }
 }
 
-provider "project" {
+provider "jfrog" {
   url = "https://myinstance.jfrog.io"
   oidc_provider_name = "terraform-cloud"
   tfc_credential_tag_name = "JFROG"

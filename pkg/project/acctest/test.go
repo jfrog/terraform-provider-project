@@ -33,8 +33,14 @@ var ProtoV6ProviderFactories map[string]func() (tfprotov6.ProviderServer, error)
 func init() {
 	Provider = project.NewProvider()()
 
+	// The provider is registered under both local names so acceptance tests can
+	// reference resources by their legacy un-namespaced type (routes to local
+	// name "project", e.g. `project`, `project_user`) and by their new
+	// `jfrog_`-namespaced type (routes to local name "jfrog", e.g.
+	// `jfrog_project`). See issue #210.
 	ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 		"project": providerserver.NewProtocol6WithError(Provider),
+		"jfrog":   providerserver.NewProtocol6WithError(Provider),
 	}
 }
 

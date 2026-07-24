@@ -23,13 +23,25 @@ const shareWithAllProjectsEndpoint = "access/api/v1/projects/_/share/repositorie
 
 func NewProjectShareRepositoryWithAllResource() resource.Resource {
 	return &ProjectShareRepositoryWithAllResource{
-		TypeName: "project_share_repository_with_all",
+		TypeName: "jfrog_project_share_repository_with_all",
+	}
+}
+
+// NewProjectShareRepositoryWithAllResourceDeprecated registers the legacy,
+// un-namespaced resource name. It is deprecated in favor of
+// jfrog_project_share_repository_with_all and will be removed in the next major
+// release.
+func NewProjectShareRepositoryWithAllResourceDeprecated() resource.Resource {
+	return &ProjectShareRepositoryWithAllResource{
+		TypeName:           "project_share_repository_with_all",
+		DeprecationMessage: "Use `jfrog_project_share_repository_with_all` instead. The `project_share_repository_with_all` resource name is deprecated and will be removed in the next major release of the provider.",
 	}
 }
 
 type ProjectShareRepositoryWithAllResource struct {
-	ProviderData util.ProviderMetadata
-	TypeName     string
+	ProviderData       util.ProviderMetadata
+	TypeName           string
+	DeprecationMessage string
 }
 
 type ProjectShareRepositoryWithAllResourceModel struct {
@@ -43,6 +55,7 @@ func (r *ProjectShareRepositoryWithAllResource) Metadata(ctx context.Context, re
 
 func (r *ProjectShareRepositoryWithAllResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: r.DeprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"repo_key": schema.StringAttribute{
 				Required: true,

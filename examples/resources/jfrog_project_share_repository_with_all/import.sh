@@ -1,0 +1,1 @@
+terraform import jfrog_project_share_repository_with_all.myprojectsharerepo repo_key
