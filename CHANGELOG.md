@@ -1,8 +1,9 @@
-## 1.9.8 (July 21, 2026). Tested on Artifactory 7.146.29 with Terraform 1.15.8 and OpenTofu 1.12.5
+## 1.9.8 (July 24, 2026). 
 
 BUG FIXES:
 
 * resource/project_share_repository: Fixed an issue where `Read` set the required `target_project_key` attribute to `null` when the repository was no longer shared with the target project (for example, when the share was removed outside of Terraform). This produced invalid state and perpetual replace/destroy drift, and made the resource unusable with Crossplane Upjet. `Read` now removes the resource from state when the share no longer exists, so the next plan cleanly recreates it, matching the behavior of `resource/project_share_repository_with_all`. Issue: [#227](https://github.com/jfrog/terraform-provider-project/issues/227) PR: [#234](https://github.com/jfrog/terraform-provider-project/pull/234)
+* resource/project: Fixed the `display_name` attribute rejecting values longer than 32 characters. The JFrog platform accepts display names up to 128 characters (verified against the Access API), but the provider imposed a stricter client-side limit of 32, preventing management of projects that are valid in the UI/API. The upper bound is now 128. Issue: [#236](https://github.com/jfrog/terraform-provider-project/issues/236)
 
 ## 1.9.7 (July 17, 2026). Tested on Artifactory 7.146.28 with Terraform 1.15.8 and OpenTofu 1.12.4
 

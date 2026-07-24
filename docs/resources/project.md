@@ -70,7 +70,7 @@ resource "project" "myproject" {
 
 ### Required
 
-- `display_name` (String) Also known as project name on the UI
+- `display_name` (String) Also known as project name on the UI. Length must be between 1 and 128 characters.
 - `key` (String) The Project Key is added as a prefix to resources created within a Project. This field is mandatory and supports only 2 - 32 lowercase alphanumeric and hyphen characters. Must begin with a letter. For example: `us1a-test`.
 
 ### Optional
