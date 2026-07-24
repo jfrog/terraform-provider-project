@@ -1,3 +1,9 @@
+## 1.9.8 (Jul 24, 2026)
+
+BUG FIXES:
+
+* resource/project: Fixed the `display_name` attribute rejecting values longer than 32 characters. The JFrog platform accepts display names up to 128 characters (verified against the Access API), but the provider imposed a stricter client-side limit of 32, preventing management of projects that are valid in the UI/API. The upper bound is now 128. Issue: [#236](https://github.com/jfrog/terraform-provider-project/issues/236)
+
 ## 1.9.7 (July 17, 2026). Tested on Artifactory 7.146.28 with Terraform 1.15.8 and OpenTofu 1.12.4
 
 BUG FIXES:

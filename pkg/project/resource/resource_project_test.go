@@ -434,6 +434,40 @@ func testProjectConfig(name, key string) string {
 	`, params)
 }
 
+// testProjectConfigWithDisplayName builds a project config where display_name is
+// set independently from the Terraform resource label, so display_name values
+// that are invalid or longer than the label can be exercised.
+func testProjectConfigWithDisplayName(name, key, displayName string) string {
+	params := map[string]interface{}{
+		"max_storage_in_gibibytes":   getRandomMaxStorageSize(),
+		"block_deployments_on_limit": testutil.RandBool(),
+		"email_notification":         testutil.RandBool(),
+		"manage_members":             testutil.RandBool(),
+		"manage_resources":           testutil.RandBool(),
+		"manage_remote_repository":   testutil.RandBool(),
+		"index_resources":            testutil.RandBool(),
+		"name":                       name,
+		"project_key":                key,
+		"display_name":               displayName,
+	}
+	return util.ExecuteTemplate("TestAccProjects", `
+		resource "project" "{{ .name }}" {
+			key = "{{ .project_key }}"
+			display_name = "{{ .display_name }}"
+			description = "test description"
+			admin_privileges {
+				manage_members = {{ .manage_members }}
+				manage_resources = {{ .manage_resources }}
+				manage_remote_repository = {{ .manage_remote_repository }}
+				index_resources = {{ .index_resources }}
+			}
+			max_storage_in_gibibytes = {{ .max_storage_in_gibibytes }}
+			block_deployments_on_limit = {{ .block_deployments_on_limit }}
+			email_notification = {{ .email_notification }}
+		}
+	`, params)
+}
+
 func TestAccProject_MultiProjectsWithRepos(t *testing.T) {
 	numberOfProjects := 50
 	config := testProjectConfigMultiProjectsWithRepos(numberOfProjects)
@@ -638,9 +672,11 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 }
 
 func TestAccProject_InvalidDisplayName(t *testing.T) {
-	name := fmt.Sprintf("invalidtestprojects%s", acctest.RandSeq(20))
+	name := fmt.Sprintf("invalidtestprojects%s", acctest.RandSeq(8))
 	resourceName := fmt.Sprintf("project.%s", name)
-	project := testProjectConfig(name, strings.ToLower(acctest.RandSeq(6)))
+	// display_name of 129 chars exceeds the JFrog platform maximum of 128.
+	displayName := acctest.RandSeq(129)
+	project := testProjectConfigWithDisplayName(name, strings.ToLower(acctest.RandSeq(6)), displayName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
@@ -649,7 +685,34 @@ func TestAccProject_InvalidDisplayName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
-				ExpectError: regexp.MustCompile(`.*Attribute display_name string length must be between 1 and 32.*`),
+				ExpectError: regexp.MustCompile(`.*Attribute display_name string length must be between 1 and 128.*`),
+			},
+		},
+	})
+}
+
+func TestAccProject_LongDisplayName(t *testing.T) {
+	name := fmt.Sprintf("testprojects%s", acctest.RandSeq(8))
+	resourceName := fmt.Sprintf("project.%s", name)
+	// display_name longer than the old 32-char limit but within the platform maximum of 128.
+	displayName := acctest.RandSeq(100)
+	project := testProjectConfigWithDisplayName(name, strings.ToLower(acctest.RandSeq(6)), displayName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: project,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "display_name", displayName),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
