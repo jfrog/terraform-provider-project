@@ -638,7 +638,7 @@ func makeInvalidMaxStorageTestCase(invalidMaxStorage int64, errorRegex string, t
 }
 
 func TestAccProject_InvalidDisplayName(t *testing.T) {
-	name := fmt.Sprintf("invalidtestprojects%s", acctest.RandSeq(20))
+	name := fmt.Sprintf("invalidtestprojects%s", acctest.RandSeq(110))
 	resourceName := fmt.Sprintf("project.%s", name)
 	project := testProjectConfig(name, strings.ToLower(acctest.RandSeq(6)))
 
@@ -649,7 +649,29 @@ func TestAccProject_InvalidDisplayName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      project,
-				ExpectError: regexp.MustCompile(`.*Attribute display_name string length must be between 1 and 32.*`),
+				ExpectError: regexp.MustCompile(`.*Attribute display_name string length must be between 1 and 128.*`),
+			},
+		},
+	})
+}
+
+func TestAccProject_MaxLengthDisplayName(t *testing.T) {
+	name := fmt.Sprintf("p%s", acctest.RandSeq(127))
+	resourceName := fmt.Sprintf("project.%s", name)
+	key := strings.ToLower(acctest.RandSeq(6))
+	project := testProjectConfig(name, key)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { acctest.PreCheck(t) },
+		CheckDestroy:             acctest.VerifyDeleted(resourceName, verifyProject),
+		ProtoV6ProviderFactories: acctest.ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: project,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "display_name", name),
+					resource.TestCheckResourceAttr(resourceName, "key", key),
+				),
 			},
 		},
 	})

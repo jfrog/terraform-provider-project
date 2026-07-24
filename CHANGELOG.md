@@ -1,3 +1,9 @@
+## 1.9.8 (July 24, 2026)
+
+BUG FIXES:
+
+* Fix project resource rejects display_name > 32 chars, but the JFrog platform UI allows longer names Issue: [#236](https://github.com/jfrog/terraform-provider-project/issues/236) PR: [#239](https://github.com/jfrog/terraform-provider-project/pull/239)
+
 ## 1.9.7 (July 17, 2026). Tested on Artifactory 7.146.28 with Terraform 1.15.8 and OpenTofu 1.12.4
 
 BUG FIXES:

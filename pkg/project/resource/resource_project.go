@@ -428,9 +428,9 @@ var schemaV1 = schema.Schema{
 		"display_name": schema.StringAttribute{
 			Required: true,
 			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 32),
+				stringvalidator.LengthBetween(1, 128),
 			},
-			Description: "Also known as project name on the UI",
+			Description: "Also known as project name on the UI. Max length is 128 characters.",
 		},
 		"description": schema.StringAttribute{
 			Optional: true,
