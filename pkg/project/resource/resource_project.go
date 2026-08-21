@@ -37,15 +37,46 @@ const (
 
 var customRoleTypeRegex = regexp.MustCompile(fmt.Sprintf("^%s$", customRoleType))
 
+// Ensure ProjectResource supports state moves so `project` -> `project_project`
+// migration works via a `moved` block.
+var _ resource.ResourceWithMoveState = &ProjectResource{}
+
+// deprecatedProjectTypeName is the legacy, non-namespaced resource type name.
+// It is kept as a deprecated alias of `project_project` so existing
+// configurations continue to work. See GitHub issue #210.
+const (
+	deprecatedProjectTypeName = "project"
+	projectTypeName           = "project_project"
+)
+
+// projectSchemaVersion is the current schema version, shared by schemaV4 and by
+// the state mover so the two cannot drift apart.
+const projectSchemaVersion int64 = 4
+
+// NewProjectResource registers the legacy `project` resource. It is deprecated
+// in favor of `project_project` and will be removed in the next major version.
+// It shares all logic with the namespaced resource; only the type name and the
+// schema-level deprecation message differ.
 func NewProjectResource() resource.Resource {
 	return &ProjectResource{
-		TypeName: "project",
+		TypeName:   deprecatedProjectTypeName,
+		Deprecated: true,
+	}
+}
+
+// NewProjectProjectResource registers the namespaced `project_project` resource.
+func NewProjectProjectResource() resource.Resource {
+	return &ProjectResource{
+		TypeName: projectTypeName,
 	}
 }
 
 type ProjectResource struct {
 	ProviderData util.ProviderMetadata
 	TypeName     string
+	// Deprecated marks this instance as the legacy `project` alias so its
+	// schema surfaces a deprecation warning to practitioners.
+	Deprecated bool
 }
 
 type ProjectResourceModelV1 struct {
@@ -406,7 +437,7 @@ type ProjectAPIModel struct {
 }
 
 func (r *ProjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName
+	resp.TypeName = r.TypeName
 }
 
 var schemaV1 = schema.Schema{
@@ -682,28 +713,112 @@ var schemaV3 = schema.Schema{
 	Description: schemaV2.Description,
 }
 
+// schemaV4 is the current (version 4) schema, shared by both the legacy
+// `project` resource and the namespaced `project_project` resource. It is kept
+// as a package-level var (rather than inline) so it can also be referenced as
+// the source schema in the state-move logic. See MoveState.
+var schemaV4 = schema.Schema{
+	Version: projectSchemaVersion,
+	Attributes: lo.Assign(schemaV3.Attributes, map[string]schema.Attribute{
+		"use_project_repository_resource": schema.BoolAttribute{
+			Optional:    true,
+			Computed:    true,
+			Default:     booldefault.StaticBool(true),
+			Description: "When set to true, this resource will ignore the `repos` attributes and allow repository to be managed by `project_repository` resource instead. Default to `true`.",
+		},
+		"repos": schema.SetAttribute{
+			ElementType: types.StringType,
+			Optional:    true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+			},
+			Description:        "(Optional) List of existing repo keys to be assigned to the project. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.\n\n```hcl\nlifecycle {\n\tignore_changes = [\n\t\trepos\n\t]\n}\n```",
+			DeprecationMessage: "Replaced by `project_repository` resource. This should not be used in combination with `project_repository` resource. Use `use_project_repository_resource` attribute to control which resource manages project repositories.",
+		},
+	}),
+	Blocks:      schemaV3.Blocks,
+	Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied with `repos` attribute set, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n\n~>We strongly recommend using the `project_repository` resource instead to manage the list of repositories.",
+}
+
 func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Version: 4,
-		Attributes: lo.Assign(schemaV3.Attributes, map[string]schema.Attribute{
-			"use_project_repository_resource": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
-				Description: "When set to true, this resource will ignore the `repos` attributes and allow repository to be managed by `project_repository` resource instead. Default to `true`.",
+	resp.Schema = schemaV4
+
+	// The legacy `project` resource is deprecated in favor of the namespaced
+	// `project_project` resource. Surface a warning to practitioners while
+	// keeping the resource fully functional so existing configurations do not
+	// break. See GitHub issue #210.
+	if r.Deprecated {
+		resp.Schema.DeprecationMessage = "Action required: the `project` resource is deprecated and WILL BE REMOVED moving forward. Configurations that still declare `resource \"project\"` will stop working at that release, so migrate to the namespaced `project_project` resource before then.\n\n" +
+			"To migrate without recreating existing infrastructure, rename the resource and add a `moved` block, substituting your own resource name for NAME in both addresses:\n\n" +
+			"```hcl\nmoved {\n\tfrom = project.NAME\n\tto   = project_project.NAME\n}\n```\n\n" +
+			"Terraform treats a `moved` block whose `from` address does not exist as a silent no-op, which destroys and recreates the project instead of moving it, so confirm the plan reports `has moved to` and `0 to destroy` before applying. NOTE: State written by an older provider version (< v1.5.0) must be upgraded by running one `terraform apply` on this version before the `moved` block is added."
+	}
+}
+
+// MoveState lets the namespaced `project_project` resource accept Terraform
+// state moved (via a `moved` block or `terraform state mv`) from the legacy
+// `project` resource. Because both resources share the identical version 4
+// schema, the source state is copied over verbatim. This is what makes the
+// `project` -> `project_project` migration seamless, with no destroy/recreate
+// of the underlying JFrog project. See GitHub issue #210.
+//
+// terraform-plugin-framework requires this because a cross-resource-type
+// `moved` block (even within the same provider) is rejected unless the target
+// resource implements the ResourceWithMoveState interface.
+//
+// Only state already at the current schema version is accepted. Practitioners
+// on an older version must run one `terraform apply` on this provider version
+// first, which runs the UpgradeState upgraders, before adding the `moved` block.
+func (r *ProjectResource) MoveState(ctx context.Context) []resource.StateMover {
+	return []resource.StateMover{
+		{
+			SourceSchema: &schemaV4,
+			StateMover: func(ctx context.Context, req resource.MoveStateRequest, resp *resource.MoveStateResponse) {
+				// Only handle moves originating from the legacy `project`
+				// resource of the `project` provider. We match on the provider
+				// *type* suffix (`/project`) rather than a specific namespace,
+				// because the namespace differs between the public registry
+				// (`jfrog/project`) and the acceptance-test harness
+				// (`hashicorp/project`). Combined with the source resource type
+				// name and the shared version 4 schema, this is appropriately
+				// scoped. Anything else falls through cleanly.
+				if !strings.HasSuffix(req.SourceProviderAddress, "/project") {
+					return
+				}
+				if req.SourceTypeName != deprecatedProjectTypeName {
+					return
+				}
+
+				// SourceSchema above is schemaV4, but Terraform hands us the
+				// source state at whatever version it was written with; the
+				// target's UpgradeState upgraders are not applied first. The
+				// raw state decode is lenient in both directions (undefined
+				// attributes are skipped, absent ones become null), so an older
+				// state would decode "successfully" with the attributes added
+				// since that version silently null. That produces a move
+				// followed by a spurious diff instead of a clean no-op, so
+				// refuse anything but the current version and let the framework
+				// report the unsupported source, which names the version.
+				if req.SourceSchemaVersion != projectSchemaVersion {
+					return
+				}
+
+				// Defensive: the framework leaves SourceState nil (logging only,
+				// no diagnostic) if the raw state could not be decoded with
+				// SourceSchema, and State.Get has a value receiver.
+				if req.SourceState == nil {
+					return
+				}
+
+				var data ProjectResourceModelV4
+				resp.Diagnostics.Append(req.SourceState.Get(ctx, &data)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.TargetState.Set(ctx, &data)...)
 			},
-			"repos": schema.SetAttribute{
-				ElementType: types.StringType,
-				Optional:    true,
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-				},
-				Description:        "(Optional) List of existing repo keys to be assigned to the project. If you wish to use the alternate method of setting `project_key` attribute in each `artifactory_*_repository` resource in the `artifactory` provider, you will need to use `lifecycle.ignore_changes` in the `project` resource to avoid state drift.\n\n```hcl\nlifecycle {\n\tignore_changes = [\n\t\trepos\n\t]\n}\n```",
-				DeprecationMessage: "Replaced by `project_repository` resource. This should not be used in combination with `project_repository` resource. Use `use_project_repository_resource` attribute to control which resource manages project repositories.",
-			},
-		}),
-		Blocks:      schemaV3.Blocks,
-		Description: "Provides an Artifactory project resource. This can be used to create and manage Artifactory project, maintain users/groups/roles/repos.\n\n## Repository Configuration\n\nAfter the project configuration is applied with `repos` attribute set, the repository's attributes `project_key` and `project_environments` would be updated with the project's data. This will generate a state drift in the next Terraform plan/apply for the repository resource. To avoid this, apply `lifecycle.ignore_changes`:\n\n```hcl\nresource \"artifactory_local_maven_repository\" \"my_maven_releases\" {\n\tkey = \"my-maven-releases\"\n\t...\n\n\tlifecycle {\n\t\tignore_changes = [\n\t\t\tproject_environments,\n\t\t\tproject_key\n\t\t]\n\t}\n}\n```\n\n~>We strongly recommend using the `project_repository` resource instead to manage the list of repositories.",
+		},
 	}
 }
 

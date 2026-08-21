@@ -16,7 +16,7 @@ Create a project role. Element has one to one mapping with the [JFrog Project Ro
 resource "project_role" "myrole" {
     name = "myrole"
     type = "CUSTOM"
-    project_key = project.myproject.key
+    project_key = project_project.myproject.key
     
     environments = ["DEV"]
     actions = ["READ_REPOSITORY", "ANNOTATE_REPOSITORY"]
