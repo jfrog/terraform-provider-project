@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-testing v1.16.0
-	github.com/jfrog/terraform-provider-shared v1.30.7
+	github.com/jfrog/terraform-provider-shared v1.30.8
 	github.com/samber/lo v1.53.0
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
 )
@@ -39,7 +39,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cloudflare/circl v1.6.4 // indirect
+	github.com/cloudflare/circl v1.6.5 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -84,11 +84,11 @@ require (
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
 	github.com/zclconf/go-cty v1.19.0 // indirect
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
-	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/mod v0.38.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260720211330-0afa2a65878a // indirect
