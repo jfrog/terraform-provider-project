@@ -19,7 +19,7 @@ provider "project" {
   oidc_provider_name = "terraform-cloud"
 }
 
-resource "project" "myproject" {
+resource "project_project" "myproject" {
   key = "myproj"
   display_name = "My Project"
   description  = "My Project"

@@ -83,7 +83,7 @@ resource "artifactory_remote_npm_repository" "npm-remote" {
   mismatching_mime_types_override_list = "application/json,application/xml"
 }
 
-resource "project" "myproject" {
+resource "project_project" "myproject" {
   key          = "myproj"
   display_name = "My Project"
   description  = "My Project"

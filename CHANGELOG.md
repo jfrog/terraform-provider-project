@@ -1,3 +1,22 @@
+## 1.9.9 (Aug 11, 2026). Tested on Artifactory 7.161.15 with Terraform 1.15.8 and OpenTofu 1.12.5
+
+FEATURES:
+
+* resource/project_project: Add new namespaced `project_project` resource. It shares all logic and schema with the existing `project` resource and is the preferred name going forward, making it clear the resource belongs to the JFrog project domain. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210)
+
+DEPRECATIONS:
+
+* resource/project: The non-namespaced `project` resource is now deprecated in favor of `project_project`. It continues to work unchanged so existing configurations do not break, but emits a deprecation warning. Migrate without recreating infrastructure by adding a `moved` block:
+
+    ```hcl
+    moved {
+      from = project.my_project
+      to   = project_project.my_project
+    }
+    ```
+
+    The `project` resource will be removed in the next major version. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210)
+
 ## 1.9.8 (July 24, 2026). Tested on Artifactory 7.146.29 with Terraform 1.15.8 and OpenTofu 1.12.5
 
 BUG FIXES:
