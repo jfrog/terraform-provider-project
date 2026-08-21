@@ -1,4 +1,4 @@
-## 1.9.9 (August 20, 2026). Tested on Artifactory 7.161.16 with Terraform 1.15.9 and OpenTofu 1.12.6
+## 1.9.9 (August 20, 2026). Tested on Artifactory 7.161.17 with Terraform 1.15.9 and OpenTofu 1.12.6
 
 SECURITY:
 
