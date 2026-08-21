@@ -1,4 +1,4 @@
-## 1.9.9 (Aug 11, 2026). Tested on Artifactory 7.161.15 with Terraform 1.15.8 and OpenTofu 1.12.5
+## 1.9.9 (Aug 21, 2026). 
 
 FEATURES:
 
@@ -16,6 +16,19 @@ DEPRECATIONS:
     ```
 
     The `project` resource will be removed in the next major version. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210)
+
+SECURITY:
+
+* provider: Address CVE-2026-39821 by upgrading Go to 1.26.6. CVSS 9.6 Critical.
+* provider: Address CVE-2026-56865 by upgrading Go to 1.26.6. CVSS 8.4 High.
+* provider: Address CVE-2026-56864 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-33818 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-46600 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-56862 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-56859 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-56860 by upgrading Go to 1.26.6. CVSS 7.5 High.
+* provider: Address CVE-2026-56858 by upgrading Go to 1.26.6. CVSS 6.1 Medium.
+* provider: Address CVE-2026-56853 by upgrading Go to 1.26.6. CVSS 5.3 Medium.
 
 ## 1.9.8 (July 24, 2026). Tested on Artifactory 7.146.29 with Terraform 1.15.8 and OpenTofu 1.12.5
 
