@@ -8,7 +8,9 @@ description: |-
 
 # {{.Name}} ({{.Type}})
 
-~> This resource was previously named `project`. The non-namespaced `project` name is **deprecated** and will be removed in the next major version. Existing configurations keep working and emit a deprecation warning; you can migrate without destroying or recreating your projects by adding a `moved` block. See the [Migrating from the `project` resource](https://registry.terraform.io/providers/jfrog/project/latest/docs/guides/migrating_to_project_project) guide.
+!> **The legacy `project` resource will be removed moving forward.** Configurations that still declare `resource "project"` will stop working at that release. New configurations should use `project_project`, and existing ones should migrate before then.
+
+~> This resource was previously named `project`. Existing configurations keep working and emit a deprecation warning; you can migrate without destroying or recreating your projects by adding a `moved` block. Follow the [Migrating from the `project` resource](https://registry.terraform.io/providers/jfrog/project/latest/docs/guides/migrating_to_project_project) guide rather than copying a `moved` block ad hoc, because a mistyped address is silently ignored and results in the project being destroyed and recreated.
 
 {{ .Description | trimspace }}
 

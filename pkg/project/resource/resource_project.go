@@ -49,6 +49,10 @@ const (
 	projectTypeName           = "project_project"
 )
 
+// projectSchemaVersion is the current schema version, shared by schemaV4 and by
+// the state mover so the two cannot drift apart.
+const projectSchemaVersion int64 = 4
+
 // NewProjectResource registers the legacy `project` resource. It is deprecated
 // in favor of `project_project` and will be removed in the next major version.
 // It shares all logic with the namespaced resource; only the type name and the
@@ -714,7 +718,7 @@ var schemaV3 = schema.Schema{
 // as a package-level var (rather than inline) so it can also be referenced as
 // the source schema in the state-move logic. See MoveState.
 var schemaV4 = schema.Schema{
-	Version: 4,
+	Version: projectSchemaVersion,
 	Attributes: lo.Assign(schemaV3.Attributes, map[string]schema.Attribute{
 		"use_project_repository_resource": schema.BoolAttribute{
 			Optional:    true,
@@ -744,7 +748,10 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
 	// keeping the resource fully functional so existing configurations do not
 	// break. See GitHub issue #210.
 	if r.Deprecated {
-		resp.Schema.DeprecationMessage = "The `project` resource is deprecated and will be removed in the next major version. Use the namespaced `project_project` resource instead. To migrate without recreating existing infrastructure, add a `moved` block, e.g.\n\n```hcl\nmoved {\n\tfrom = project.my_project\n\tto   = project_project.my_project\n}\n```"
+		resp.Schema.DeprecationMessage = "Action required: the `project` resource is deprecated and WILL BE REMOVED moving forward. Configurations that still declare `resource \"project\"` will stop working at that release, so migrate to the namespaced `project_project` resource before then.\n\n" +
+			"To migrate without recreating existing infrastructure, rename the resource and add a `moved` block, substituting your own resource name for NAME in both addresses:\n\n" +
+			"```hcl\nmoved {\n\tfrom = project.NAME\n\tto   = project_project.NAME\n}\n```\n\n" +
+			"Terraform treats a `moved` block whose `from` address does not exist as a silent no-op, which destroys and recreates the project instead of moving it, so confirm the plan reports `has moved to` and `0 to destroy` before applying. NOTE: State written by an older provider version (< v1.5.0) must be upgraded by running one `terraform apply` on this version before the `moved` block is added."
 	}
 }
 
@@ -758,6 +765,10 @@ func (r *ProjectResource) Schema(ctx context.Context, req resource.SchemaRequest
 // terraform-plugin-framework requires this because a cross-resource-type
 // `moved` block (even within the same provider) is rejected unless the target
 // resource implements the ResourceWithMoveState interface.
+//
+// Only state already at the current schema version is accepted. Practitioners
+// on an older version must run one `terraform apply` on this provider version
+// first, which runs the UpgradeState upgraders, before adding the `moved` block.
 func (r *ProjectResource) MoveState(ctx context.Context) []resource.StateMover {
 	return []resource.StateMover{
 		{
@@ -775,6 +786,27 @@ func (r *ProjectResource) MoveState(ctx context.Context) []resource.StateMover {
 					return
 				}
 				if req.SourceTypeName != deprecatedProjectTypeName {
+					return
+				}
+
+				// SourceSchema above is schemaV4, but Terraform hands us the
+				// source state at whatever version it was written with; the
+				// target's UpgradeState upgraders are not applied first. The
+				// raw state decode is lenient in both directions (undefined
+				// attributes are skipped, absent ones become null), so an older
+				// state would decode "successfully" with the attributes added
+				// since that version silently null. That produces a move
+				// followed by a spurious diff instead of a clean no-op, so
+				// refuse anything but the current version and let the framework
+				// report the unsupported source, which names the version.
+				if req.SourceSchemaVersion != projectSchemaVersion {
+					return
+				}
+
+				// Defensive: the framework leaves SourceState nil (logging only,
+				// no diagnostic) if the raw state could not be decoded with
+				// SourceSchema, and State.Get has a value receiver.
+				if req.SourceState == nil {
 					return
 				}
 

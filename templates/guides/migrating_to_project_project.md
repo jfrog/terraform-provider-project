@@ -4,6 +4,8 @@ page_title: "Migrating from the `project` resource"
 
 Starting with provider version 1.9.9, the project resource is available under the namespaced name `project_project`. The original `project` name is deprecated and will be removed in the next major version.
 
+!> **The legacy `project` resource will be removed moving forward** It remains fully functional for now so that existing configurations have time to migrate, but configurations that still declare `resource "project"` will stop working soon. New configurations should use `project_project` from the start.
+
 ## Why the resource was renamed
 
 `project` was the only resource in this provider that was not prefixed with the provider name. That made configurations ambiguous to read, since `resource "project" "myproject"` gives no indication that the resource belongs to the JFrog project domain, and it was inconsistent with every other resource in the provider (`project_group`, `project_repository`, `project_role`, and so on). The non-namespaced name also prevented tooling that relies on the `<provider>_<resource>` convention, such as Crossplane Upjet, from consuming the provider.
@@ -74,6 +76,8 @@ moved {
 
 Remember to update any references to the resource elsewhere in your configuration, for example `project_key = project.my_project.key` becomes `project_key = project_project.my_project.key`.
 
+~> **Both addresses must name your own resource.** `my_project` above is a placeholder. Terraform does not report an error when a `moved` block's `from` address doesn't exist — it silently treats the block as a no-op. The old address is then orphaned and the new one has no state, so Terraform destroys your project and creates a replacement. Always check the plan output described below before applying.
+
 Running `terraform plan` reports the move and no infrastructure changes:
 
 ```
@@ -82,7 +86,26 @@ Running `terraform plan` reports the move and no infrastructure changes:
 Plan: 0 to add, 0 to change, 0 to destroy.
 ```
 
+If the plan instead says the project `will be destroyed` because it `is not in configuration`, the `moved` block did not match. Do not apply — correct the addresses and plan again.
+
 Apply it, and then remove the `moved` block once every workspace that shares this configuration has been applied. A follow-up plan reports `No changes` with no deprecation warnings.
+
+## Upgrade older state first
+
+The migration only accepts state at the provider's current resource schema version. If your `project` resource was last applied by an older provider version (< v1.5.0), run a single `terraform apply` on this version before adding the `moved` block — that runs the state upgraders and brings the resource up to the current version.
+
+Skipping this step is safe rather than destructive: Terraform reports that the move is unsupported and names the version it found.
+
+```
+Error: Unable to Move Resource State
+
+The target resource implementation does not include support for the given
+source resource.
+...
+Source Resource Schema Version: 2
+```
+
+Apply once on the current version, then retry the move.
 
 ## `terraform state mv` does not work here
 

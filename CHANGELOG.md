@@ -2,7 +2,7 @@
 
 FEATURES:
 
-* resource/project_project: Add new namespaced `project_project` resource. It shares all logic and schema with the existing `project` resource and is the preferred name going forward, making it clear the resource belongs to the JFrog project domain. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210)
+* resource/project_project: Add new namespaced `project_project` resource. It *shares all logic and schema with the existing `project` resource and is the preferred name going forward, making it clear the resource belongs to the JFrog project domain. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210) PR: [#240](https://github.com/jfrog/terraform-provider-project/pull/240)
 
 DEPRECATIONS:
 
@@ -10,12 +10,14 @@ DEPRECATIONS:
 
     ```hcl
     moved {
-      from = project.my_project
-      to   = project_project.my_project
+      from = project.NAME
+      to   = project_project.NAME
     }
     ```
 
-    The `project` resource will be removed in the next major version. Issue: [#210](https://github.com/jfrog/terraform-provider-project/issues/210)
+    Substitute your own resource name for `NAME` in both addresses. Terraform treats a `moved` block whose `from` address does not exist as a silent no-op, which destroys and recreates the project instead of moving it, so confirm the plan reports `has moved to` and `0 to destroy` before applying. State written by an older provider version must be upgraded by running one `terraform apply` on this version before the `moved` block is added.
+
+    **Going forward, the legacy `project` resource will be removed.** 
 
 SECURITY:
 
