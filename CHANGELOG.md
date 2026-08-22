@@ -1,4 +1,4 @@
-## 1.9.9 (August 20, 2026). Tested on Artifactory 7.161.16 with Terraform 1.15.9 and OpenTofu 1.12.6
+## 1.9.9 (August 20, 2026). Tested on Artifactory 7.161.17 with Terraform 1.15.9 and OpenTofu 1.12.6
 
 SECURITY:
 
@@ -12,6 +12,7 @@ SECURITY:
 * provider: Address CVE-2026-56860 by upgrading Go to 1.26.6. CVSS 7.5 High.
 * provider: Address CVE-2026-56858 by upgrading Go to 1.26.6. CVSS 6.1 Medium.
 * provider: Address CVE-2026-56853 by upgrading Go to 1.26.6. CVSS 5.3 Medium.
+* provider: Bump `github.com/jfrog/terraform-provider-shared` from v1.30.7 to v1.30.8, which pulls in `github.com/cloudflare/circl` v1.6.5, `golang.org/x/crypto` v0.55.0, `golang.org/x/net` v0.58.0, and `golang.org/x/text` v0.41.0.
 
 ## 1.9.8 (July 24, 2026). Tested on Artifactory 7.146.29 with Terraform 1.15.8 and OpenTofu 1.12.5
 
