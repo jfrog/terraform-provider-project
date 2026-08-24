@@ -6,7 +6,7 @@ The guide provides information and the example on how to add repositories to the
 
 ## Resources creation sequence
 
-1. Create `project` resource
+1. Create `project_project` resource
 2. Create repository resource(s), the ordering of these first 2 steps doesn't matter.
 3. Create `project_repository` resource, using attributes from #1 and #2 as reference values for this resource
 
@@ -42,7 +42,7 @@ terraform {
     }
     project = {
       source  = "jfrog/project"
-      version = "1.7.1"
+      version = "1.9.9"
     }
   }
 }
@@ -55,7 +55,7 @@ provider "project" {
   // supply JFROG_ACCESS_TOKEN / JFROG_URL as env vars
 }
 
-resource "project" "myproject" {
+resource "project_project" "myproject" {
   key          = "myproj"
   display_name = "My Project"
   description  = "My Project"
@@ -84,7 +84,7 @@ resource "artifactory_local_docker_v2_repository" "docker-v2-local" {
 }
 
 resource "project_repository" "myproject-docker-v2-local" {
-  project_key = project.myproject.key
+  project_key = project_project.myproject.key
   key         = artifactory_local_docker_v2_repository.docker-v2-local.key
 } 
 ```
